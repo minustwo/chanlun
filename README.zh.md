@@ -194,12 +194,17 @@ chanlun/
 ├─ conformance/chanlun-v1/             # 冻结的一致性语料库（Phase-3 规范）
 │  ├─ manifest.json                    # corpus_sha256 = 版本号
 │  ├─ fixtures/*.json                  # 48 个（输入、期望、sha）fixtures
-│  ├─ reference_backend/               # 独立纯标准库参考实现
+│  ├─ reference_backend/               # 独立纯标准库参考实现（Python）
 │  ├─ runner.py                        # ~100 行纯标准库验证脚本
 │  ├─ generate_corpus.py               # 确定性 fixture 生成器
 │  ├─ example_phase3_check.py          # Phase-3 实现者模板
 │  ├─ README.md, README.zh.md          # 完整规范文档（英 / 中）
-└─ .github/workflows/chanlun-gate.yml  # Hosted Ubuntu CI：lake build + groundings + conformance
+├─ impl/ts/                            # TypeScript 移植（Phase-3 多语言 #1）
+│  ├─ src/*.ts                         # 六个流水线阶段，零运行时依赖
+│  ├─ check.ts                         # 48-fixture 一致性验证脚本
+│  ├─ package.json                     # 仅 devDeps（typescript + @types/node）
+│  └─ README.md, README.zh.md          # impl/ts 文档（英 / 中）
+└─ .github/workflows/chanlun-gate.yml  # Hosted Ubuntu CI：lake build + groundings + conformance + conformance-ts
 ```
 
 ---
@@ -220,6 +225,10 @@ Hosted Ubuntu 工作流 `.github/workflows/chanlun-gate.yml` 在每次 push 到
   （以捕获参考实现的任何漂移）。`chanlun-v1` 的 `corpus_sha256` 即为
   一致性版本号：任何语言的 Phase-3 多语言实现要合规，必须重现每个
   fixture 的期望 SHA-256。
+* `conformance-ts` job：安装 Node 20、编译 `impl/ts/`（仅 devDeps：
+  `typescript` + `@types/node`）、运行 `impl/ts/dist/check.js` 验证
+  TypeScript 后端逐字节重现每个 fixture 的 `expected_sha256`。任何
+  分歧都让 job 非零退出——SHA 相等是律，绝不模糊匹配。
 
 Lean job 在缓存命中时约 5 分钟，冷缓存约 25 分钟。Grounding 全部约 30 秒
 跑完。Conformance 不到 1 分钟。
