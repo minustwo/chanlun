@@ -1,0 +1,94 @@
+name: chanlun-gate
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: chanlun-gate-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lean:
+    name: lake build (Mathlib kernel CI)
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install elan + lean toolchain
+        run: |
+          set -euo pipefail
+          curl -sSfL https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh \
+            | sh -s -- -y --default-toolchain none
+          echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
+          export PATH="$HOME/.elan/bin:$PATH"
+          # Force-install the toolchain pinned in lean-toolchain.
+          TOOLCHAIN=$(cat lean-toolchain | sed 's|^leanprover/lean4:||' | tr -d '[:space:]')
+          elan toolchain install "$TOOLCHAIN"
+          elan default "$TOOLCHAIN"
+          lean --version
+          lake --version
+
+      - name: Cache Lake + Mathlib oleans
+        uses: actions/cache@v4
+        with:
+          path: |
+            .lake
+          key: chanlun-lake-${{ runner.os }}-${{ hashFiles('lake-manifest.json', 'lean-toolchain', 'lakefile.lean') }}
+          restore-keys: |
+            chanlun-lake-${{ runner.os }}-
+
+      - name: Resolve dependencies
+        run: lake update
+
+      - name: Download Mathlib oleans (cache get)
+        run: |
+          set -euo pipefail
+          # Get Mathlib's pre-built oleans (the WIN — free hosted runners CAN reach this).
+          lake exe cache get || true
+
+      - name: Build Chanlun library
+        run: lake build Chanlun
+
+      - name: Sorry-free gate
+        run: |
+          set -euo pipefail
+          # Hard fail if any Chanlun .lean file contains the keyword `sorry` (token-level).
+          if grep -RIn --include='*.lean' -E '(^|[^[:alnum:]_])sorry([^[:alnum:]_]|$)' lean/Chanlun; then
+            echo "FAIL: at least one Chanlun Lean file contains `sorry`."
+            exit 1
+          fi
+          echo "OK: no sorries in lean/Chanlun/*.lean."
+
+  grounding:
+    name: Grounding (pure-Python oracles)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Run all groundings
+        working-directory: grounding
+        run: |
+          set -euo pipefail
+          status=0
+          for f in chanlun_*_grounding.py; do
+            echo "===== $f ====="
+            if PYTHONPATH=. python3 "$f"; then
+              echo "PASS: $f"
+            else
+              echo "FAIL: $f"
+              status=1
+            fi
+          done
+          exit "$status"
