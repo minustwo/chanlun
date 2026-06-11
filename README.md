@@ -1,18 +1,19 @@
-# Chanlun (缠论) — Theory + Lean Formalization
+# Chanlun — Theory + Lean Formalization
 
-A formalized geometric decomposition system for **Chanlun** (缠论, "the
-theory taught by Master 缠中说禅") technical analysis, with:
+A formalized geometric decomposition system for **Chanlun** (the theory
+taught by Master Chanzhongshuochan) technical analysis, with:
 
-* **Theory documents** (Klaus, April 2026): `chanlun.pdf` (English),
-  `chanlun_zh.pdf` (中文).
+* **Theory document** (Klaus, April 2026): `chanlun.pdf`.
 * **Lean 4 formalization** (`lean/Chanlun/`): the 11 load-bearing
   theorems below, all `sorry`-free, kernel-verified on hosted Ubuntu CI.
 * **Pure-Python groundings** (`grounding/`): independent reference
   oracles for each Lean theorem, with §15 falsifying mutants.
 
-> **Attribution.** The 缠论 theory itself belongs to 缠中说禅 (the
-> chanzhongshuochan tradition). The formal system in `chanlun{,_zh}.pdf`
-> is Klaus's published formalization. The Lean formalization in
+Chinese version: see [README.zh.md](README.zh.md).
+
+> **Attribution.** The Chanlun theory itself belongs to the
+> Chanzhongshuochan tradition. The formal system in `chanlun.pdf` is
+> Klaus's published formalization. The Lean formalization in
 > `lean/Chanlun/` (this directory's contribution) was developed inside
 > the [`codex-proof-workbench`](https://github.com/minustwo/codex-proof-workbench)
 > proof program and migrated here for public availability.
@@ -23,21 +24,21 @@ theory taught by Master 缠中说禅") technical analysis, with:
 
 The Lean library `Chanlun` (`lake build Chanlun`) is sorry-free and
 covers the four-stage published pipeline plus two follow-up structural
-layers (中枢 / 走势类型). Eleven modules:
+layers (Zhongshu / WalkType). Eleven modules:
 
 | Module | Theorems (chanlun.pdf reference) |
 |---|---|
-| `Chanlun.Fractal` | Def-3 (分型): `fractal_slot_equiv_def3`, `def3_trichotomy` (Lemma 1), `def3_admissible_classifies`, `def3_residue_iff_neither` |
-| `Chanlun.Normalize` | Algorithm N (包含处理, Appendix A): `normalize_no_adjacent_containment` (single-pass ≡ full-collapse) |
+| `Chanlun.Fractal` | Def-3 (Fenxing): `fractal_slot_equiv_def3`, `def3_trichotomy` (Lemma 1), `def3_admissible_classifies`, `def3_residue_iff_neither` |
+| `Chanlun.Normalize` | Algorithm N (containment handling, Appendix A): `normalize_no_adjacent_containment` (single-pass = full-collapse) |
 | `Chanlun.Pipeline` | N → Def-3 composition: `pipeline_inclusion_normalized`, `pipeline_fractal_classification_well_defined` |
-| `Chanlun.Stroke` | Def-4 (笔, leftmost-greedy): `stroke_emits_separated` (B), `stroke_emits_alternate` (A), `strokes_separated` |
-| `Chanlun.StrokeUniqueness` | Lemma 2 strong form: `strokes_unique` (any `IsValidBi` ≡ canonical streaming output) |
-| `Chanlun.Segment` | Def 5–16 + Theorem 1 (线段 + parameterized unique segment decomposition): `segments_partition` (P), `segments_terminate` (T), `segment_advance_strictly_increasing` |
-| `Chanlun.Zhongshu` | 中枢 (走势中枢, 108课 lesson 17/20): `zhongshu_valid`, `zhongshu_disjoint`, `extendEnd_ge`, parameterized over `ZoneGate ∈ {first3, all_}` |
-| `Chanlun.TrendType` | 盘整 / 趋势 (108课 lesson 17): `classify_total`, `classify_trend_monotone` (依次同向 is genuinely monotone) |
-| `Chanlun.BiReachableDeterminism` | Reachable-domain determinism: `fractals_alternate_on_containment_free` (post-normalize ⇒ 分型 strictly alternates ⇒ the three 笔-endpoint readings COINCIDE on reachable inputs) |
-| `Chanlun.LevelRecursion` | 走势必完美 (lesson 24): `centerSize_ge_3`, `lift_strict_drop` (≥2 element drop per non-terminal lift ⇒ level recursion terminates in ≤ `n/2` levels) |
-| `Chanlun.WalkDecomposition` | 走势 maximal decomposition (lesson 17): `decompose_partition`, `decompose_monotonic`, `decompose_type_homogeneous` |
+| `Chanlun.Stroke` | Def-4 (Bi, leftmost-greedy): `stroke_emits_separated` (B), `stroke_emits_alternate` (A), `strokes_separated` |
+| `Chanlun.StrokeUniqueness` | Lemma 2 strong form: `strokes_unique` (any `IsValidBi` = canonical streaming output) |
+| `Chanlun.Segment` | Def 5–16 + Theorem 1 (Xianduan + parameterized unique segment decomposition): `segments_partition` (P), `segments_terminate` (T), `segment_advance_strictly_increasing` |
+| `Chanlun.Zhongshu` | Zhongshu (lesson 17/20): `zhongshu_valid`, `zhongshu_disjoint`, `extendEnd_ge`, parameterized over `ZoneGate ∈ {first3, all_}` |
+| `Chanlun.TrendType` | Consolidation / Trend (lesson 17): `classify_total`, `classify_trend_monotone` (sequentially-same-direction is genuinely monotone) |
+| `Chanlun.BiReachableDeterminism` | Reachable-domain determinism: `fractals_alternate_on_containment_free` (post-normalize ⇒ Fenxings strictly alternate ⇒ the three Bi-endpoint readings COINCIDE on reachable inputs) |
+| `Chanlun.LevelRecursion` | "Every trend must complete" (lesson 24): `centerSize_ge_3`, `lift_strict_drop` (≥2 element drop per non-terminal lift ⇒ level recursion terminates in ≤ n/2 levels) |
+| `Chanlun.WalkDecomposition` | Maximal walk decomposition (lesson 17): `decompose_partition`, `decompose_monotonic`, `decompose_type_homogeneous` |
 
 ### Honest scope — named-open follow-ups (not proven yet)
 
@@ -55,12 +56,12 @@ These are deliberately surfaced as named residues per Klaus's
 * `[chanlun_zhongshu_zone_gate_OPEN]` — `first3` vs `all_` differ on ~12%
   of element sequences; both are proven `valid` + `disjoint`, but the
   gate-relativity is named.
-* `[chanlun_bi_to_endpoint_first_admissible_OPEN]` — `Chanlun.StrokeUniqueness`
-  reads the TO-endpoint as the LEFTMOST opposite-kind admissible
-  fractal; a literal-strong reading of "extremal of the to-side run"
-  could differ on multi-fractal runs.
-* `[chanlun_bi_close_drop_named_residue_OPEN]` — opposite-close
-  fractals (gap < δmin) are silently dropped by `step`; the uniqueness
+* `[chanlun_bi_to_endpoint_first_admissible_OPEN]` —
+  `Chanlun.StrokeUniqueness` reads the TO-endpoint as the LEFTMOST
+  opposite-kind admissible Fenxing; a literal-strong reading of
+  "extremal of the to-side run" could differ on multi-Fenxing runs.
+* `[chanlun_bi_close_drop_named_residue_OPEN]` — opposite-close Fenxings
+  (gap < δmin) are silently dropped by `step`; the uniqueness
   proof treats drops as no-ops.
 * `[chanlun_stroke_output_order_lift_OPEN]` — `strokes_separated`
   lifts to the user-facing reversed order via `List.mem_reverse`;
@@ -74,9 +75,10 @@ These are deliberately surfaced as named residues per Klaus's
 * `[chanlun_level_recursion_determinism_preservation_OPEN]` —
   determinism preserved up the tower.
 * `[chanlun_walk_decomposition_spec_unique_OPEN]` — the SPEC form of
-  walk-decomposition uniqueness (any spec-satisfying function ≡ `decompose`).
-* `[chanlun_walk_decomposition_intervalnesting_OPEN]` — 区间套 / multi-level
-  nested decomposition.
+  walk-decomposition uniqueness (any spec-satisfying function =
+  `decompose`).
+* `[chanlun_walk_decomposition_intervalnesting_OPEN]` — interval-nesting
+  multi-level nested decomposition.
 
 These are NOT silent gaps — each is named so the next pass knows exactly
 what residue to discharge.
@@ -95,7 +97,7 @@ what residue to discharge.
 ```bash
 # Resolve & download dependencies (Mathlib v4.14.0 + transitive).
 lake update
-# Download pre-built Mathlib oleans (THE WIN — works on free hosted runners).
+# Download pre-built Mathlib oleans (works on free hosted runners).
 lake exe cache get
 # Build the Chanlun library.
 lake build Chanlun
@@ -124,8 +126,9 @@ external Python deps; pure stdlib + `random`.
 
 ```
 chanlun/
-├─ chanlun.pdf, chanlun_zh.pdf       # the theory (Klaus, April 2026)
-├─ README.md                          # this file
+├─ chanlun.pdf                        # the theory (Klaus, April 2026, English)
+├─ README.md                          # this file (English)
+├─ README.zh.md                       # Chinese version
 ├─ lakefile.lean, lean-toolchain      # Lean 4 build config (Mathlib v4.14.0)
 ├─ lean/Chanlun/                      # the 11 Lean MWE modules
 │  ├─ Fractal.lean, Normalize.lean, Pipeline.lean
@@ -166,16 +169,16 @@ cold. Groundings finish in ~30 seconds total.
 
 * The proof program these MWE files were developed in:
   [`codex-proof-workbench`](https://github.com/minustwo/codex-proof-workbench)
-* Chan's published lessons (108课) are the source-of-truth for 中枢,
-  走势类型, and the buy-sell-point geometry hooks used in the
-  follow-up work.
+* Master Chan's published lessons (108-lesson series) are the
+  source-of-truth for Zhongshu, WalkType, and the buy-sell-point
+  geometry hooks used in the follow-up work.
 * Mathlib v4.14.0 is the only library dependency.
 
 ---
 
 ## License
 
-The theory PDFs (`chanlun.pdf`, `chanlun_zh.pdf`) are released into the
-public domain per Klaus's authorial statement. The Lean formalization,
-groundings, and CI workflow are MIT-licensed (see
-[`LICENSE`](LICENSE) if present in the repo).
+The theory PDF (`chanlun.pdf`) is released into the public domain per
+Klaus's authorial statement. The Lean formalization, groundings, and
+CI workflow are MIT-licensed (see [`LICENSE`](LICENSE) if present in
+the repo).
