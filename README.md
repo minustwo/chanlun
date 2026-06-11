@@ -225,7 +225,12 @@ chanlun/
 │  ├─ check.ts                         # 48-fixture conformance harness
 │  ├─ package.json                     # devDeps only (typescript + @types/node)
 │  └─ README.md, README.zh.md          # impl/ts docs (EN / ZH)
-└─ .github/workflows/chanlun-gate.yml  # hosted Ubuntu CI: lake build + groundings + conformance + conformance-ts
+├─ impl/go/                            # Go (pure-stdlib) Phase-3 backend, passes all 48 fixtures
+│  ├─ go.mod                           # github.com/minustwo/chanlun/impl/go, Go 1.22
+│  ├─ cmd/check/main.go                # `go run ./cmd/check` runs the conformance harness
+│  ├─ internal/chanlun/                # one file per stage, faithful port of the Python reference
+│  └─ README.md, README.zh.md          # how to run, canonical-JSON choice, lineage
+└─ .github/workflows/chanlun-gate.yml  # hosted Ubuntu CI: lake build + groundings + conformance (Python + TS + Go)
 ```
 
 ---
@@ -253,6 +258,11 @@ every push to `main` and every PR:
   to verify the TypeScript backend reproduces every fixture's
   `expected_sha256` byte-for-byte. The job exits non-zero on any
   divergence - SHA-equality is the law, no fuzzy match.
+* `conformance-go` job: builds the Go Phase-3 backend at `impl/go/` and
+  runs `go run ./cmd/check`, which loads the same `manifest.json` and
+  proves each fixture's SHA-256 reproduces under the Go port too. Go
+  1.22, pure stdlib, no third-party dependencies. SHA-equality remains
+  the law — non-zero exit fails the gate, never silently skips.
 
 The Lean job typically takes ~5 minutes on a warm cache, ~25 minutes
 cold. Groundings finish in ~30 seconds total. Conformance finishes in
