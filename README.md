@@ -4,8 +4,8 @@ A formalized geometric decomposition system for **Chanlun** (the theory
 taught by Master Chanzhongshuochan) technical analysis, with:
 
 * **Theory document**: [`chanlun.md`](chanlun.md) (mathematical formalism).
-* **Lean 4 formalization** (`lean/Chanlun/`): the 11 load-bearing
-  theorems below, all `sorry`-free, kernel-verified on hosted Ubuntu CI.
+* **Lean 4 formalization** (`lean/Chanlun/`): the 21 load-bearing
+  modules below, all `sorry`-free, kernel-verified on hosted Ubuntu CI.
 * **Pure-Python groundings** (`grounding/`): independent reference
   oracles for each Lean theorem, with §15 falsifying mutants.
 
@@ -25,8 +25,11 @@ Chinese version: see [README.zh.md](README.zh.md).
 ## Status — what is proven, what is named-open
 
 The Lean library `Chanlun` (`lake build Chanlun`) is sorry-free and
-covers the four-stage published pipeline plus two follow-up structural
-layers (Zhongshu / WalkType). Eleven modules:
+covers the four-stage published pipeline plus follow-up structural and
+buy/sell-point layers (Zhongshu, WalkType, Beichi, BSPs, interval-nested
+decomposition). Twenty-one modules:
+
+### Core pipeline (Def-3 → Stroke → Segment → Zhongshu)
 
 | Module | Theorems (chanlun.md reference) |
 |---|---|
@@ -35,12 +38,37 @@ layers (Zhongshu / WalkType). Eleven modules:
 | `Chanlun.Pipeline` | N → Def-3 composition: `pipeline_inclusion_normalized`, `pipeline_fractal_classification_well_defined` |
 | `Chanlun.Stroke` | Def-4 (Bi, leftmost-greedy): `stroke_emits_separated` (B), `stroke_emits_alternate` (A), `strokes_separated` |
 | `Chanlun.StrokeUniqueness` | Lemma 2 strong form: `strokes_unique` (any `IsValidBi` = canonical streaming output) |
+| `Chanlun.StrokesIsValidBiCorollary` | Lemma 2 non-vacuity + biconditional: `strokes_isValidBi`, `strokes_iff_IsValidBi` |
+| `Chanlun.BiEndpointSubResidues` | PR #1090 §3 sub-residues: `to_endpoint_leftmost_eq_extremal_on_reachable`, `dropBranch_preserves_IsValidBi`, `allAlternate_reverse`, `strokes_alternate` |
 | `Chanlun.Segment` | Def 5–16 + Theorem 1 (Xianduan + parameterized unique segment decomposition): `segments_partition` (P), `segments_terminate` (T), `segment_advance_strictly_increasing` |
 | `Chanlun.Zhongshu` | Zhongshu (lesson 17/20): `zhongshu_valid`, `zhongshu_disjoint`, `extendEnd_ge`, parameterized over `ZoneGate ∈ {first3, all_}` |
+| `Chanlun.ZhongshuExtension` | 中枢 延伸 / 扩展 / 新生 / 9-段升级 (lesson 17/20/30): `classifyExtension_total`, `extension_preserves_core_ZD_ZG`, `expansion_widens_GG_DD`, `rebirth_creates_disjoint_core`, `upgrade_trigger_iff_9_segments` |
 | `Chanlun.TrendType` | Consolidation / Trend (lesson 17): `classify_total`, `classify_trend_monotone` (sequentially-same-direction is genuinely monotone) |
+| `Chanlun.WalkDecomposition` | Maximal walk decomposition (lesson 17): `decompose_partition`, `decompose_monotonic`, `decompose_type_homogeneous`, `decompose_unique` |
+
+### Reachable-domain determinism
+
+| Module | Theorems |
+|---|---|
 | `Chanlun.BiReachableDeterminism` | Reachable-domain determinism: `fractals_alternate_on_containment_free` (post-normalize ⇒ Fenxings strictly alternate ⇒ the three Bi-endpoint readings COINCIDE on reachable inputs) |
+| `Chanlun.BiReachableDeterminismBridge` | Bar↔Interval bridge: `map_toBar_preserves_noAdjContainment`, `normalize_then_fractals_alternate` (raw `Interval` ⇒ alternation one-shot) |
+
+### Buy/sell points + 背驰 (lessons 20/24/27/29/37)
+
+| Module | Theorems |
+|---|---|
+| `Chanlun.Beichi` | 背驰 力度 comparison (lessons 24/27/29): `classifyBeichi_total`, `beichi_irrefl`, `beichi_load_bearing` (disp + slope cross-product), `beichi_measure_gate_witness` (§15 non-vacuity of `disp` vs `slope`) |
+| `Chanlun.PanzhengBeichi` | 盘整背驰 (lesson 37): single-center A-vs-C classifier, `classify_panzheng_total`, `panzheng_load_bearing_disp`/`slope`, `panzheng_measure_gate_witness`, `panzheng_intra_vs_inter_load_bearing` |
+| `Chanlun.ThirdBuysell` | 第三类买卖点 (lesson 20): `classifyBsp_total`, `bsp_zone_load_bearing`, `bsp_reenter_up_iff` / `bsp_reenter_down_iff`, `bsp_excl` |
+| `Chanlun.FirstSecondBuysell` | 第一/第二类买卖点 (lesson 24): `classify_total`, `classify_first_point_only_total`, `second_not_breaking_iff`, `first_point_failed_iff`, `first_second_inheritance_load_bearing` (named gate inheritance) |
+| `Chanlun.RecursiveSubBspBeichi` | Recursive 三买卖 + 背驰 (lessons 20/24/27/29 推广至 次级别): `recursive_subBsp_fuel_stationary`, `recursive_subBsp_terminates`, `recursive_subBsp_inheritance`, `recursive_subBsp_total`, `recursive_subBsp_fuel_bound_via_levelRecursion` |
+
+### 级别 recursion + 区间套
+
+| Module | Theorems |
+|---|---|
 | `Chanlun.LevelRecursion` | "Every trend must complete" (lesson 24): `centerSize_ge_3`, `lift_strict_drop` (≥2 element drop per non-terminal lift ⇒ level recursion terminates in ≤ n/2 levels) |
-| `Chanlun.WalkDecomposition` | Maximal walk decomposition (lesson 17): `decompose_partition`, `decompose_monotonic`, `decompose_type_homogeneous` |
+| `Chanlun.IntervalNesting` | 区间套 (lessons 65–66): `intervalnesting_terminates`, `walk_always_has_verdict`, `intervalnesting_pin_monotone`, `intervalnesting_chain_strict_drop`, `walk_at_zero_returns_gate_limit`, `walk_at_positive_returns_pinned` |
 
 ### Honest scope — named-open follow-ups (not proven yet)
 
@@ -79,8 +107,39 @@ These are deliberately surfaced as named residues per Klaus's
 * `[chanlun_walk_decomposition_spec_unique_OPEN]` — the SPEC form of
   walk-decomposition uniqueness (any spec-satisfying function =
   `decompose`).
+* `[chanlun_zhongshu_extension_shoulder_OPEN]` — the "kiss" case
+  (`next_el.lo = ZG` or `next_el.hi = ZD`) is admitted as EXTENSION
+  under the published `≤`-overlap reading; a strict `<` reading would
+  name it rebirth-boundary.
+* `[chanlun_zhongshu_extension_all_gate_OPEN]` — the `all_` zone-gate
+  propagation of expansion (the `first3` form is closed in
+  `Chanlun.ZhongshuExtension`).
+* `[chanlun_zhongshu_extension_multistep_envelope_OPEN]` — multi-element
+  envelope across a full 中枢; per-step proven, list-induction left open.
+* `[chanlun_beichi_measure_gate_OPEN]` — the `disp` vs `slope` 力度
+  measure gate is REAL (host grounding 82.2% agreement). The
+  `beichi_measure_gate_witness` theorem certifies non-vacuity; the choice
+  itself is NAMED.
+* `[chanlun_beichi_macd_gate_OPEN]` — MACD as a measure-gate instance
+  (lesson 27's 辅助 tool, explicitly named non-canonical).
+* `[chanlun_panzheng_measure_gate_propagation_OPEN]` — propagation of
+  the 盘整背驰 measure gate across the §15 mutant table.
+* `[chanlun_first_second_buysell_recursive_OPEN]` — recursive form of
+  lessons-24 第一/第二类买卖点 (sits on the same descent + the
+  measure-gate inheritance).
+* `[chanlun_panzheng_beichi_recursive_OPEN]` — recursive form of
+  盘整背驰 (lesson 37).
+* `[chanlun_recursive_descent_strict_subwindow_OPEN]` — the strict
+  proof that the level-(n-1) sub-window is a STRICT subset of the
+  level-(n-1) tower.
+* `[chanlun_intervalnesting_lowest_level_OPEN]` — the strict
+  characterisation of the lowest-level pin endpoint.
+* `[chanlun_intervalnesting_multiscale_OPEN]` — multi-scale composition
+  of nested intervals across non-adjacent levels.
+* `[chanlun_intervalnesting_macd_OPEN]` — MACD-decorated 区间套
+  variant.
 * `[chanlun_walk_decomposition_intervalnesting_OPEN]` — interval-nesting
-  multi-level nested decomposition.
+  multi-level nested decomposition (joined to `Chanlun.IntervalNesting`).
 
 These are NOT silent gaps — each is named so the next pass knows exactly
 what residue to discharge.
@@ -105,7 +164,7 @@ lake exe cache get
 lake build Chanlun
 ```
 
-A green `lake build Chanlun` verifies all 11 modules sorry-free under
+A green `lake build Chanlun` verifies all 21 modules sorry-free under
 the Lean kernel.
 
 ### Run the groundings
@@ -133,11 +192,18 @@ chanlun/
 ├─ README.md                          # this file (English)
 ├─ README.zh.md                       # Chinese version
 ├─ lakefile.lean, lean-toolchain      # Lean 4 build config (Mathlib v4.14.0)
-├─ lean/Chanlun/                      # the 11 Lean MWE modules
+├─ lean/Chanlun/                      # the 21 Lean MWE modules
 │  ├─ Fractal.lean, Normalize.lean, Pipeline.lean
-│  ├─ Stroke.lean, StrokeUniqueness.lean, Segment.lean
-│  ├─ Zhongshu.lean, TrendType.lean, BiReachableDeterminism.lean
-│  ├─ LevelRecursion.lean, WalkDecomposition.lean
+│  ├─ Stroke.lean, StrokeUniqueness.lean, StrokesIsValidBiCorollary.lean
+│  ├─ BiEndpointSubResidues.lean
+│  ├─ Segment.lean
+│  ├─ Zhongshu.lean, ZhongshuExtension.lean
+│  ├─ TrendType.lean, WalkDecomposition.lean
+│  ├─ BiReachableDeterminism.lean, BiReachableDeterminismBridge.lean
+│  ├─ Beichi.lean, PanzhengBeichi.lean
+│  ├─ ThirdBuysell.lean, FirstSecondBuysell.lean
+│  ├─ LevelRecursion.lean, RecursiveSubBspBeichi.lean
+│  ├─ IntervalNesting.lean
 ├─ grounding/                         # pure-Python reference oracles
 │  ├─ chanlun_inclusion_grounding.py
 │  ├─ chanlun_singlepass_idempotent_grounding.py

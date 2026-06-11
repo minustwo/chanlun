@@ -383,7 +383,42 @@ Lean module:
 
 ---
 
-## §12 Named residues (honest follow-ups)
+## §12 Newly closed layers (Phase 1 refresh)
+
+Ten new MWE modules were added in the Phase-1 refresh, closing previously
+named-OPEN residues. The remaining named-OPEN residues sit one level deeper.
+
+* `Chanlun.StrokesIsValidBiCorollary` (`strokes_isValidBi`,
+  `strokes_iff_IsValidBi`) — non-vacuity + biconditional for
+  `strokes_unique`. Closes
+  `[chanlun_bi_strokes_isValidBi_corollary_OPEN]`.
+* `Chanlun.BiEndpointSubResidues` — closes the three §3 sub-residues
+  named by `Chanlun.StrokeUniqueness`: TO-endpoint leftmost-vs-extremal,
+  drop-branch preservation, output-order alternation lift.
+* `Chanlun.BiReachableDeterminismBridge` — closes
+  `[chanlun_bi_reachable_determinism_bridge_OPEN]` (Interval → Bar
+  plumbing for the §9 alternation theorem).
+* `Chanlun.ZhongshuExtension` — closes
+  `[chanlun_zhongshu_extension_lean_OPEN]`: the 4-way named transitions
+  (延伸 / 扩展 / 新生 / endNoRebirth) + 9-段 升级 trigger.
+* `Chanlun.Beichi` — closes `[chanlun_beichi_lean_OPEN]` (lessons
+  24/27/29 力度 comparison, integer-exact disp + slope).
+* `Chanlun.PanzhengBeichi` — closes `[chanlun_panzheng_beichi_OPEN]`
+  (lesson 37 single-中枢 A-vs-C).
+* `Chanlun.ThirdBuysell` — closes `[chanlun_third_buysell_lean_OPEN]`
+  (lesson 20 第三类买卖点).
+* `Chanlun.FirstSecondBuysell` — closes
+  `[chanlun_first_second_buysell_OPEN]` (lesson 24 第一/第二类买卖点 +
+  measure-gate inheritance).
+* `Chanlun.RecursiveSubBspBeichi` — closes
+  `[chanlun_third_buysell_recursive_OPEN]` +
+  `[chanlun_beichi_recursive_OPEN]` (lessons 20/24/27/29 推广至 次级别).
+* `Chanlun.IntervalNesting` — closes the lesson-65/66 区间套 base
+  classifier and the strict-descent termination measure.
+
+---
+
+## §13 Named residues (honest follow-ups)
 
 These are deliberate gaps surfaced as named `[..._OPEN]` markers. None
 of them is silent.
@@ -397,14 +432,6 @@ of them is silent.
 * `[chanlun_zhongshu_zone_gate_OPEN]` — `first3` vs `all_` differ on
   ~12% of arbitrary element sequences. Both proven `valid` + `disjoint`;
   on the reachable domain the gate collapses (per §9's chain).
-* `[chanlun_bi_to_endpoint_first_admissible_OPEN]` — TO-endpoint
-  reading: leftmost vs run-extremal. On reachable inputs they coincide
-  (§9).
-* `[chanlun_bi_close_drop_named_residue_OPEN]` — opposite-close
-  Fractals (gap `< δmin`) silently dropped by `step`; uniqueness proof
-  treats drops as no-ops.
-* `[chanlun_stroke_output_order_lift_OPEN]` — alternation lifted to
-  reverse-order is a separate one-liner.
 * `[chanlun_level_recursion_lift_function_OPEN]` — the actual `lift`
   function is out of scope; only the strict-drop measure is proven.
 * `[chanlun_level_recursion_envelope_soundness_OPEN]` — envelope
@@ -413,8 +440,35 @@ of them is silent.
   determinism preserved up the tower.
 * `[chanlun_walk_decomposition_spec_unique_OPEN]` — spec-form
   uniqueness of `decompose` (any spec-satisfying function = `decompose`).
-* `[chanlun_walk_decomposition_intervalnesting_OPEN]` — interval-nested
-  multi-level decomposition.
+* `[chanlun_zhongshu_extension_shoulder_OPEN]` — `≤`-overlap vs `<`-overlap
+  reading on the kiss boundary; `≤` is what's proven.
+* `[chanlun_zhongshu_extension_all_gate_OPEN]` — `all_` zone-gate
+  propagation of expansion (the `first3` form is closed).
+* `[chanlun_zhongshu_extension_multistep_envelope_OPEN]` — multi-element
+  envelope across a full 中枢; per-step proven, list-induction left open.
+* `[chanlun_beichi_measure_gate_OPEN]` — `disp` vs `slope` 力度 measure
+  gate is REAL (host grounding 82.2% agreement); the
+  `beichi_measure_gate_witness` theorem certifies non-vacuity but the
+  measure choice itself is NAMED.
+* `[chanlun_beichi_macd_gate_OPEN]` — MACD as a measure-gate instance
+  (lesson 27's 辅助 tool, explicitly non-canonical).
+* `[chanlun_panzheng_measure_gate_propagation_OPEN]` — propagation of
+  the 盘整背驰 measure gate across the §15 mutant table.
+* `[chanlun_first_second_buysell_recursive_OPEN]` — recursive form of
+  lessons-24 第一/第二类买卖点.
+* `[chanlun_panzheng_beichi_recursive_OPEN]` — recursive form of
+  盘整背驰 (lesson 37).
+* `[chanlun_recursive_descent_strict_subwindow_OPEN]` — strict proof
+  that the level-(n-1) sub-window is a STRICT subset of the
+  level-(n-1) tower.
+* `[chanlun_intervalnesting_lowest_level_OPEN]` — strict
+  characterisation of the lowest-level pin endpoint.
+* `[chanlun_intervalnesting_multiscale_OPEN]` — multi-scale composition
+  of nested intervals across non-adjacent levels.
+* `[chanlun_intervalnesting_macd_OPEN]` — MACD-decorated 区间套
+  variant.
+* `[chanlun_walk_decomposition_intervalnesting_OPEN]` — joining
+  `Chanlun.WalkDecomposition` to `Chanlun.IntervalNesting`.
 
 Each name corresponds to a verbatim string in the source code and the
 residue ledger (`closed_residues.json` in upstream `codex-proof-workbench`).
@@ -422,7 +476,7 @@ The next layer of work knows exactly what to discharge.
 
 ---
 
-## §13 Attribution
+## §14 Attribution
 
 The Chanlun theory itself belongs to the Chanzhongshuochan tradition.
 The formal system written above and the Lean encoding under `lean/Chanlun/`
@@ -433,7 +487,7 @@ everything else is the published theory in Lean form.
 
 ---
 
-## §14 License
+## §15 License
 
 The formalization, mathematical document, groundings, and CI workflow
 are released under MIT; see `LICENSE` if present.
