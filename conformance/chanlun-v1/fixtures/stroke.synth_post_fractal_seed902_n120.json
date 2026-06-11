@@ -1,0 +1,418 @@
+{
+  "description": "Post-fractal stream (seed=902, n=120) -> Def-4 strokes at dmin=4.",
+  "expected": {
+    "dispositions": [
+      "first",
+      "residue",
+      "absorbed",
+      "residue",
+      "absorbed",
+      "emit",
+      "residue",
+      "absorbed",
+      "emit",
+      "residue",
+      "absorbed",
+      "residue",
+      "absorbed",
+      "emit",
+      "residue",
+      "absorbed",
+      "residue",
+      "absorbed",
+      "emit",
+      "residue",
+      "absorbed",
+      "residue",
+      "absorbed",
+      "emit",
+      "residue",
+      "absorbed",
+      "emit",
+      "residue",
+      "absorbed",
+      "emit",
+      "residue",
+      "absorbed",
+      "residue",
+      "absorbed",
+      "residue",
+      "absorbed",
+      "residue",
+      "absorbed",
+      "emit",
+      "residue",
+      "absorbed",
+      "emit",
+      "residue",
+      "absorbed",
+      "residue",
+      "absorbed",
+      "emit"
+    ],
+    "strokes": [
+      {
+        "dir": "down",
+        "from_idx": 9,
+        "from_p": 127,
+        "to_idx": 13,
+        "to_p": 111
+      },
+      {
+        "dir": "up",
+        "from_idx": 13,
+        "from_p": 111,
+        "to_idx": 18,
+        "to_p": 131
+      },
+      {
+        "dir": "down",
+        "from_idx": 18,
+        "from_p": 131,
+        "to_idx": 26,
+        "to_p": 104
+      },
+      {
+        "dir": "up",
+        "from_idx": 28,
+        "from_p": 99,
+        "to_idx": 32,
+        "to_p": 111
+      },
+      {
+        "dir": "down",
+        "from_idx": 34,
+        "from_p": 114,
+        "to_idx": 40,
+        "to_p": 91
+      },
+      {
+        "dir": "up",
+        "from_idx": 40,
+        "from_p": 91,
+        "to_idx": 44,
+        "to_p": 104
+      },
+      {
+        "dir": "down",
+        "from_idx": 44,
+        "from_p": 104,
+        "to_idx": 48,
+        "to_p": 88
+      },
+      {
+        "dir": "up",
+        "from_idx": 56,
+        "from_p": 85,
+        "to_idx": 62,
+        "to_p": 106
+      },
+      {
+        "dir": "down",
+        "from_idx": 62,
+        "from_p": 106,
+        "to_idx": 68,
+        "to_p": 76
+      },
+      {
+        "dir": "up",
+        "from_idx": 72,
+        "from_p": 74,
+        "to_idx": 79,
+        "to_p": 91
+      }
+    ]
+  },
+  "expected_sha256": "c86a3bbd663c32a5bd8698033f1bde5366ac05f6c40f7029601902df49fc208d",
+  "fixture_sha256": "2e579d0613c8b3b950fd1307811e555fde78cdff0714c38abe3f274069d7d47a",
+  "id": "stroke.synth_post_fractal_seed902_n120",
+  "input": {
+    "dmin": 4,
+    "fractals": [
+      {
+        "h": 123,
+        "idx": 4,
+        "kind": "top",
+        "l": 113
+      },
+      {
+        "h": 115,
+        "idx": 6,
+        "kind": "bottom",
+        "l": 108
+      },
+      {
+        "h": 127,
+        "idx": 9,
+        "kind": "top",
+        "l": 123
+      },
+      {
+        "h": 124,
+        "idx": 10,
+        "kind": "bottom",
+        "l": 119
+      },
+      {
+        "h": 126,
+        "idx": 11,
+        "kind": "top",
+        "l": 120
+      },
+      {
+        "h": 119,
+        "idx": 13,
+        "kind": "bottom",
+        "l": 111
+      },
+      {
+        "h": 132,
+        "idx": 15,
+        "kind": "top",
+        "l": 122
+      },
+      {
+        "h": 124,
+        "idx": 17,
+        "kind": "bottom",
+        "l": 118
+      },
+      {
+        "h": 131,
+        "idx": 18,
+        "kind": "top",
+        "l": 125
+      },
+      {
+        "h": 123,
+        "idx": 19,
+        "kind": "bottom",
+        "l": 117
+      },
+      {
+        "h": 131,
+        "idx": 20,
+        "kind": "top",
+        "l": 126
+      },
+      {
+        "h": 123,
+        "idx": 21,
+        "kind": "bottom",
+        "l": 116
+      },
+      {
+        "h": 129,
+        "idx": 22,
+        "kind": "top",
+        "l": 121
+      },
+      {
+        "h": 110,
+        "idx": 26,
+        "kind": "bottom",
+        "l": 104
+      },
+      {
+        "h": 114,
+        "idx": 27,
+        "kind": "top",
+        "l": 108
+      },
+      {
+        "h": 110,
+        "idx": 28,
+        "kind": "bottom",
+        "l": 99
+      },
+      {
+        "h": 111,
+        "idx": 29,
+        "kind": "top",
+        "l": 109
+      },
+      {
+        "h": 107,
+        "idx": 31,
+        "kind": "bottom",
+        "l": 99
+      },
+      {
+        "h": 111,
+        "idx": 32,
+        "kind": "top",
+        "l": 105
+      },
+      {
+        "h": 109,
+        "idx": 33,
+        "kind": "bottom",
+        "l": 97
+      },
+      {
+        "h": 114,
+        "idx": 34,
+        "kind": "top",
+        "l": 102
+      },
+      {
+        "h": 98,
+        "idx": 37,
+        "kind": "bottom",
+        "l": 94
+      },
+      {
+        "h": 104,
+        "idx": 38,
+        "kind": "top",
+        "l": 100
+      },
+      {
+        "h": 95,
+        "idx": 40,
+        "kind": "bottom",
+        "l": 91
+      },
+      {
+        "h": 104,
+        "idx": 42,
+        "kind": "top",
+        "l": 102
+      },
+      {
+        "h": 102,
+        "idx": 43,
+        "kind": "bottom",
+        "l": 100
+      },
+      {
+        "h": 104,
+        "idx": 44,
+        "kind": "top",
+        "l": 102
+      },
+      {
+        "h": 95,
+        "idx": 46,
+        "kind": "bottom",
+        "l": 93
+      },
+      {
+        "h": 103,
+        "idx": 47,
+        "kind": "top",
+        "l": 96
+      },
+      {
+        "h": 96,
+        "idx": 48,
+        "kind": "bottom",
+        "l": 88
+      },
+      {
+        "h": 98,
+        "idx": 49,
+        "kind": "top",
+        "l": 96
+      },
+      {
+        "h": 96,
+        "idx": 50,
+        "kind": "bottom",
+        "l": 94
+      },
+      {
+        "h": 103,
+        "idx": 51,
+        "kind": "top",
+        "l": 98
+      },
+      {
+        "h": 92,
+        "idx": 53,
+        "kind": "bottom",
+        "l": 86
+      },
+      {
+        "h": 98,
+        "idx": 55,
+        "kind": "top",
+        "l": 88
+      },
+      {
+        "h": 91,
+        "idx": 56,
+        "kind": "bottom",
+        "l": 85
+      },
+      {
+        "h": 100,
+        "idx": 59,
+        "kind": "top",
+        "l": 96
+      },
+      {
+        "h": 96,
+        "idx": 60,
+        "kind": "bottom",
+        "l": 94
+      },
+      {
+        "h": 106,
+        "idx": 62,
+        "kind": "top",
+        "l": 96
+      },
+      {
+        "h": 91,
+        "idx": 65,
+        "kind": "bottom",
+        "l": 79
+      },
+      {
+        "h": 94,
+        "idx": 66,
+        "kind": "top",
+        "l": 86
+      },
+      {
+        "h": 88,
+        "idx": 68,
+        "kind": "bottom",
+        "l": 76
+      },
+      {
+        "h": 93,
+        "idx": 69,
+        "kind": "top",
+        "l": 81
+      },
+      {
+        "h": 78,
+        "idx": 72,
+        "kind": "bottom",
+        "l": 74
+      },
+      {
+        "h": 90,
+        "idx": 75,
+        "kind": "top",
+        "l": 86
+      },
+      {
+        "h": 85,
+        "idx": 76,
+        "kind": "bottom",
+        "l": 83
+      },
+      {
+        "h": 91,
+        "idx": 79,
+        "kind": "top",
+        "l": 89
+      }
+    ]
+  },
+  "input_sha256": "becce1d7001d1f747d5d3708459eeb92dda1a944c9f1231aaff5a03fc4a28d6c",
+  "stage": "stroke"
+}

@@ -1,0 +1,16 @@
+{
+  "description": "Empty fractal list -> empty strokes + empty dispositions.",
+  "expected": {
+    "dispositions": [],
+    "strokes": []
+  },
+  "expected_sha256": "234a91defa868a0881ac8a3f315313fc4e2a7fdd0a8a4d987690a61bb6346edb",
+  "fixture_sha256": "086e09b8a4268b951454e509b55e664cca087a48eadede306432faaae34a5a6c",
+  "id": "stroke.hand_empty",
+  "input": {
+    "dmin": 4,
+    "fractals": []
+  },
+  "input_sha256": "734f81afce70c3748e4df7c4df221d9cce1a425dd12f727694c9175a6cc8c368",
+  "stage": "stroke"
+}

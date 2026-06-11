@@ -1,0 +1,79 @@
+{
+  "description": "Stroke-elements (seed=1202, n=200, zone=first3) -> center decomposition.",
+  "expected": [
+    {
+      "ZD": 70,
+      "ZG": 75,
+      "end": 2,
+      "n": 3,
+      "start": 0
+    },
+    {
+      "ZD": 95,
+      "ZG": 103,
+      "end": 7,
+      "n": 5,
+      "start": 3
+    }
+  ],
+  "expected_sha256": "8752d1cd28fe4a99d6b13fd679a34a29eeb22a3b33ca5804efd255798a21ab63",
+  "fixture_sha256": "1048069230dc59ad721ff66454101675852ed7186f6be1c24695c3e4cb6c21ca",
+  "id": "zhongshu.synth_zone_first3_seed1202_n200",
+  "input": {
+    "elements": [
+      {
+        "hi": 75,
+        "idx": 0,
+        "lo": 53
+      },
+      {
+        "hi": 80,
+        "idx": 1,
+        "lo": 70
+      },
+      {
+        "hi": 95,
+        "idx": 2,
+        "lo": 68
+      },
+      {
+        "hi": 103,
+        "idx": 3,
+        "lo": 91
+      },
+      {
+        "hi": 112,
+        "idx": 4,
+        "lo": 91
+      },
+      {
+        "hi": 112,
+        "idx": 5,
+        "lo": 95
+      },
+      {
+        "hi": 110,
+        "idx": 6,
+        "lo": 95
+      },
+      {
+        "hi": 117,
+        "idx": 7,
+        "lo": 77
+      },
+      {
+        "hi": 90,
+        "idx": 8,
+        "lo": 69
+      },
+      {
+        "hi": 91,
+        "idx": 9,
+        "lo": 77
+      }
+    ],
+    "zone": "first3"
+  },
+  "input_sha256": "4f349bece6228e38b5d493bad0fb7d9be20a06d153852a89ae8e9fd5ad47d694",
+  "stage": "zhongshu"
+}

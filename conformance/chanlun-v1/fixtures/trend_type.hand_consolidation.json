@@ -1,0 +1,18 @@
+{
+  "description": "Exactly one center -> consolidation.",
+  "expected": "consolidation",
+  "expected_sha256": "fc2c4dc80dc965f79dcaa012451094aa19ac2200055e8ff2d8d94f9210ea6aa5",
+  "fixture_sha256": "904fc5cc6503371d235eca32d49fad5cfb0f8c99bbf1dd04dbf1d2254d510eae",
+  "id": "trend_type.hand_consolidation",
+  "input": [
+    {
+      "ZD": 48,
+      "ZG": 53,
+      "end": 2,
+      "n": 3,
+      "start": 0
+    }
+  ],
+  "input_sha256": "cfe48fb92b591f5c382d6b4a232d11cc3460f6c8523186859e337e07fa5eca9b",
+  "stage": "trend_type"
+}

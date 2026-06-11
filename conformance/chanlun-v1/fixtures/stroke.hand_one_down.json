@@ -1,0 +1,47 @@
+{
+  "description": "Top at idx 0, bottom at idx 5 with gap >= dmin=3 -> one down-stroke; a too-close top is residue.",
+  "expected": {
+    "dispositions": [
+      "first",
+      "emit",
+      "residue"
+    ],
+    "strokes": [
+      {
+        "dir": "down",
+        "from_idx": 0,
+        "from_p": 10,
+        "to_idx": 5,
+        "to_p": 2
+      }
+    ]
+  },
+  "expected_sha256": "9aea41407928220c9965adf1ca24742f0872c1d96af069bc8bb0e99cb6c9cef0",
+  "fixture_sha256": "ba4c546d4574c2fee16ca40241e90002785ed71dba4eed53e6786fab1917ff58",
+  "id": "stroke.hand_one_down",
+  "input": {
+    "dmin": 3,
+    "fractals": [
+      {
+        "h": 10,
+        "idx": 0,
+        "kind": "top",
+        "l": 8
+      },
+      {
+        "h": 4,
+        "idx": 5,
+        "kind": "bottom",
+        "l": 2
+      },
+      {
+        "h": 11,
+        "idx": 6,
+        "kind": "top",
+        "l": 9
+      }
+    ]
+  },
+  "input_sha256": "dfdc42926969734f52eae60896d105c528b139d1f86bbf97c5d4b72bf10e1320",
+  "stage": "stroke"
+}

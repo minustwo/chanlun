@@ -1,0 +1,25 @@
+{
+  "description": "Two centers, second strictly below first -> trend_down.",
+  "expected": "trend_down",
+  "expected_sha256": "ce2ce23c9b6283658b811772346cbd1bfb2078a5c5352993adf347ea42995307",
+  "fixture_sha256": "c2ba5e06b5a499f67d05fb34e508e02227328c3ba050e49d811f0a27dd6529a1",
+  "id": "trend_type.hand_trend_down",
+  "input": [
+    {
+      "ZD": 30,
+      "ZG": 40,
+      "end": 2,
+      "n": 3,
+      "start": 0
+    },
+    {
+      "ZD": 10,
+      "ZG": 20,
+      "end": 5,
+      "n": 3,
+      "start": 3
+    }
+  ],
+  "input_sha256": "4cadf301e2b957fd1eec8da03da1f600e1d2c1f78baeba010b30739ae4d42e99",
+  "stage": "trend_type"
+}

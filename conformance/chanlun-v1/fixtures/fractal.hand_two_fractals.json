@@ -1,0 +1,44 @@
+{
+  "description": "5-bar window: top at idx 1, bottom at idx 3 (alternating Def-3).",
+  "expected": [
+    {
+      "h": 15,
+      "idx": 1,
+      "kind": "top",
+      "l": 8
+    },
+    {
+      "h": 7,
+      "idx": 3,
+      "kind": "bottom",
+      "l": 2
+    }
+  ],
+  "expected_sha256": "8ab07bfe189c74b2b4f72a2a40a2086d7dc6b23b857eb60e4c973768d0266a4a",
+  "fixture_sha256": "c5a55d6ea26d97154e5777e89a6dbea3f64b8690086b57f4e09aedfd47089d17",
+  "id": "fractal.hand_two_fractals",
+  "input": [
+    {
+      "h": 10,
+      "l": 5
+    },
+    {
+      "h": 15,
+      "l": 8
+    },
+    {
+      "h": 12,
+      "l": 6
+    },
+    {
+      "h": 7,
+      "l": 2
+    },
+    {
+      "h": 11,
+      "l": 5
+    }
+  ],
+  "input_sha256": "d174a174fdaaf5a0d799c89eb332af11ab28ec7a2f845e6f0e638b5ed8258dbb",
+  "stage": "fractal"
+}

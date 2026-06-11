@@ -1,0 +1,25 @@
+{
+  "description": "Two centers, second strictly above first -> trend_up.",
+  "expected": "trend_up",
+  "expected_sha256": "edde2b98682668c41a4587e27e6c6acd1a6fc85d50c1f367df93c7741bfd51ef",
+  "fixture_sha256": "c56423b0a52bd623bdb5554414509d9fd6a4190c507edbb69d542de555298697",
+  "id": "trend_type.hand_trend_up",
+  "input": [
+    {
+      "ZD": 10,
+      "ZG": 20,
+      "end": 2,
+      "n": 3,
+      "start": 0
+    },
+    {
+      "ZD": 30,
+      "ZG": 40,
+      "end": 5,
+      "n": 3,
+      "start": 3
+    }
+  ],
+  "input_sha256": "666fc8cb6caa753e0d9131b2eaf08177e45b5aa2f3e61d415046993a10f292f1",
+  "stage": "trend_type"
+}

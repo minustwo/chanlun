@@ -1,0 +1,47 @@
+{
+  "description": "Two consecutive tops (idx 0, idx 4): the second is absorbed (extremal rep wins).",
+  "expected": {
+    "dispositions": [
+      "first",
+      "absorbed",
+      "emit"
+    ],
+    "strokes": [
+      {
+        "dir": "down",
+        "from_idx": 4,
+        "from_p": 12,
+        "to_idx": 8,
+        "to_p": 3
+      }
+    ]
+  },
+  "expected_sha256": "9419eb85c5c58c2377065fb3be2f0d3900a8808398404aa42a0c7bc04bdfe4d4",
+  "fixture_sha256": "1c26bcd4bbea851609348e15594ad28f55377fa81382fdc908cab05ffb6da809",
+  "id": "stroke.hand_absorbed_same_kind",
+  "input": {
+    "dmin": 3,
+    "fractals": [
+      {
+        "h": 10,
+        "idx": 0,
+        "kind": "top",
+        "l": 8
+      },
+      {
+        "h": 12,
+        "idx": 4,
+        "kind": "top",
+        "l": 9
+      },
+      {
+        "h": 5,
+        "idx": 8,
+        "kind": "bottom",
+        "l": 3
+      }
+    ]
+  },
+  "input_sha256": "316f6b2710aaefe1f24ddba5a532bac1625d16b70941f5b50653f12989a2cdc3",
+  "stage": "stroke"
+}

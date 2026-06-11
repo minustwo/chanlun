@@ -1,0 +1,30 @@
+{
+  "description": "A 3-bar window with the middle strictly below both neighbours -> bottom.",
+  "expected": [
+    {
+      "h": 6,
+      "idx": 1,
+      "kind": "bottom",
+      "l": 2
+    }
+  ],
+  "expected_sha256": "5c53b74deb6554d99dee9d6fcc23e024494b71f4f3614676eb2bcf77212bd59f",
+  "fixture_sha256": "2567c517ae7ac32eef78518aedb3ebd50896941bfc51c0e3eb2dc9013ab37c18",
+  "id": "fractal.hand_bottom",
+  "input": [
+    {
+      "h": 10,
+      "l": 5
+    },
+    {
+      "h": 6,
+      "l": 2
+    },
+    {
+      "h": 9,
+      "l": 4
+    }
+  ],
+  "input_sha256": "3520cb8fc9f815e098c434bbbd0940a0a816bd32ad3ef7024da5d5c1ab837ada",
+  "stage": "fractal"
+}

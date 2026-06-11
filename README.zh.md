@@ -133,7 +133,15 @@ chanlun/
 │  ├─ chanlun_zhongshu_grounding.py
 │  ├─ chanlun_bi_endpoint_multivalued_grounding.py
 │  └─ chanlun_bi_kline_rule_grounding.py
-└─ .github/workflows/chanlun-gate.yml  # Hosted Ubuntu CI：lake build + groundings
+├─ conformance/chanlun-v1/             # 冻结的一致性语料库（Phase-3 规范）
+│  ├─ manifest.json                    # corpus_sha256 = 版本号
+│  ├─ fixtures/*.json                  # 48 个（输入、期望、sha）fixtures
+│  ├─ reference_backend/               # 独立纯标准库参考实现
+│  ├─ runner.py                        # ~100 行纯标准库验证脚本
+│  ├─ generate_corpus.py               # 确定性 fixture 生成器
+│  ├─ example_phase3_check.py          # Phase-3 实现者模板
+│  ├─ README.md, README.zh.md          # 完整规范文档（英 / 中）
+└─ .github/workflows/chanlun-gate.yml  # Hosted Ubuntu CI：lake build + groundings + conformance
 ```
 
 ---
@@ -149,9 +157,14 @@ Hosted Ubuntu 工作流 `.github/workflows/chanlun-gate.yml` 在每次 push 到
   `sorry` 关键字。
 * `grounding` job：用纯标准库 Python 3.11 跑每个
   `grounding/chanlun_*_grounding.py`。
+* `conformance` job：跑 `python3 conformance/chanlun-v1/runner.py`，验证
+  每个 fixture 逐字节匹配冻结规范；接着重新生成语料库并确认字节完全相同
+  （以捕获参考实现的任何漂移）。`chanlun-v1` 的 `corpus_sha256` 即为
+  一致性版本号：任何语言的 Phase-3 多语言实现要合规，必须重现每个
+  fixture 的期望 SHA-256。
 
 Lean job 在缓存命中时约 5 分钟，冷缓存约 25 分钟。Grounding 全部约 30 秒
-跑完。
+跑完。Conformance 不到 1 分钟。
 
 ---
 

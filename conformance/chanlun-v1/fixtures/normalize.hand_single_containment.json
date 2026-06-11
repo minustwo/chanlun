@@ -1,0 +1,24 @@
+{
+  "description": "Two bars in containment collapse to one merged interval (up-rule).",
+  "expected": [
+    {
+      "h": 10,
+      "l": 2
+    }
+  ],
+  "expected_sha256": "4cfbb4dbcb765b78a455d0ea00b543da1705a9f7ceeb033edd33780046c73726",
+  "fixture_sha256": "350a2e7b29af662890222ef9678720971f7cfefd3fc097242dfd0ca5f436b9f5",
+  "id": "normalize.hand_single_containment",
+  "input": [
+    {
+      "h": 10,
+      "l": 0
+    },
+    {
+      "h": 8,
+      "l": 2
+    }
+  ],
+  "input_sha256": "ba65c9dfe3381bafda3d1f7867183f672a2adc307caff465a6e057e39e007150",
+  "stage": "normalize"
+}

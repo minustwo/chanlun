@@ -1,0 +1,158 @@
+{
+  "description": "Stroke-elements (seed=1303, n=300, zone=first3) -> center decomposition.",
+  "expected": [
+    {
+      "ZD": 89,
+      "ZG": 104,
+      "end": 5,
+      "n": 6,
+      "start": 0
+    },
+    {
+      "ZD": 112,
+      "ZG": 131,
+      "end": 11,
+      "n": 6,
+      "start": 6
+    },
+    {
+      "ZD": 134,
+      "ZG": 134,
+      "end": 14,
+      "n": 3,
+      "start": 12
+    },
+    {
+      "ZD": 95,
+      "ZG": 101,
+      "end": 20,
+      "n": 6,
+      "start": 15
+    }
+  ],
+  "expected_sha256": "f41d7df8dc3e456e1083e6e53f7c529d3997b1368690f03a8e8309db26b23554",
+  "fixture_sha256": "ffb9668ba319be174f6041475e57e14dfc8caab305f63a1d94fd7fe5dfd02d9f",
+  "id": "zhongshu.synth_zone_first3_seed1303_n300",
+  "input": {
+    "elements": [
+      {
+        "hi": 109,
+        "idx": 0,
+        "lo": 89
+      },
+      {
+        "hi": 104,
+        "idx": 1,
+        "lo": 89
+      },
+      {
+        "hi": 104,
+        "idx": 2,
+        "lo": 79
+      },
+      {
+        "hi": 93,
+        "idx": 3,
+        "lo": 79
+      },
+      {
+        "hi": 98,
+        "idx": 4,
+        "lo": 88
+      },
+      {
+        "hi": 110,
+        "idx": 5,
+        "lo": 88
+      },
+      {
+        "hi": 131,
+        "idx": 6,
+        "lo": 112
+      },
+      {
+        "hi": 135,
+        "idx": 7,
+        "lo": 112
+      },
+      {
+        "hi": 135,
+        "idx": 8,
+        "lo": 111
+      },
+      {
+        "hi": 141,
+        "idx": 9,
+        "lo": 111
+      },
+      {
+        "hi": 146,
+        "idx": 10,
+        "lo": 131
+      },
+      {
+        "hi": 143,
+        "idx": 11,
+        "lo": 126
+      },
+      {
+        "hi": 156,
+        "idx": 12,
+        "lo": 134
+      },
+      {
+        "hi": 134,
+        "idx": 13,
+        "lo": 123
+      },
+      {
+        "hi": 134,
+        "idx": 14,
+        "lo": 108
+      },
+      {
+        "hi": 115,
+        "idx": 15,
+        "lo": 95
+      },
+      {
+        "hi": 115,
+        "idx": 16,
+        "lo": 87
+      },
+      {
+        "hi": 101,
+        "idx": 17,
+        "lo": 87
+      },
+      {
+        "hi": 108,
+        "idx": 18,
+        "lo": 84
+      },
+      {
+        "hi": 97,
+        "idx": 19,
+        "lo": 82
+      },
+      {
+        "hi": 99,
+        "idx": 20,
+        "lo": 79
+      },
+      {
+        "hi": 89,
+        "idx": 21,
+        "lo": 74
+      },
+      {
+        "hi": 89,
+        "idx": 22,
+        "lo": 60
+      }
+    ],
+    "zone": "first3"
+  },
+  "input_sha256": "2f5a0d62655958bca430bf467ea85b8f4e37a8fc5491fa967a469a536d482217",
+  "stage": "zhongshu"
+}

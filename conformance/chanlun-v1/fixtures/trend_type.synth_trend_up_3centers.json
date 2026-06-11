@@ -1,0 +1,32 @@
+{
+  "description": "Three step-up centers -> trend_up (all dirs +1).",
+  "expected": "trend_up",
+  "expected_sha256": "edde2b98682668c41a4587e27e6c6acd1a6fc85d50c1f367df93c7741bfd51ef",
+  "fixture_sha256": "840f8dbbd3c4a3ca964b47f1f73abedb0a8bb9b0272790da8465c6f04940f8ad",
+  "id": "trend_type.synth_trend_up_3centers",
+  "input": [
+    {
+      "ZD": 10,
+      "ZG": 20,
+      "end": 2,
+      "n": 3,
+      "start": 0
+    },
+    {
+      "ZD": 30,
+      "ZG": 40,
+      "end": 5,
+      "n": 3,
+      "start": 3
+    },
+    {
+      "ZD": 50,
+      "ZG": 60,
+      "end": 8,
+      "n": 3,
+      "start": 6
+    }
+  ],
+  "input_sha256": "fc52db711397dd3c6decda3f32208d29d900dd192a58cb6f5e478aa3f5d3fd56",
+  "stage": "trend_type"
+}
