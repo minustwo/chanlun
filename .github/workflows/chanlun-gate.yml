@@ -133,3 +133,28 @@ jobs:
           # The example phase-3 backend MUST pass too - the template stays correct.
           python3 conformance/chanlun-v1/example_phase3_check.py reference
           python3 conformance/chanlun-v1/example_phase3_check.py alt
+
+  conformance-go:
+    name: Conformance corpus (chanlun-v1, Go backend)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+
+      - name: Build Go conformance backend
+        working-directory: impl/go
+        run: |
+          set -euo pipefail
+          go build ./...
+
+      - name: Run Go conformance harness
+        working-directory: impl/go
+        run: |
+          set -euo pipefail
+          # SHA-equality is the law. A byte off = FAIL. The harness exits
+          # non-zero on any divergence; the gate fails honestly, never silently.
+          go run ./cmd/check

@@ -136,12 +136,17 @@ chanlun/
 ├─ conformance/chanlun-v1/             # 冻结的一致性语料库（Phase-3 规范）
 │  ├─ manifest.json                    # corpus_sha256 = 版本号
 │  ├─ fixtures/*.json                  # 48 个（输入、期望、sha）fixtures
-│  ├─ reference_backend/               # 独立纯标准库参考实现
+│  ├─ reference_backend/               # 独立纯标准库 Python 参考实现
 │  ├─ runner.py                        # ~100 行纯标准库验证脚本
 │  ├─ generate_corpus.py               # 确定性 fixture 生成器
 │  ├─ example_phase3_check.py          # Phase-3 实现者模板
 │  ├─ README.md, README.zh.md          # 完整规范文档（英 / 中）
-└─ .github/workflows/chanlun-gate.yml  # Hosted Ubuntu CI：lake build + groundings + conformance
+├─ impl/go/                            # Go（纯标准库）Phase-3 后端，通过全部 48 fixture
+│  ├─ go.mod                           # github.com/minustwo/chanlun/impl/go, Go 1.22
+│  ├─ cmd/check/main.go                # `go run ./cmd/check` 跑一致性 harness
+│  ├─ internal/chanlun/                # 每个 stage 一个文件，忠实移植自 Python 参考
+│  └─ README.md, README.zh.md          # 运行说明、规范 JSON 选择、源流
+└─ .github/workflows/chanlun-gate.yml  # Hosted Ubuntu CI：lake build + groundings + conformance (Python + Go)
 ```
 
 ---
@@ -162,6 +167,10 @@ Hosted Ubuntu 工作流 `.github/workflows/chanlun-gate.yml` 在每次 push 到
   （以捕获参考实现的任何漂移）。`chanlun-v1` 的 `corpus_sha256` 即为
   一致性版本号：任何语言的 Phase-3 多语言实现要合规，必须重现每个
   fixture 的期望 SHA-256。
+* `conformance-go` job：在 `impl/go/` 下构建 Go Phase-3 后端，跑
+  `go run ./cmd/check`。它载入同一个 `manifest.json`，证明每个 fixture
+  在 Go 移植版上也复现同样的 SHA-256。Go 1.22，纯标准库，无任何第三方
+  依赖。SHA 等同仍是法律 —— 非零退出码即 fail，绝不静默跳过。
 
 Lean job 在缓存命中时约 5 分钟，冷缓存约 25 分钟。Grounding 全部约 30 秒
 跑完。Conformance 不到 1 分钟。

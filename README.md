@@ -149,12 +149,17 @@ chanlun/
 ├─ conformance/chanlun-v1/             # FROZEN conformance corpus (Phase-3 spec)
 │  ├─ manifest.json                    # corpus_sha256 = the version id
 │  ├─ fixtures/*.json                  # 48 (input, expected, sha) fixtures
-│  ├─ reference_backend/               # standalone pure-stdlib reference
+│  ├─ reference_backend/               # standalone pure-stdlib Python reference
 │  ├─ runner.py                        # ~100-line pure-stdlib verifier
 │  ├─ generate_corpus.py               # deterministic fixture generator
 │  ├─ example_phase3_check.py          # template for Phase-3 implementors
 │  ├─ README.md, README.zh.md          # full spec docs (EN / ZH)
-└─ .github/workflows/chanlun-gate.yml  # hosted Ubuntu CI: lake build + groundings + conformance
+├─ impl/go/                            # Go (pure-stdlib) Phase-3 backend, passes all 48 fixtures
+│  ├─ go.mod                           # github.com/minustwo/chanlun/impl/go, Go 1.22
+│  ├─ cmd/check/main.go                # `go run ./cmd/check` runs the conformance harness
+│  ├─ internal/chanlun/                # one file per stage, faithful port of the Python reference
+│  └─ README.md, README.zh.md          # how to run, canonical-JSON choice, lineage
+└─ .github/workflows/chanlun-gate.yml  # hosted Ubuntu CI: lake build + groundings + conformance (Python + Go)
 ```
 
 ---
@@ -177,6 +182,11 @@ every push to `main` and every PR:
   the conformance-version id: a Phase-3 multi-language implementation
   in any language is conformant iff it reproduces every fixture's
   expected SHA-256.
+* `conformance-go` job: builds the Go Phase-3 backend at `impl/go/` and
+  runs `go run ./cmd/check`, which loads the same `manifest.json` and
+  proves each fixture's SHA-256 reproduces under the Go port too. Go
+  1.22, pure stdlib, no third-party dependencies. SHA-equality remains
+  the law — non-zero exit fails the gate, never silently skips.
 
 The Lean job typically takes ~5 minutes on a warm cache, ~25 minutes
 cold. Groundings finish in ~30 seconds total. Conformance finishes in
