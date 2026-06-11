@@ -92,3 +92,44 @@ jobs:
             fi
           done
           exit "$status"
+
+  conformance:
+    name: Conformance corpus (chanlun-v1)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Run chanlun-v1 conformance runner
+        run: |
+          set -euo pipefail
+          # SHA-equality is the law. A byte off = FAIL. The runner exits non-zero on any divergence.
+          python3 conformance/chanlun-v1/runner.py
+
+      - name: Regenerate corpus + verify byte-identical
+        run: |
+          set -euo pipefail
+          # The corpus MUST be deterministic: regeneration produces byte-identical bytes. If the
+          # reference backend drifts in any observable way, this job catches it BEFORE merging.
+          sha_before=$(python3 -c "import hashlib; print(hashlib.sha256(open('conformance/chanlun-v1/manifest.json','rb').read()).hexdigest())")
+          python3 conformance/chanlun-v1/generate_corpus.py
+          sha_after=$(python3 -c "import hashlib; print(hashlib.sha256(open('conformance/chanlun-v1/manifest.json','rb').read()).hexdigest())")
+          if [ "$sha_before" != "$sha_after" ]; then
+            echo "FAIL: regeneration is NOT byte-identical."
+            echo "  before: $sha_before"
+            echo "  after:  $sha_after"
+            echo "The reference backend has drifted - the frozen corpus would change."
+            exit 1
+          fi
+          echo "OK: corpus regeneration is byte-identical (manifest sha = $sha_before)."
+
+      - name: Phase-3 example check (template)
+        run: |
+          set -euo pipefail
+          # The example phase-3 backend MUST pass too - the template stays correct.
+          python3 conformance/chanlun-v1/example_phase3_check.py reference
+          python3 conformance/chanlun-v1/example_phase3_check.py alt

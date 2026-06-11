@@ -1,0 +1,10 @@
+{
+  "description": "Zero centers -> none.",
+  "expected": "none",
+  "expected_sha256": "30a0924a3360be687d1df9fcbbfdff62c01bc0fd14036ab9076cf7f451568666",
+  "fixture_sha256": "6b89efed45231f3da0fd962f4af143a2579c8e5d9679c7d688d2ee5be1941e5b",
+  "id": "trend_type.hand_none",
+  "input": [],
+  "input_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+  "stage": "trend_type"
+}

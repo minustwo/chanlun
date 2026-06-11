@@ -1,0 +1,173 @@
+{
+  "description": "Post-fractal stream (seed=801, n=60) -> Def-4 strokes at dmin=4.",
+  "expected": {
+    "dispositions": [
+      "first",
+      "residue",
+      "absorbed",
+      "emit",
+      "emit",
+      "residue",
+      "absorbed",
+      "emit",
+      "residue",
+      "absorbed",
+      "residue",
+      "absorbed",
+      "emit",
+      "residue",
+      "absorbed",
+      "emit",
+      "residue"
+    ],
+    "strokes": [
+      {
+        "dir": "down",
+        "from_idx": 1,
+        "from_p": 105,
+        "to_idx": 6,
+        "to_p": 87
+      },
+      {
+        "dir": "up",
+        "from_idx": 6,
+        "from_p": 87,
+        "to_idx": 12,
+        "to_p": 116
+      },
+      {
+        "dir": "down",
+        "from_idx": 12,
+        "from_p": 116,
+        "to_idx": 17,
+        "to_p": 90
+      },
+      {
+        "dir": "up",
+        "from_idx": 17,
+        "from_p": 90,
+        "to_idx": 22,
+        "to_p": 101
+      },
+      {
+        "dir": "down",
+        "from_idx": 25,
+        "from_p": 105,
+        "to_idx": 29,
+        "to_p": 78
+      }
+    ]
+  },
+  "expected_sha256": "867e3584d762b3578224eabc638d75e3f789b4221c3a46bb514ef8b815d185e0",
+  "fixture_sha256": "2d043fa21b924b64c37df4796ec981521fbcfbab082d449d24f55c311046d2f3",
+  "id": "stroke.synth_post_fractal_seed801_n60",
+  "input": {
+    "dmin": 4,
+    "fractals": [
+      {
+        "h": 105,
+        "idx": 1,
+        "kind": "top",
+        "l": 97
+      },
+      {
+        "h": 96,
+        "idx": 4,
+        "kind": "bottom",
+        "l": 84
+      },
+      {
+        "h": 97,
+        "idx": 5,
+        "kind": "top",
+        "l": 91
+      },
+      {
+        "h": 92,
+        "idx": 6,
+        "kind": "bottom",
+        "l": 87
+      },
+      {
+        "h": 116,
+        "idx": 12,
+        "kind": "top",
+        "l": 112
+      },
+      {
+        "h": 102,
+        "idx": 15,
+        "kind": "bottom",
+        "l": 100
+      },
+      {
+        "h": 105,
+        "idx": 16,
+        "kind": "top",
+        "l": 101
+      },
+      {
+        "h": 100,
+        "idx": 17,
+        "kind": "bottom",
+        "l": 90
+      },
+      {
+        "h": 109,
+        "idx": 18,
+        "kind": "top",
+        "l": 101
+      },
+      {
+        "h": 103,
+        "idx": 19,
+        "kind": "bottom",
+        "l": 95
+      },
+      {
+        "h": 108,
+        "idx": 20,
+        "kind": "top",
+        "l": 98
+      },
+      {
+        "h": 98,
+        "idx": 21,
+        "kind": "bottom",
+        "l": 92
+      },
+      {
+        "h": 101,
+        "idx": 22,
+        "kind": "top",
+        "l": 93
+      },
+      {
+        "h": 96,
+        "idx": 23,
+        "kind": "bottom",
+        "l": 90
+      },
+      {
+        "h": 105,
+        "idx": 25,
+        "kind": "top",
+        "l": 95
+      },
+      {
+        "h": 82,
+        "idx": 29,
+        "kind": "bottom",
+        "l": 78
+      },
+      {
+        "h": 101,
+        "idx": 31,
+        "kind": "top",
+        "l": 90
+      }
+    ]
+  },
+  "input_sha256": "b0de8c73ddc64d4487ebcb4a8addae03f08c7326260a5e685cd77de91bbabae3",
+  "stage": "stroke"
+}

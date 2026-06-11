@@ -1,0 +1,68 @@
+{
+  "description": "Random walk bars (seed=101, n=10) -> Algorithm N normalize stack.",
+  "expected": [
+    {
+      "h": 106,
+      "l": 102
+    },
+    {
+      "h": 110,
+      "l": 108
+    },
+    {
+      "h": 119,
+      "l": 109
+    },
+    {
+      "h": 113,
+      "l": 106
+    }
+  ],
+  "expected_sha256": "fc36a0dbca628695469ebe04ec5ab14d212390e17ead4bb2b0a8b9ab0635cda5",
+  "fixture_sha256": "92f7d41d6231f40641bce53d2bc5dc21e191a643e0827e94b547359a9993a7ab",
+  "id": "normalize.synth_walk_seed101_n10",
+  "input": [
+    {
+      "h": 106,
+      "l": 102
+    },
+    {
+      "h": 110,
+      "l": 104
+    },
+    {
+      "h": 110,
+      "l": 108
+    },
+    {
+      "h": 119,
+      "l": 109
+    },
+    {
+      "h": 117,
+      "l": 107
+    },
+    {
+      "h": 113,
+      "l": 107
+    },
+    {
+      "h": 118,
+      "l": 106
+    },
+    {
+      "h": 113,
+      "l": 107
+    },
+    {
+      "h": 113,
+      "l": 111
+    },
+    {
+      "h": 113,
+      "l": 109
+    }
+  ],
+  "input_sha256": "d74469add05855f09453079bda9b1815b1b292d27f039766b050ee6dfe7d99be",
+  "stage": "normalize"
+}

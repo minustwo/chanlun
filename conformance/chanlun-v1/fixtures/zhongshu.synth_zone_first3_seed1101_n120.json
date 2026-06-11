@@ -1,0 +1,42 @@
+{
+  "description": "Stroke-elements (seed=1101, n=120, zone=first3) -> center decomposition.",
+  "expected": [
+    {
+      "ZD": 140,
+      "ZG": 156,
+      "end": 3,
+      "n": 3,
+      "start": 1
+    }
+  ],
+  "expected_sha256": "34da4c7bc5246f7fccd2dfdb7fc2cb2e451d9ca8629971b257016898c8088b6a",
+  "fixture_sha256": "e43659dcb94616d5d59bceb3cbfe2968c891ccacda2feb492a97e57b2049ab08",
+  "id": "zhongshu.synth_zone_first3_seed1101_n120",
+  "input": {
+    "elements": [
+      {
+        "hi": 108,
+        "idx": 0,
+        "lo": 88
+      },
+      {
+        "hi": 162,
+        "idx": 1,
+        "lo": 140
+      },
+      {
+        "hi": 156,
+        "idx": 2,
+        "lo": 134
+      },
+      {
+        "hi": 156,
+        "idx": 3,
+        "lo": 135
+      }
+    ],
+    "zone": "first3"
+  },
+  "input_sha256": "383dc2113bbebd56a5eeb8f1194f606b8b2bed59247b1702bf046295e4a89dd3",
+  "stage": "zhongshu"
+}

@@ -1,0 +1,10 @@
+{
+  "description": "Empty input -> empty stack.",
+  "expected": [],
+  "expected_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+  "fixture_sha256": "42ba610a86d150941363115a6aad91c30c4d108039d4f16ca498999e39039a06",
+  "id": "normalize.hand_empty",
+  "input": [],
+  "input_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+  "stage": "normalize"
+}

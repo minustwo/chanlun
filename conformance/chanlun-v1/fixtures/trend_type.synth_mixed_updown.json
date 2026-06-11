@@ -1,0 +1,32 @@
+{
+  "description": "Two centers stepping up then one stepping down -> mixed.",
+  "expected": "mixed",
+  "expected_sha256": "0aa52ffaa672c5a43dd1b5cf6239a3c3de78a77b37f6dca3f8ea10b9153c84c7",
+  "fixture_sha256": "a54efe48282aae9c6f422befe67694bd122e07aa5eba3834a163438af4731854",
+  "id": "trend_type.synth_mixed_updown",
+  "input": [
+    {
+      "ZD": 10,
+      "ZG": 20,
+      "end": 2,
+      "n": 3,
+      "start": 0
+    },
+    {
+      "ZD": 30,
+      "ZG": 40,
+      "end": 5,
+      "n": 3,
+      "start": 3
+    },
+    {
+      "ZD": 15,
+      "ZG": 25,
+      "end": 8,
+      "n": 3,
+      "start": 6
+    }
+  ],
+  "input_sha256": "32cd9a7f0f5e4dd9a004770df98a78b64d53ae9bd5a8801d84f11074c5725ada",
+  "stage": "trend_type"
+}

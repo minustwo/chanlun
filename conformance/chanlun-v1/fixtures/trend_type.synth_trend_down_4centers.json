@@ -1,0 +1,39 @@
+{
+  "description": "Four step-down centers -> trend_down (all dirs -1).",
+  "expected": "trend_down",
+  "expected_sha256": "ce2ce23c9b6283658b811772346cbd1bfb2078a5c5352993adf347ea42995307",
+  "fixture_sha256": "9afed3a9aba16ed398cb538609ce021f689f2cf8b2bcc8951b81f91853f2b549",
+  "id": "trend_type.synth_trend_down_4centers",
+  "input": [
+    {
+      "ZD": 80,
+      "ZG": 95,
+      "end": 2,
+      "n": 3,
+      "start": 0
+    },
+    {
+      "ZD": 55,
+      "ZG": 70,
+      "end": 5,
+      "n": 3,
+      "start": 3
+    },
+    {
+      "ZD": 30,
+      "ZG": 45,
+      "end": 8,
+      "n": 3,
+      "start": 6
+    },
+    {
+      "ZD": 5,
+      "ZG": 20,
+      "end": 11,
+      "n": 3,
+      "start": 9
+    }
+  ],
+  "input_sha256": "503b8fb22157e66d3145d290c0ae33129de37bfd16b4bd15a8affcb4a6492fc6",
+  "stage": "trend_type"
+}

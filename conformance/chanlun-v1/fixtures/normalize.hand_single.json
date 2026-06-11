@@ -1,0 +1,20 @@
+{
+  "description": "Single bar -> single-element stack.",
+  "expected": [
+    {
+      "h": 7,
+      "l": 5
+    }
+  ],
+  "expected_sha256": "c7d6b1640c7028704484a27b800341c598f4885947d02114201e3f5574bf5963",
+  "fixture_sha256": "df4a6233f5ec6b88b73af37063972ee468d8176c4f2aa46c6e386c5d68a9efee",
+  "id": "normalize.hand_single",
+  "input": [
+    {
+      "h": 7,
+      "l": 5
+    }
+  ],
+  "input_sha256": "c7d6b1640c7028704484a27b800341c598f4885947d02114201e3f5574bf5963",
+  "stage": "normalize"
+}

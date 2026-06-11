@@ -146,7 +146,15 @@ chanlun/
 │  ├─ chanlun_zhongshu_grounding.py
 │  ├─ chanlun_bi_endpoint_multivalued_grounding.py
 │  └─ chanlun_bi_kline_rule_grounding.py
-└─ .github/workflows/chanlun-gate.yml  # hosted Ubuntu CI: lake build + groundings
+├─ conformance/chanlun-v1/             # FROZEN conformance corpus (Phase-3 spec)
+│  ├─ manifest.json                    # corpus_sha256 = the version id
+│  ├─ fixtures/*.json                  # 48 (input, expected, sha) fixtures
+│  ├─ reference_backend/               # standalone pure-stdlib reference
+│  ├─ runner.py                        # ~100-line pure-stdlib verifier
+│  ├─ generate_corpus.py               # deterministic fixture generator
+│  ├─ example_phase3_check.py          # template for Phase-3 implementors
+│  ├─ README.md, README.zh.md          # full spec docs (EN / ZH)
+└─ .github/workflows/chanlun-gate.yml  # hosted Ubuntu CI: lake build + groundings + conformance
 ```
 
 ---
@@ -162,9 +170,17 @@ every push to `main` and every PR:
   rejects any `sorry` keyword in `lean/Chanlun/*.lean`.
 * `grounding` job: runs each `grounding/chanlun_*_grounding.py` with
   pure-stdlib Python 3.11.
+* `conformance` job: runs `python3 conformance/chanlun-v1/runner.py` to
+  verify every fixture matches the FROZEN spec byte-for-byte, then
+  regenerates the corpus and confirms the bytes are identical (catches
+  any reference-backend drift). The corpus_sha256 of `chanlun-v1` IS
+  the conformance-version id: a Phase-3 multi-language implementation
+  in any language is conformant iff it reproduces every fixture's
+  expected SHA-256.
 
 The Lean job typically takes ~5 minutes on a warm cache, ~25 minutes
-cold. Groundings finish in ~30 seconds total.
+cold. Groundings finish in ~30 seconds total. Conformance finishes in
+under a minute.
 
 ---
 

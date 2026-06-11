@@ -1,0 +1,32 @@
+{
+  "description": "Three centers stepping up then overlapping -> mixed (named residue).",
+  "expected": "mixed",
+  "expected_sha256": "0aa52ffaa672c5a43dd1b5cf6239a3c3de78a77b37f6dca3f8ea10b9153c84c7",
+  "fixture_sha256": "62f2be9ee3391476c84f5960c316ceb4fe030b3462c918340aff94635eb44329",
+  "id": "trend_type.hand_mixed",
+  "input": [
+    {
+      "ZD": 10,
+      "ZG": 20,
+      "end": 2,
+      "n": 3,
+      "start": 0
+    },
+    {
+      "ZD": 30,
+      "ZG": 40,
+      "end": 5,
+      "n": 3,
+      "start": 3
+    },
+    {
+      "ZD": 35,
+      "ZG": 45,
+      "end": 8,
+      "n": 3,
+      "start": 6
+    }
+  ],
+  "input_sha256": "3eebb4d20540a27a25c0af137904763525fdbe8a7953da26fff4405d2a52604c",
+  "stage": "trend_type"
+}

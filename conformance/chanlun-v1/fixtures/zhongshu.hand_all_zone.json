@@ -1,0 +1,47 @@
+{
+  "description": "Same 5 elements as hand_one_center but with the `all` zone gate (re-tightens to all members).",
+  "expected": [
+    {
+      "ZD": 48,
+      "ZG": 53,
+      "end": 3,
+      "n": 4,
+      "start": 0
+    }
+  ],
+  "expected_sha256": "a7e3fb296140d67b6d7adf783ee6372820aff3ce71f5fc7077e36ad0e7bbb06f",
+  "fixture_sha256": "7a464b9807e8f9809b47f84f634e6da9380b788f6b38d4938fd2143a7abab3c9",
+  "id": "zhongshu.hand_all_zone",
+  "input": {
+    "elements": [
+      {
+        "hi": 55,
+        "idx": 0,
+        "lo": 45
+      },
+      {
+        "hi": 58,
+        "idx": 1,
+        "lo": 48
+      },
+      {
+        "hi": 53,
+        "idx": 2,
+        "lo": 44
+      },
+      {
+        "hi": 60,
+        "idx": 3,
+        "lo": 49
+      },
+      {
+        "hi": 99,
+        "idx": 4,
+        "lo": 90
+      }
+    ],
+    "zone": "all"
+  },
+  "input_sha256": "903f0f6d1d7d8a79e0b3e15cc0e881b1c048526a748c8b1c040a9adbe8e30737",
+  "stage": "zhongshu"
+}

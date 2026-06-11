@@ -1,0 +1,28 @@
+{
+  "description": "Two adjacent non-contained bars pass through unchanged.",
+  "expected": [
+    {
+      "h": 5,
+      "l": 0
+    },
+    {
+      "h": 10,
+      "l": 6
+    }
+  ],
+  "expected_sha256": "fefd9c7e2ebfd2029a2d14a2832ac10897650a7fd3a286229874df0437d630a9",
+  "fixture_sha256": "268777370d1504a3353366a5cf3adca1a158d497ccc2966968759623ac953006",
+  "id": "normalize.hand_no_containment",
+  "input": [
+    {
+      "h": 5,
+      "l": 0
+    },
+    {
+      "h": 10,
+      "l": 6
+    }
+  ],
+  "input_sha256": "fefd9c7e2ebfd2029a2d14a2832ac10897650a7fd3a286229874df0437d630a9",
+  "stage": "normalize"
+}

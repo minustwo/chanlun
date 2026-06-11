@@ -1,0 +1,36 @@
+{
+  "description": "Down-direction containment: after a higher prior bar, the contained pair uses min/min.",
+  "expected": [
+    {
+      "h": 10,
+      "l": 7
+    },
+    {
+      "h": 3,
+      "l": 0
+    }
+  ],
+  "expected_sha256": "e9a70fc8eb284cf9a43fb4c102b2fa52e0fc669122722a0b03a5d6609ca68036",
+  "fixture_sha256": "907ebaddb121e7861b3a682f089b17ffe87040735e73049741139ed0b811c820",
+  "id": "normalize.hand_down_merge",
+  "input": [
+    {
+      "h": 10,
+      "l": 5
+    },
+    {
+      "h": 9,
+      "l": 7
+    },
+    {
+      "h": 4,
+      "l": 0
+    },
+    {
+      "h": 3,
+      "l": 1
+    }
+  ],
+  "input_sha256": "80cf724aa690fde75b2d66288f1782559a80c817d7620a3895a5d6089828d2fd",
+  "stage": "normalize"
+}

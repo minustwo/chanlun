@@ -1,0 +1,23 @@
+{
+  "description": "A flat-ish 3-bar window with no extremum -> neither (dropped).",
+  "expected": [],
+  "expected_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+  "fixture_sha256": "1629b2ca058b2ce3a161fd68972153a46681c1180b323208881a946150f343d4",
+  "id": "fractal.hand_neither",
+  "input": [
+    {
+      "h": 10,
+      "l": 5
+    },
+    {
+      "h": 11,
+      "l": 6
+    },
+    {
+      "h": 12,
+      "l": 7
+    }
+  ],
+  "input_sha256": "1d4afdddac9597df75e6ed65f6dc1a46eda2a2949999a3d2c310571f22f4315f",
+  "stage": "fractal"
+}
