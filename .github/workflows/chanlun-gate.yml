@@ -134,6 +134,62 @@ jobs:
           python3 conformance/chanlun-v1/example_phase3_check.py reference
           python3 conformance/chanlun-v1/example_phase3_check.py alt
 
+  conformance-ts:
+    name: Conformance corpus (chanlun-v1, TypeScript backend)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install devDependencies (typescript + @types/node only)
+        working-directory: impl/ts
+        run: |
+          set -euo pipefail
+          # Pure devDeps: no runtime deps at all. --omit=optional keeps the
+          # tree at the bare minimum (typescript + @types/node).
+          npm ci --omit=optional || npm install --no-audit --no-fund
+
+      - name: Compile TypeScript
+        working-directory: impl/ts
+        run: npx tsc
+
+      - name: Run impl/ts conformance harness (48 fixtures)
+        working-directory: impl/ts
+        run: |
+          set -euo pipefail
+          # SHA-equality is the law. The harness exits non-zero on ANY divergence.
+          node dist/check.js
+
+  conformance-go:
+    name: Conformance corpus (chanlun-v1, Go backend)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+
+      - name: Build Go conformance backend
+        working-directory: impl/go
+        run: |
+          set -euo pipefail
+          go build ./...
+
+      - name: Run Go conformance harness
+        working-directory: impl/go
+        run: |
+          set -euo pipefail
+          # SHA-equality is the law. A byte off = FAIL. The harness exits
+          # non-zero on any divergence; the gate fails honestly, never silently.
+          go run ./cmd/check
+
   conformance-pinescript-lint:
     name: PineScript v5 port (discipline lint, not a conformance gate)
     runs-on: ubuntu-latest
