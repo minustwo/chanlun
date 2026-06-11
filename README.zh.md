@@ -209,8 +209,21 @@ chanlun/
 │  ├─ cmd/check/main.go                # `go run ./cmd/check` 跑一致性 harness
 │  ├─ internal/chanlun/                # 每个 stage 一个文件，忠实移植自 Python 参考
 │  └─ README.md, README.zh.md          # 运行说明、规范 JSON 选择、源流
-└─ .github/workflows/chanlun-gate.yml  # Hosted Ubuntu CI：lake build + groundings + conformance (Python + TS + Go)
+├─ impl/pinescript/                    # PineScript v5 后端（文档化移植）
+│  ├─ chanlun_indicator.pine           # 指标本体（贴进 TradingView）
+│  ├─ PINESCRIPT_PORT.md               # 分阶段映射 + 13 条 NAMED-OPEN 残差
+│  └─ README.md, README.zh.md          # 中英文使用文档（仅文档化移植 —— 见下）
+└─ .github/workflows/chanlun-gate.yml  # Hosted Ubuntu CI：lake build + groundings + conformance (Python + TS + Go) + pinescript-lint
 ```
+
+### PineScript 后端 —— 仅文档化移植
+
+`impl/pinescript/` 是同一算法的 PineScript v5 移植版本，会把 分型/笔/中枢 画在
+TradingView 真实的 K 线上。**它没有做一致性验证**：PineScript v5 无法在 CI 中读 fixture
+语料或做 SHA-256 比对。诚实纪律把每个缺口都命名为 `[chanlun_v1_pinescript_<stage>_OPEN]`
+残差（共 13 条 —— 见 `impl/pinescript/PINESCRIPT_PORT.md`）。CI 跑一个**纪律检查**
+（`conformance-pinescript-lint`），核对反模式不存在、命名残差都在文档里 —— 但它**不是**
+SHA-equality 一致性 gate。
 
 ---
 

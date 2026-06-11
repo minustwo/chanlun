@@ -1,0 +1,424 @@
+//@version=5
+// chanlun_indicator.pine
+// PineScript v5 port of the Chanlun decomposition pipeline (normalize -> fractal -> stroke -> zhongshu).
+// This is a DOCUMENTED PORT. See PINESCRIPT_PORT.md for the per-stage mapping commentary and the
+// list of NAMED-OPEN residues (Pine v5 cannot run the chanlun-v1 conformance corpus in CI).
+//
+// Lineage:
+//   chanlun.md / chanlun.zh.md (Lessons 3-5, 17, 20, Appendix A)
+//     -> lean/Chanlun/*.lean (kernel-verified theorems)
+//       -> conformance/chanlun-v1/reference_backend/*.py (pure-stdlib Python)
+//         -> THIS FILE (PineScript v5 bar-by-bar streaming port)
+//
+// The reference backend is BATCH (sees the whole sequence at once). PineScript is BAR-BY-BAR
+// (gets one new bar per call). The port adapts each stage to the streaming model and accepts the
+// well-known confirmation-lag conventions documented in PINESCRIPT_PORT.md.
+
+indicator(title = "Chanlun (chanlun-v1 port)", shorttitle = "Chanlun", overlay = true, max_bars_back = 5000, max_lines_count = 500, max_labels_count = 500, max_boxes_count = 500)
+
+// ---- User inputs --------------------------------------------------------------------------------
+
+i_show_normalized = input.bool(true,  "Show normalized (post-Algorithm-N) high/low markers", group = "Display")
+i_show_fractals   = input.bool(true,  "Show fractals (top / bottom)",                         group = "Display")
+i_show_strokes    = input.bool(true,  "Show strokes (笔)",                                    group = "Display")
+i_show_zhongshu   = input.bool(true,  "Show zhongshu (中枢) zones",                           group = "Display")
+i_dmin            = input.int(4, "δmin (stroke separation, idx units)", minval = 1, group = "Algorithm")
+i_zone_gate       = input.string("first3", "Zhongshu zone gate", options = ["first3", "all"], group = "Algorithm")
+i_only_confirmed  = input.bool(true,  "Use barstate.isconfirmed (no repaint of last bar)",    group = "Display")
+
+// ---- Stage 1: normalize (Algorithm N, Appendix A, streaming) ------------------------------------
+// Reference: conformance/chanlun-v1/reference_backend/normalize.py :: normalize_N
+//
+//   stack, up = [], True
+//   for it in xs:
+//     if not stack: stack.append(it); continue
+//     top = stack[-1]
+//     if contained(top, it): stack[-1] = merge(top, it, up)
+//     else: stack.append(it); up = it.h > top.h
+//
+// PineScript adaptation: each bar invocation is one iteration of the loop. Persist
+// (top_l, top_h, up_dir, stack_idx) across bars with `var`. When a bar is absorbed by
+// containment-merge, top_l/top_h are updated in place. When a bar is non-contained, we
+// commit the prior top and start a new top.
+//
+// NOTE: the "stack" is implicit. We only retain the CURRENT (top-of-stack) bar plus the previous
+// committed bar (needed for the 3-bar fractal window). The pre-prior bar is also retained so the
+// fractal window has all three normalized bars available.
+
+var float n_top_l   = na   // current top-of-stack low  (live, may absorb)
+var float n_top_h   = na   // current top-of-stack high (live, may absorb)
+var int   n_top_bar = na   // chart-bar index where this top-of-stack STARTED
+var bool  n_up      = true // direction for the next containment merge
+var bool  n_inited  = false
+
+// Two most recently COMMITTED (pushed) normalized bars, needed for the 3-bar fractal window:
+var float n_prev_l  = na   // bar 2 ago in normalized space
+var float n_prev_h  = na
+var int   n_prev_bar = na
+var float n_prev2_l = na   // bar 3 ago in normalized space
+var float n_prev2_h = na
+var int   n_prev2_bar = na
+
+// Per-bar emit flag (set to true on the bar where a previous-top was just COMMITTED).
+var bool  n_just_committed = false
+
+bool can_run = i_only_confirmed ? barstate.isconfirmed : true
+
+if can_run
+    n_just_committed := false
+    float cur_l = low
+    float cur_h = high
+    if not n_inited
+        n_top_l   := cur_l
+        n_top_h   := cur_h
+        n_top_bar := bar_index
+        n_inited  := true
+    else
+        // Containment test: A contains B iff B.l >= A.l and B.h <= A.h (inclusive, matches Appendix-A `<=`).
+        bool top_in_cur = (cur_l <= n_top_l) and (n_top_h <= cur_h)
+        bool cur_in_top = (n_top_l <= cur_l) and (cur_h <= n_top_h)
+        bool contained  = top_in_cur or cur_in_top
+        if contained
+            // Directional merge: up uses (max,max); down uses (min,min).
+            if n_up
+                n_top_l := math.max(n_top_l, cur_l)
+                n_top_h := math.max(n_top_h, cur_h)
+            else
+                n_top_l := math.min(n_top_l, cur_l)
+                n_top_h := math.min(n_top_h, cur_h)
+            // The merged bar inherits n_top_bar (anchor) for visual purposes.
+        else
+            // Commit the prior top as a normalized bar. Shift the prev/prev2 slots.
+            n_prev2_l   := n_prev_l
+            n_prev2_h   := n_prev_h
+            n_prev2_bar := n_prev_bar
+            n_prev_l    := n_top_l
+            n_prev_h    := n_top_h
+            n_prev_bar  := n_top_bar
+            // Update direction: up iff the NEW bar's high exceeds the just-committed top's high.
+            n_up        := cur_h > n_top_h
+            // New top is this bar.
+            n_top_l     := cur_l
+            n_top_h     := cur_h
+            n_top_bar   := bar_index
+            n_just_committed := true
+
+// Optional: plot small dots at the high/low of the live top-of-stack normalized bar.
+plotchar(i_show_normalized and not na(n_top_h) ? n_top_h : na, title = "norm top H", char = "·", location = location.absolute, color = color.new(color.blue, 50), size = size.tiny)
+plotchar(i_show_normalized and not na(n_top_l) ? n_top_l : na, title = "norm top L", char = "·", location = location.absolute, color = color.new(color.blue, 50), size = size.tiny)
+
+// ---- Stage 2: fractal (Def-3, streaming, 1-bar confirmation lag) --------------------------------
+// Reference: conformance/chanlun-v1/reference_backend/fractal.py :: extract_fractals
+//
+//   def extract_fractals(bars):
+//     for i in range(1, n-1):
+//       kind = classify_window(bars[i-1], bars[i], bars[i+1])
+//       if kind != NEITHER: out.append({idx:i, kind, h, l})
+//
+// In streaming form, we can only classify the MIDDLE bar when the RIGHT bar is also known.
+// So when a normalized bar is COMMITTED (n_just_committed), we now have:
+//   (n_prev2, n_prev, n_top) = (left, middle, right)   if there are 3 normalized bars
+// and we can classify n_prev as a fractal on THIS bar (one bar lag from when n_prev became
+// the most-recent committed bar).
+//
+// Confirmation lag: the fractal at the middle bar is confirmed at chart-bar n_top_bar (when
+// the right bar exists). This is the unavoidable Def-3 right-side-requires-future lag.
+
+// Last detected fractal (for the stroke greedy). Maintained as a small ring (last 3 fractals).
+var float f_h_0   = na  // most recent fractal (the anchor candidate)
+var float f_l_0   = na
+var int   f_idx_0 = na  // bar index (chart bar) of the fractal middle
+var string f_kind_0 = na
+var float f_h_1   = na
+var float f_l_1   = na
+var int   f_idx_1 = na
+var string f_kind_1 = na
+var float f_h_2   = na
+var float f_l_2   = na
+var int   f_idx_2 = na
+var string f_kind_2 = na
+
+var int n_fractals_seen = 0
+
+if can_run and n_just_committed and not na(n_prev2_l) and not na(n_prev_l) and not na(n_top_l)
+    // 3-bar window in normalized space: A = n_prev2, B = n_prev, C = n_top.
+    bool is_top = (n_prev_h > n_prev2_h) and (n_prev_h > n_top_h) and (n_prev_l > n_prev2_l) and (n_prev_l > n_top_l)
+    bool is_bot = (n_prev_l < n_prev2_l) and (n_prev_l < n_top_l) and (n_prev_h < n_prev2_h) and (n_prev_h < n_top_h)
+    string kind = is_top ? "top" : (is_bot ? "bottom" : "neither")
+    if kind != "neither"
+        // Shift the fractal ring: 0 -> 1 -> 2 (drop 2).
+        f_h_2    := f_h_1
+        f_l_2    := f_l_1
+        f_idx_2  := f_idx_1
+        f_kind_2 := f_kind_1
+        f_h_1    := f_h_0
+        f_l_1    := f_l_0
+        f_idx_1  := f_idx_0
+        f_kind_1 := f_kind_0
+        f_h_0    := n_prev_h
+        f_l_0    := n_prev_l
+        f_idx_0  := n_prev_bar
+        f_kind_0 := kind
+        n_fractals_seen += 1
+
+// Mark a fractal on the chart at the middle bar's location. The label is placed retroactively
+// using x = n_prev_bar (the historical chart-bar index of the middle).
+if i_show_fractals and can_run and n_just_committed and not na(f_kind_0) and f_idx_0 == n_prev_bar
+    if f_kind_0 == "top"
+        label.new(x = f_idx_0, y = f_h_0, text = "T", color = color.new(color.red, 0), textcolor = color.white, style = label.style_label_down, size = size.small)
+    if f_kind_0 == "bottom"
+        label.new(x = f_idx_0, y = f_l_0, text = "B", color = color.new(color.green, 0), textcolor = color.white, style = label.style_label_up, size = size.small)
+
+// ---- Stage 3: stroke (Def-4 + Lemma 2 leftmost-greedy, streaming) -------------------------------
+// Reference: conformance/chanlun-v1/reference_backend/strokes.py :: strokes
+//
+//   anchor = None
+//   for f in fractals:
+//     if anchor is None: anchor = f; disp.append("first")
+//     elif f.kind == anchor.kind: anchor = pick_rep(anchor, f); disp.append("absorbed")
+//     elif f.idx - anchor.idx >= dmin: emit stroke; anchor = f; disp.append("emit")
+//     else: disp.append("residue")   # [chanlun_v1_stroke_close_drop_OPEN]
+//
+// PineScript adaptation: each NEW fractal (n_fractals_seen increment) triggers one step of the
+// greedy. We persist (anchor_idx, anchor_kind, anchor_h, anchor_l) across bars.
+//
+// Confirmation lag: a stroke is CONFIRMED when the opposite-kind+far fractal arrives.
+// This already requires the right-side bar of THAT fractal to exist, so the stroke confirms
+// at chart-bar = the fractal-middle's right-bar = n_top_bar at fractal-emit time.
+
+var int   anchor_idx  = na
+var string anchor_kind = na
+var float anchor_h    = na
+var float anchor_l    = na
+var int   n_strokes_emitted = 0
+
+// Track the most recent stroke for stroke-to-element conversion (zhongshu stage).
+var int   stroke_from_bar = na
+var int   stroke_to_bar   = na
+var float stroke_from_p   = na
+var float stroke_to_p     = na
+var string stroke_dir     = na
+var bool  stroke_just_emitted = false
+
+// When n_fractals_seen incremented THIS bar, run the greedy step on f_0 (the freshest fractal).
+var int n_fractals_prev = 0
+
+if can_run
+    stroke_just_emitted := false
+    if n_fractals_seen > n_fractals_prev
+        // A new fractal just landed; classify.
+        if na(anchor_idx)
+            anchor_idx  := f_idx_0
+            anchor_kind := f_kind_0
+            anchor_h    := f_h_0
+            anchor_l    := f_l_0
+            // "first" disposition; no emit.
+        else
+            if f_kind_0 == anchor_kind
+                // Same-kind: keep the extremal representative.
+                if anchor_kind == "top"
+                    if f_h_0 > anchor_h
+                        anchor_idx := f_idx_0
+                        anchor_h   := f_h_0
+                        anchor_l   := f_l_0
+                else
+                    if f_l_0 < anchor_l
+                        anchor_idx := f_idx_0
+                        anchor_h   := f_h_0
+                        anchor_l   := f_l_0
+                // "absorbed" disposition; no emit.
+            else
+                // Opposite kind: check separation.
+                // Note: idx is CHART-BAR index (n_prev_bar at fractal-time). For δmin gating we
+                // measure in chart-bar units, which differs from the reference (normalized-index
+                // units). See PINESCRIPT_PORT.md §"δmin units" -- this is a NAMED divergence,
+                // residue [chanlun_v1_pinescript_stroke_dmin_units_OPEN].
+                int gap = f_idx_0 - anchor_idx
+                if gap >= i_dmin
+                    // EMIT a stroke (anchor -> f_0). Re-anchor.
+                    stroke_from_bar := anchor_idx
+                    stroke_to_bar   := f_idx_0
+                    stroke_from_p   := anchor_kind == "top" ? anchor_h : anchor_l
+                    stroke_to_p     := f_kind_0 == "top" ? f_h_0 : f_l_0
+                    stroke_dir      := f_kind_0 == "top" ? "up" : "down"
+                    stroke_just_emitted := true
+                    n_strokes_emitted += 1
+                    anchor_idx  := f_idx_0
+                    anchor_kind := f_kind_0
+                    anchor_h    := f_h_0
+                    anchor_l    := f_l_0
+                else
+                    // Too-close opposite: dispose as "residue" (NAMED [chanlun_v1_stroke_close_drop_OPEN]).
+                    // No emit; do not re-anchor. Pine requires a body statement here; rebind anchor to self.
+                    anchor_kind := anchor_kind
+        n_fractals_prev := n_fractals_seen
+
+// Draw the stroke as a line on the chart.
+if i_show_strokes and can_run and stroke_just_emitted
+    color stroke_color = stroke_dir == "up" ? color.new(color.lime, 0) : color.new(color.fuchsia, 0)
+    line.new(x1 = stroke_from_bar, y1 = stroke_from_p, x2 = stroke_to_bar, y2 = stroke_to_p, xloc = xloc.bar_index, color = stroke_color, width = 2)
+
+// ---- Stage 4: zhongshu (中枢, 3-overlap, streaming) ---------------------------------------------
+// Reference: conformance/chanlun-v1/reference_backend/zhongshu.py :: zhongshu
+//
+//   while i + 2 < n:
+//     ZD = max(els[i..i+2].lo); ZG = min(els[i..i+2].hi)
+//     if ZD <= ZG: form a 中枢; extend while overlap; emit; i = end+1
+//     else: i += 1
+//
+// PineScript adaptation: each new stroke is one "element". An element has lo = min(from_p, to_p),
+// hi = max(from_p, to_p). We maintain a sliding-3 window of the LAST 3 elements + a "live 中枢"
+// state machine. A center FORMS when the live 3 overlap; it EXTENDS while subsequent strokes
+// overlap; it ENDS on the first non-overlapping stroke.
+//
+// Confirmation lag: a center FORMS only when its 3rd member is received -- so the formation is
+// confirmed at the chart-bar where the 3rd stroke completed (= the bar of that stroke's to_idx
+// which itself had a 1-bar fractal lag from its middle). The center END is confirmed at the bar
+// of the FIRST non-overlapping stroke arriving after.
+
+var float e_lo_0 = na
+var float e_hi_0 = na
+var int   e_to_0 = na    // chart-bar where this stroke ended (for visual end-of-center)
+var float e_lo_1 = na
+var float e_hi_1 = na
+var int   e_to_1 = na
+var float e_lo_2 = na
+var float e_hi_2 = na
+var int   e_to_2 = na
+var int   n_strokes_for_zhongshu = 0
+
+var bool  zs_active = false        // is a 中枢 currently open?
+var float zs_ZD = na               // the FROZEN core ZD (first3 zone) or live zone (all)
+var float zs_ZG = na
+var float zs_live_ZD = na          // the live overlap test zone (matters when zone == "all")
+var float zs_live_ZG = na
+var int   zs_start_bar = na
+var int   zs_end_bar   = na
+var int   zs_n_members = 0
+
+var bool  zs_just_formed = false
+var bool  zs_just_closed = false
+var box   zs_box_id = na
+
+if can_run
+    zs_just_formed := false
+    zs_just_closed := false
+    if stroke_just_emitted
+        // Shift the 3-element ring: 0 (oldest) <- 1 <- 2 <- new.
+        e_lo_0 := e_lo_1
+        e_hi_0 := e_hi_1
+        e_to_0 := e_to_1
+        e_lo_1 := e_lo_2
+        e_hi_1 := e_hi_2
+        e_to_1 := e_to_2
+        e_lo_2 := math.min(stroke_from_p, stroke_to_p)
+        e_hi_2 := math.max(stroke_from_p, stroke_to_p)
+        e_to_2 := stroke_to_bar
+        n_strokes_for_zhongshu += 1
+
+        if zs_active
+            // Test if the new element overlaps the LIVE zone.
+            float new_lo = e_lo_2
+            float new_hi = e_hi_2
+            bool overlaps = (new_lo <= zs_live_ZG) and (new_hi >= zs_live_ZD)
+            if overlaps
+                zs_n_members += 1
+                zs_end_bar   := e_to_2
+                if i_zone_gate == "all"
+                    zs_live_ZD := math.max(zs_live_ZD, new_lo)
+                    zs_live_ZG := math.min(zs_live_ZG, new_hi)
+                // first3: do NOT change zs_ZD/zs_ZG (core stays frozen by the first 3).
+            else
+                // CLOSE the live 中枢.
+                zs_just_closed := true
+                zs_active := false
+        else if n_strokes_for_zhongshu >= 3
+            // Check if the LAST 3 elements overlap.
+            float ZD = math.max(math.max(e_lo_0, e_lo_1), e_lo_2)
+            float ZG = math.min(math.min(e_hi_0, e_hi_1), e_hi_2)
+            if ZD <= ZG
+                // FORM a new 中枢.
+                zs_ZD := ZD
+                zs_ZG := ZG
+                zs_live_ZD := ZD
+                zs_live_ZG := ZG
+                zs_start_bar := e_to_0   // start chart-bar = end-bar of the first element
+                zs_end_bar   := e_to_2
+                zs_n_members := 3
+                zs_active := true
+                zs_just_formed := true
+
+// Render: a box for the formed/extending 中枢.
+if i_show_zhongshu and can_run
+    if zs_just_formed
+        // Open a new box for the center.
+        zs_box_id := box.new(left = zs_start_bar, top = zs_ZG, right = zs_end_bar, bottom = zs_ZD, xloc = xloc.bar_index, bgcolor = color.new(color.yellow, 80), border_color = color.new(color.orange, 0), border_width = 1)
+    else if zs_active and not na(zs_box_id)
+        // Extend the live box.
+        box.set_right(zs_box_id, zs_end_bar)
+        if i_zone_gate == "all"
+            box.set_top(zs_box_id, zs_live_ZG)
+            box.set_bottom(zs_box_id, zs_live_ZD)
+
+// ---- Stage 5: trend_type (走势类型, lesson 17) --------------------------------------------------
+// Reference: conformance/chanlun-v1/reference_backend/trend_type.py :: classify
+//
+//   if n_centers == 0: return "none"
+//   if n_centers == 1: return "consolidation"
+//   if all step up:    return "trend_up"
+//   if all step down:  return "trend_down"
+//   return "mixed"
+//
+// PineScript adaptation: we accumulate completed centers in a fixed-size buffer and recompute the
+// trend classification on each newly-closed center. Pine v5 cannot return a label for a
+// "completed walk" (the boundaries of a walk are themselves a higher-level construct -- see
+// the `chanlun_walk_decomposition_OPEN` residue). So this implementation classifies the
+// MOST-RECENT-K-centers window, which is an approximation. NAMED:
+// [chanlun_v1_pinescript_trend_type_walk_boundary_OPEN] -- proper walk boundaries unavailable.
+
+var float c_ZD_0 = na
+var float c_ZG_0 = na
+var float c_ZD_1 = na
+var float c_ZG_1 = na
+var float c_ZD_2 = na
+var float c_ZG_2 = na
+var float c_ZD_3 = na
+var float c_ZG_3 = na
+var int   n_centers_closed = 0
+
+if can_run and zs_just_closed
+    // Shift the closed-center ring (drop oldest).
+    c_ZD_0 := c_ZD_1
+    c_ZG_0 := c_ZG_1
+    c_ZD_1 := c_ZD_2
+    c_ZG_1 := c_ZG_2
+    c_ZD_2 := c_ZD_3
+    c_ZG_2 := c_ZG_3
+    c_ZD_3 := zs_ZD
+    c_ZG_3 := zs_ZG
+    n_centers_closed += 1
+
+string trend_label = "none"
+if n_centers_closed == 1
+    trend_label := "consolidation"
+else if n_centers_closed >= 2
+    // Step-direction of last consecutive pair (most recent two closed centers).
+    float prev_ZD = c_ZD_2
+    float prev_ZG = c_ZG_2
+    float cur_ZD = c_ZD_3
+    float cur_ZG = c_ZG_3
+    if cur_ZD > prev_ZG
+        trend_label := "trend_up"
+    else if cur_ZG < prev_ZD
+        trend_label := "trend_down"
+    else
+        trend_label := "mixed"
+
+// Display the running trend label in the top-right corner.
+var label trend_lbl = na
+if barstate.islast
+    if not na(trend_lbl)
+        label.delete(trend_lbl)
+    trend_lbl := label.new(x = bar_index, y = high, text = "trend: " + trend_label + "\ncenters: " + str.tostring(n_centers_closed) + "\nstrokes: " + str.tostring(n_strokes_emitted) + "\nfractals: " + str.tostring(n_fractals_seen), color = color.new(color.gray, 80), textcolor = color.white, style = label.style_label_left, size = size.normal)
+
+// ---- End of file --------------------------------------------------------------------------------

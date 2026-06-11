@@ -189,3 +189,22 @@ jobs:
           # SHA-equality is the law. A byte off = FAIL. The harness exits
           # non-zero on any divergence; the gate fails honestly, never silently.
           go run ./cmd/check
+
+  conformance-pinescript-lint:
+    name: PineScript v5 port (discipline lint, not a conformance gate)
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run discipline lint on impl/pinescript
+        run: |
+          set -euo pipefail
+          # This is NOT a conformance gate. PineScript v5 cannot read the chanlun-v1
+          # fixture corpus or compare SHA-256 in CI. The lint verifies:
+          #   (1) no look-ahead bias anti-patterns in chanlun_indicator.pine
+          #   (2) all 14 named residues are present in PINESCRIPT_PORT.md
+          #   (3) lineage + confirmation-lag commentary present
+          # The conformance gap itself stays NAMED-OPEN as
+          # [chanlun_v1_pinescript_conformance_OPEN] + [chanlun_v1_pinescript_ci_offline_harness_OPEN].
+          bash impl/pinescript/lint_check.sh
