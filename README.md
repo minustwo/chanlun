@@ -154,8 +154,22 @@ chanlun/
 │  ├─ generate_corpus.py               # deterministic fixture generator
 │  ├─ example_phase3_check.py          # template for Phase-3 implementors
 │  ├─ README.md, README.zh.md          # full spec docs (EN / ZH)
-└─ .github/workflows/chanlun-gate.yml  # hosted Ubuntu CI: lake build + groundings + conformance
+├─ impl/pinescript/                    # PineScript v5 backend (documented port)
+│  ├─ chanlun_indicator.pine           # the indicator (load into TradingView)
+│  ├─ PINESCRIPT_PORT.md               # per-stage mapping + 13 NAMED-OPEN residues
+│  └─ README.md, README.zh.md          # EN/ZH usage docs (documentation-port-only — see below)
+└─ .github/workflows/chanlun-gate.yml  # hosted Ubuntu CI: lake build + groundings + conformance + pinescript-lint
 ```
+
+### PineScript backend — documentation-port-only
+
+`impl/pinescript/` is a PineScript v5 port of the same algorithm. It plots
+分型/笔/中枢 on real TradingView K-lines. **It is NOT conformance-verified**: PineScript
+v5 cannot read the fixture corpus or compare SHA-256 in CI. The honesty discipline
+surfaces every gap as a NAMED `[chanlun_v1_pinescript_<stage>_OPEN]` residue (13 in
+total — see `impl/pinescript/PINESCRIPT_PORT.md`). The CI runs a DISCIPLINE check
+(`conformance-pinescript-lint`) that verifies absence of anti-patterns and presence of
+named residues — but it is NOT a SHA-equality gate.
 
 ---
 

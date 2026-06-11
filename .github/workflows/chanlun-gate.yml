@@ -133,3 +133,22 @@ jobs:
           # The example phase-3 backend MUST pass too - the template stays correct.
           python3 conformance/chanlun-v1/example_phase3_check.py reference
           python3 conformance/chanlun-v1/example_phase3_check.py alt
+
+  conformance-pinescript-lint:
+    name: PineScript v5 port (discipline lint, not a conformance gate)
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run discipline lint on impl/pinescript
+        run: |
+          set -euo pipefail
+          # This is NOT a conformance gate. PineScript v5 cannot read the chanlun-v1
+          # fixture corpus or compare SHA-256 in CI. The lint verifies:
+          #   (1) no look-ahead bias anti-patterns in chanlun_indicator.pine
+          #   (2) all 14 named residues are present in PINESCRIPT_PORT.md
+          #   (3) lineage + confirmation-lag commentary present
+          # The conformance gap itself stays NAMED-OPEN as
+          # [chanlun_v1_pinescript_conformance_OPEN] + [chanlun_v1_pinescript_ci_offline_harness_OPEN].
+          bash impl/pinescript/lint_check.sh
