@@ -2,7 +2,7 @@
 
 **缠论**（缠中说禅老师所传授的技术分析方法）的形式化几何分解系统：
 
-* **理论文档**（Klaus, 2026 年 4 月）：`chanlun_zh.pdf`。
+* **理论文档**：[`chanlun.zh.md`](chanlun.zh.md)（数学形式）。
 * **Lean 4 形式化**（`lean/Chanlun/`）：以下 11 个承重定理，全部 `sorry`-free，
   由 Hosted Ubuntu CI 的 Lean 内核验证。
 * **纯 Python 接地**（`grounding/`）：每个 Lean 定理都有独立参考实现作为
@@ -10,8 +10,9 @@
 
 English version: see [README.md](README.md).
 
-> **致谢声明**：缠论本身属于缠中说禅的传承。`chanlun_zh.pdf` 中的形式系统是
-> Klaus 的发表版形式化。本目录贡献的 Lean 形式化（`lean/Chanlun/`）在
+> **致谢声明**：缠论本身属于缠中说禅的传承。[`chanlun.zh.md`](chanlun.zh.md)
+> 中的数学形式是本仓库对 Lean 库的叙述形式；`lean/Chanlun/` 下的 Lean
+> 模块才是可信工件。本目录贡献的 Lean 形式化在
 > [`codex-proof-workbench`](https://github.com/minustwo/codex-proof-workbench)
 > 证明工程中完成，迁移至此公开发布。
 
@@ -22,7 +23,7 @@ English version: see [README.md](README.md).
 Lean 库 `Chanlun`（`lake build Chanlun`）sorry-free，覆盖了发表版四段流水线
 加上两个后续结构层（中枢 / 走势类型）。共 11 个模块：
 
-| 模块 | 定理（chanlun_zh.pdf 索引） |
+| 模块 | 定理（chanlun.zh.md 索引） |
 |---|---|
 | `Chanlun.Fractal` | Def-3 分型：`fractal_slot_equiv_def3`、`def3_trichotomy`（引理 1）、`def3_admissible_classifies`、`def3_residue_iff_neither` |
 | `Chanlun.Normalize` | 算法 N（包含处理，附录 A）：`normalize_no_adjacent_containment`（单次扫描 = 完全合并） |
@@ -114,7 +115,8 @@ falsifiability 检查。无外部 Python 依赖；纯标准库 + `random`。
 
 ```
 chanlun/
-├─ chanlun_zh.pdf                     # 理论（Klaus, 2026 年 4 月，中文）
+├─ chanlun.md                         # 数学形式（英文）
+├─ chanlun.zh.md                      # 数学形式（中文）
 ├─ README.md                          # 英文版
 ├─ README.zh.md                       # 本文件（中文）
 ├─ lakefile.lean, lean-toolchain      # Lean 4 构建配置（Mathlib v4.14.0）
@@ -165,6 +167,5 @@ Lean job 在缓存命中时约 5 分钟，冷缓存约 25 分钟。Grounding 全
 
 ## 许可
 
-理论 PDF（`chanlun_zh.pdf`）按 Klaus 的作者声明进入公共领域。Lean 形式
-化、接地脚本和 CI 工作流按 MIT 许可发布（见 [`LICENSE`](LICENSE)，如果
-仓库中存在）。
+数学形式文档（`chanlun.md`、`chanlun.zh.md`）、Lean 形式化、接地脚本和
+CI 工作流按 MIT 许可发布（见 [`LICENSE`](LICENSE)，如果仓库中存在）。

@@ -3,7 +3,7 @@
 A formalized geometric decomposition system for **Chanlun** (the theory
 taught by Master Chanzhongshuochan) technical analysis, with:
 
-* **Theory document** (Klaus, April 2026): `chanlun.pdf`.
+* **Theory document**: [`chanlun.md`](chanlun.md) (mathematical formalism).
 * **Lean 4 formalization** (`lean/Chanlun/`): the 11 load-bearing
   theorems below, all `sorry`-free, kernel-verified on hosted Ubuntu CI.
 * **Pure-Python groundings** (`grounding/`): independent reference
@@ -12,8 +12,10 @@ taught by Master Chanzhongshuochan) technical analysis, with:
 Chinese version: see [README.zh.md](README.zh.md).
 
 > **Attribution.** The Chanlun theory itself belongs to the
-> Chanzhongshuochan tradition. The formal system in `chanlun.pdf` is
-> Klaus's published formalization. The Lean formalization in
+> Chanzhongshuochan tradition. The mathematical formalism in
+> [`chanlun.md`](chanlun.md) is this repository's narrative form of the
+> Lean library; the Lean modules in `lean/Chanlun/` are the trusted
+> artifact. The Lean formalization in
 > `lean/Chanlun/` (this directory's contribution) was developed inside
 > the [`codex-proof-workbench`](https://github.com/minustwo/codex-proof-workbench)
 > proof program and migrated here for public availability.
@@ -26,7 +28,7 @@ The Lean library `Chanlun` (`lake build Chanlun`) is sorry-free and
 covers the four-stage published pipeline plus two follow-up structural
 layers (Zhongshu / WalkType). Eleven modules:
 
-| Module | Theorems (chanlun.pdf reference) |
+| Module | Theorems (chanlun.md reference) |
 |---|---|
 | `Chanlun.Fractal` | Def-3 (Fenxing): `fractal_slot_equiv_def3`, `def3_trichotomy` (Lemma 1), `def3_admissible_classifies`, `def3_residue_iff_neither` |
 | `Chanlun.Normalize` | Algorithm N (containment handling, Appendix A): `normalize_no_adjacent_containment` (single-pass = full-collapse) |
@@ -126,7 +128,8 @@ external Python deps; pure stdlib + `random`.
 
 ```
 chanlun/
-├─ chanlun.pdf                        # the theory (Klaus, April 2026, English)
+├─ chanlun.md                         # mathematical formalism (English)
+├─ chanlun.zh.md                      # mathematical formalism (Chinese)
 ├─ README.md                          # this file (English)
 ├─ README.zh.md                       # Chinese version
 ├─ lakefile.lean, lean-toolchain      # Lean 4 build config (Mathlib v4.14.0)
@@ -178,7 +181,6 @@ cold. Groundings finish in ~30 seconds total.
 
 ## License
 
-The theory PDF (`chanlun.pdf`) is released into the public domain per
-Klaus's authorial statement. The Lean formalization, groundings, and
-CI workflow are MIT-licensed (see [`LICENSE`](LICENSE) if present in
-the repo).
+The mathematical formalism documents (`chanlun.md`, `chanlun.zh.md`),
+the Lean formalization, groundings, and CI workflow are MIT-licensed
+(see [`LICENSE`](LICENSE) if present in the repo).
