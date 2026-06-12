@@ -60,8 +60,8 @@ open Chanlun.Zhongshu
     Under this condition, the `all_` tightening at each step is a no-op,
     so the `all_` and `first3` recursions stay in lockstep. -/
 def ContainsZoneFrom (els : List Element) (zd zg : Int) (j : Nat) : Prop :=
-  ∀ k, j ≤ k → k < els.length →
-    (els.get ⟨k, by omega⟩).lo ≤ zd ∧ (els.get ⟨k, by omega⟩).hi ≥ zg
+  ∀ (k : Nat) (h_lt : k < els.length), j ≤ k →
+    (els.get ⟨k, h_lt⟩).lo ≤ zd ∧ (els.get ⟨k, h_lt⟩).hi ≥ zg
 
 /-- **THEOREM (ZONE-GATE COLLAPSE, X.5.10, CLASS A)**.
 
@@ -101,33 +101,32 @@ theorem zhongshu_zone_gate_collapses_when_no_tightening
     · -- Terminal case.
       simp [h_done]
     · have h_lt : j < els.length := Nat.lt_of_not_ge h_done
+      -- Eliminate the outer `dif h_done` on both sides using `dif_neg`.
+      rw [dif_neg h_done, dif_neg h_done]
+      -- Now the LHS / RHS have the form `if h_overlap : ... then ... else ...`.
       by_cases h_overlap : (els.get ⟨j, h_lt⟩).lo ≤ zg ∧ (els.get ⟨j, h_lt⟩).hi ≥ zd
-      · -- Overlap admitted on both sides; gate-specific branches diverge.
+      · -- Overlap admitted on both sides.
+        rw [dif_pos h_overlap, dif_pos h_overlap]
+        -- Force iota-reduction of the `match ZoneGate.{first3,all_} with ...`.
+        dsimp only
         have h_contains_j :
             (els.get ⟨j, h_lt⟩).lo ≤ zd ∧ (els.get ⟨j, h_lt⟩).hi ≥ zg :=
-          h_contains j (Nat.le_refl _) h_lt
+          h_contains j h_lt (Nat.le_refl _)
         have h_max : max zd (els.get ⟨j, h_lt⟩).lo = zd :=
           max_eq_left h_contains_j.1
         have h_min : min zg (els.get ⟨j, h_lt⟩).hi = zg :=
           min_eq_left h_contains_j.2
         have h_dec : els.length - (j + 1) < k := by omega
         have h_contains_next : ContainsZoneFrom els zd zg (j + 1) := by
-          intro k' h_ge h_lt'
-          exact h_contains k' (by omega) h_lt'
+          intro k' h_lt' h_ge
+          exact h_contains k' h_lt' (by omega)
         have ih_eq :
             extendEnd els ZoneGate.first3 zd zg (j + 1) =
               extendEnd els ZoneGate.all_ zd zg (j + 1) :=
           ih (els.length - (j + 1)) h_dec zd zg (j + 1) rfl h_contains_next
-        -- Reduce the dif on both sides to the recursive call.
-        simp only [h_done, dif_neg, not_false_iff, h_overlap, dif_pos]
-        -- Goal is now:
-        --   extendEnd els ZoneGate.first3 zd zg (j+1)
-        --     = extendEnd els ZoneGate.all_
-        --         (max zd (els.get ⟨j, h_lt⟩).lo)
-        --         (min zg (els.get ⟨j, h_lt⟩).hi) (j+1)
         rw [h_max, h_min, ih_eq]
-      · -- No overlap on either side.
-        simp [h_done, h_overlap]
+      · -- No overlap on either side; both reduce to (j - 1).
+        rw [dif_neg h_overlap, dif_neg h_overlap]
 
 /-! ## §2 — Shoulder ≤ vs < Class-A collapse (X.5.11).
 
@@ -188,12 +187,12 @@ theorem zhongshu_shoulder_collapses_off_boundary
     agree pointwise on the sequence. -/
 theorem zhongshu_shoulder_collapses_off_boundary_list
     (els : List Element) (zd zg : Int) (j : Nat)
-    (h_off : ∀ k, j ≤ k → k < els.length →
-      OffShoulder zd zg (els.get ⟨k, by omega⟩)) :
-    ∀ k, j ≤ k → ∀ (h_lt : k < els.length),
-      overlapsLE zd zg (els.get ⟨k, h_lt⟩) ↔
-      overlapsLT zd zg (els.get ⟨k, h_lt⟩) := by
-  intro k h_ge h_lt
-  exact zhongshu_shoulder_collapses_off_boundary zd zg _ (h_off k h_ge h_lt)
+    (h_off : ∀ (k : Nat) (h_lt : k < els.length), j ≤ k →
+      OffShoulder zd zg (els.get ⟨k, h_lt⟩)) :
+    ∀ (k : Nat) (h_lt : k < els.length), j ≤ k →
+      (overlapsLE zd zg (els.get ⟨k, h_lt⟩) ↔
+       overlapsLT zd zg (els.get ⟨k, h_lt⟩)) := by
+  intro k h_lt h_ge
+  exact zhongshu_shoulder_collapses_off_boundary zd zg _ (h_off k h_lt h_ge)
 
 end Chanlun.CollapseTheorems
