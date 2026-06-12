@@ -1,418 +1,1108 @@
-# 缠论 —— 数学形式化
+# 缠论 —— 一份数学教科书
 
-> 缠论的数学形态。下列每条定义和定理都在 `lean/Chanlun/` 中证明，无任何
-> `sorry`。本文档是给人看的叙述形式；可信的承诺在 Lean 模块里。
+> 以数学家与学生的视角阅读缠论。下列每条**定义**与**定理**均按三段式
+> 给出：自然语言陈述、严格形式、`lean/Chanlun/` 下可验证的 Lean 对应。
+> 凡原文确有歧义、或 Lean 证明尚未完成之处，均按可外部审计的理由明示
+> 其开放状态。
 >
 > English version: [chanlun.md](chanlun.md).
 
 ---
 
-## §0 记号
+## §0 记号与范围
 
-所有算术均在 `ℤ`（整数）上进行，`ℕ` 用作索引。形式系统**无浮点依赖**；
-价格按整数标度输入（例如 CME 小型期货 0.25 跳点 ⇒ 价格 × 4）。这一整数
-纪律让每条定理可判定、内核证明构造性。
+本文将缠论视为一维离散时间价格序列上的数学理论。价格以整数到达
+（如 0.25 跳点的合约按 4 放大，使最小单位为 1）；时间以 ℕ 索引。在
+ℤ 上工作避免了浮点不确定性，并使每条定理可判定。
 
-* `Bar := { h : ℤ, l : ℤ }` —— K 线：高、低。
-* `Interval := { l : ℤ, h : ℤ }` —— 同样的数据，字段顺序不同（包含处理
-  算法使用；通过 `toBar : Interval → Bar` 桥接）。
-* `Fractal := { idx : ℕ, kind : FractalKind, h : ℤ, l : ℤ }`，
-  其中 `FractalKind ∈ { top, bottom, neither }`。
-* `Stroke := { from_idx : ℕ, to_idx : ℕ, dir : StrokeDir }`，
-  其中 `StrokeDir ∈ { up, down }`。
-* `Center := { start : ℕ, end_ : ℕ, ZD : ℤ, ZG : ℤ }`（中枢）。
+研究对象：
 
----
+- **K 线**（bar）是一对 (h, l) ∈ ℤ × ℤ 且 h ≥ l，记录一个周期的最高
+  与最低价。类型：`Bar := { h : ℤ, l : ℤ }`。
+- **区间**（interval）是同样的数据，字段顺序互换，用于包含归一算法：
+  `Interval := { l : ℤ, h : ℤ }`，通过 `toBar : Interval → Bar` 桥接。
+- **分型**（fractal）是带索引和种类的 K 线，种类取自
+  {top, bottom, neither}：
+  `Fractal := { idx : ℕ, kind : FractalKind, h : ℤ, l : ℤ }`。
+- **笔**（stroke）`{ from_idx, to_idx : ℕ, dir : {up, down} }`。
+- **中枢**（center）`{ start, end_ : ℕ, ZD, ZG : ℤ }`，索引区间与重叠
+  区间 [ZD, ZG]。
+- **走势**（walk）是中枢列表的一个连续子区间附带走势类型标签。
 
-## §1 定义 3 —— 分型
-
-### 顶分型
-
-3 K 线窗口 `(a, b, c)` 是**顶分型** iff
-
-```
-b.h > a.h  ∧  b.h > c.h  ∧  b.l > a.l  ∧  b.l > c.l.
-```
-
-### 底分型
-
-`(a, b, c)` 是**底分型** iff
-
-```
-b.h < a.h  ∧  b.h < c.h  ∧  b.l < a.l  ∧  b.l < c.l.
-```
-
-### 分类
-
-```
-classifyDef3(a, b, c) := if isTopFractal then top
-                        else if isBottomFractal then bottom
-                        else neither
-```
-
-### 定理 1.1（`def3_trichotomy`）
-
-对每个 3 K 线窗口，`classifyDef3` 返回 `{top, bottom, neither}` 中恰好
-一个，且 top/bottom 互斥（不存在同时满足的窗口）。
-
-### 定理 1.2（`fractal_slot_equiv_def3`）
-
-算子端整数编码分类器（`0 = top`、`1 = bottom`、`2 = neither`）等于
-`kindToInt ∘ classifyDef3`，对每个窗口成立。
-
-Lean 模块：[`Chanlun.Fractal`](lean/Chanlun/Fractal.lean)。
+缠论描述的，是 K 线如何组合成分型、分型如何组合成笔、笔如何组合成
+线段、线段如何组合成中枢、中枢如何组合成走势，再经递归将整个层级体系
+提升到更高层。本文沿此次第展开。
 
 ---
 
-## §2 算法 N —— 包含处理（附录 A）
+## §1 包含处理 —— 算法 N
 
-### 包含
+### 定义 1.1（包含关系）
 
-相邻区间 `(a, b)` 处于**包含关系** iff
-`(b.l ≤ a.l ∧ a.h ≤ b.h) ∨ (a.l ≤ b.l ∧ b.h ≤ a.h)`。
+**叙述。** 相邻 K 线处于*包含关系*指其中之一在高、低两端均被另一者
+完全包住 —— 较小者不携带新信息。包含关系必须先被处理掉，序列的分型
+形态才可读。
 
-### `noAdjContainment`
+**形式。** 相邻区间 (a, b) 满足包含关系，当且仅当
 
-区间列表 `noAdjContainment` iff 相邻对均不在包含关系中。
+    (b.l ≤ a.l ∧ a.h ≤ b.h) ∨ (a.l ≤ b.l ∧ b.h ≤ a.h).
 
-### 单次扫描 `normalize`
+列表 xs : List Interval 满足 `noAdjContainment` 当且仅当任何相邻对都
+不在包含关系中。
 
-用方向感知的 `pushOne` 步骤走列表：
+**Lean 实现。** `Chanlun.Normalize.contained`、
+`Chanlun.Normalize.noAdjContainment`，位于
+[`lean/Chanlun/Normalize.lean`](lean/Chanlun/Normalize.lean)。
 
-* 同方向 + 新 K 线被栈顶包含：用 `[max, max]`（上）/ `[min, min]`（下）
-  合并；
-* 否则 push。
+### 定义 1.2（单次扫描 `normalize`）
 
-### 定理 2.1（`normalize_no_adjacent_containment`）
+**叙述。** 自左向右扫描 K 线列表，维护一个带方向标志的栈。当下一根
+K 线被栈顶包含时，上升趋势取双方高、低的 max；下降趋势取 min；否则
+入栈并更新方向。
 
-对每个输入 `xs`，`noAdjContainment (normalize xs).1`。
+**形式。**
 
-等价地：单次从左到右扫描 + 方向合并已经生成了无包含商 —— 不需要第二
-次扫描。
+    pushOne : (stack, up) → bar →
+      若 up ∧ contained(stack.top, bar) 则 ([max h, max l] :: stack.tail, up)
+      若 ¬up ∧ contained(stack.top, bar) 则 ([min h, min l] :: stack.tail, up)
+      否则 (bar :: stack, h(bar) > h(stack.top)).
 
-Lean 模块：[`Chanlun.Normalize`](lean/Chanlun/Normalize.lean)。
+    normalize : List Interval → List Interval × Bool := foldl pushOne ([], true).
 
----
+**Lean 实现。** `Chanlun.Normalize.pushOne`、
+`Chanlun.Normalize.normalize`。
 
-## §3 流水线组合（N → Def-3）
+### 定理 1.3 —— `normalize_no_adjacent_containment`
 
-### `isInclusionNormalized`
+**叙述。** 单次自左向右扫描即可产生无包含的输出。无需第二次扫描 ——
+方向感知的合并规则足够强。
 
-3 K 线窗口 `(a, b, c)` 称为*包含归一* iff 相邻间均不存在彼此包含关系。
+**形式。** 对每个 xs : List Interval，
 
-### 定理 3.1（`pipeline_inclusion_normalized`）
+    noAdjContainment (normalize xs).1.
 
-```
-∀ xs, ∀ a b c rest,
-  (normalize xs).1 = a :: b :: c :: rest →
-  isInclusionNormalized (toBar b) (toBar a) (toBar c).
-```
-
-### 定理 3.2（`pipeline_fractal_classification_well_defined`）
-
-经算法 N 后，结果栈中每个内部 3 K 线窗口均确定地分类为
-`{top, bottom, neither}` 之一。
-
-Lean 模块：[`Chanlun.Pipeline`](lean/Chanlun/Pipeline.lean)。
-
----
-
-## §4 定义 4 —— 笔
-
-### 构造（最左贪心）
-
-用一个交替锚点走分型列表：
-
-* 尚无锚点 → 把锚点设为当前分型 `f`；
-* 同向分型 → 保留极值代表（`pickRep`）；
-* 反向分型，间隔 `≥ δmin` → **发射**笔 `(锚点 → f)`，重锚到 `f`；
-* 反向分型，间隔 `< δmin` → 丢弃（见 [`README.zh.md`](README.zh.md)
-  的「已知限制」）。
-
-### 定理 4.1（`stroke_emits_separated`，性质 B）
-
-每条发射的笔满足 `δmin ≤ to_idx − from_idx`。
-
-### 定理 4.2（`stroke_emits_alternate`，性质 A）
-
-折叠内输出中相邻笔的方向相反。
-
-### 定理 4.3（`strokes_separated`）
-
-通过 `List.mem_reverse`，用户面向的反转输出笔列表继承间隔性质。
-
-Lean 模块：[`Chanlun.Stroke`](lean/Chanlun/Stroke.lean)。
+**Lean 证明。**
+[`Chanlun.Normalize.normalize_no_adjacent_containment`](lean/Chanlun/Normalize.lean)。
+证明经 `pushOne_preserves`：携带 `noAdjContainment` 与 `goodStack` 方向
+一致性的归纳不变量。
 
 ---
 
-## §5 引理 2（强形式） —— 笔唯一性
+## §2 分型 —— 定义 3
 
-### 结构有效性谓词 `IsValidBi`
+### 定义 2.1（顶分型 / 底分型）
 
-参数为 `(Option Fractal × List Fractal × ℤ × List Stroke)` 的递归
-谓词，与 `step` 的 case 分析一一对应。捕获：*from 端点是同向 run 的
-极值代表；to 端点是锚点之后最左的反向 admissible 分型*。
+**叙述。** 给定三根连续的归一 K 线，若中间一根在高、低两端均严格大于
+两邻，则为**顶**；若均严格小于两邻，则为**底**；否则为 **neither**。顶
+与底标记序列的候选拐点。
 
-### 定理 5.1（`strokes_unique`）
+**形式。** 对 K 线 a, b, c：
 
-```
-∀ frs δmin alt, IsValidBi frs δmin alt → alt = strokes frs δmin.
-```
+    isTopFractal a b c    := b.h > a.h ∧ b.h > c.h ∧ b.l > a.l ∧ b.l > c.l
+    isBottomFractal a b c := b.h < a.h ∧ b.h < c.h ∧ b.l < a.l ∧ b.l < c.l
 
-任何结构上有效的笔分解都等于流式规范输出。证明走广义化的
-fold-vs-alt 不变量 `fold_consumes_alt`，沿 `frs` 归纳。
+    classifyDef3 a b c := if isTopFractal a b c    then top
+                          else if isBottomFractal a b c then bottom
+                          else neither.
 
-Lean 模块：[`Chanlun.StrokeUniqueness`](lean/Chanlun/StrokeUniqueness.lean)。
+**Lean 实现。** `Chanlun.Fractal.isTopFractal`、
+`Chanlun.Fractal.isBottomFractal`、`Chanlun.Fractal.classifyDef3`，
+位于 [`lean/Chanlun/Fractal.lean`](lean/Chanlun/Fractal.lean)。
 
----
+### 定理 2.2 —— `def3_trichotomy`
 
-## §6 定义 5–16 + 定理 1 —— 线段
+**叙述。** 每一个 3 K 线窗口被分类为 {top, bottom, neither} 中的恰好
+一种：分类是 total，且 top/bottom 互斥。
 
-### BoundedFix 递归
+**形式。** 对所有 K 线 a, b, c，
 
-`segments : (find_term : ℕ → Option ℕ) → (find_term_ge : property) → ℕ → ℕ → List Segment`。
+    classifyDef3 a b c ∈ {top, bottom, neither}
+    ∧ ¬ (isTopFractal a b c ∧ isBottomFractal a b c).
 
-参数化于一个 *最左 ≥ a* 的预言 `find_term` 及其契约
-`find_term_ge : ∀ a j, find_term a = some j → a ≤ j`。完整的特征序列 Φ
-+ 重叠 admissibility 内部细节在此未重新推导（见 `README.zh.md` 的
-「已知限制」）；Lean 递归只需契约 `find_term_ge`。
+**Lean 证明。** `Chanlun.Fractal.def3_trichotomy`。按严格比较的可判定
+性做案例分析。
 
-### 定理 6.1（`segments_partition`，性质 P）
+### 定理 2.3 —— `fractal_slot_equiv_def3`
 
-发射的线段是 `[a, n)` 的连续分划。
+**叙述。** 算子端的整数编码分类器（0 = top、1 = bottom、2 = neither）
+与叙述端的分类器在每个输入上一致。两种"找分型种类"的写法不可能冲突。
 
-### 定理 6.2（`segments_terminate`，性质 T）
+**形式。** 令 `kindToInt : FractalKind → ℤ` 把 top ↦ 0、bottom ↦ 1、
+neither ↦ 2，`fractalSlotPredicate` 为算子端的整数分类器：
 
-最多发射 `n - a + 1` 个线段（well-founded、有限列表）。
+    ∀ a b c : Bar, fractalSlotPredicate a b c = kindToInt (classifyDef3 a b c).
 
-### 定理 6.3（`segment_advance_strictly_increasing`）
+**Lean 证明。** `Chanlun.Fractal.fractal_slot_equiv_def3`。两侧展开后
+作 9 路案例分析。
 
-中心终止引理：
-`find_term a = some j → a ≤ j → n - (j + 1) < n - a`。
-`n − a` 测度严格下降 ⇒ BoundedFix 是良基的。
+### 定理 2.4 —— `pipeline_inclusion_normalized`（与 §1 的组合）
 
-Lean 模块：[`Chanlun.Segment`](lean/Chanlun/Segment.lean)。
+**叙述。** 算法 N 运行之后，输出中每个内部 3 K 线窗口都是*包含归一*
+的：相邻两侧不存在彼此包含关系。所以定义 2.1 在算法 N 之后无歧义
+适用。
 
----
+**形式。** 对所有 xs : List Interval 与所有形如
 
-## §7 中枢（17/20 课）
+    (normalize xs).1 = a :: b :: c :: rest
 
-### 构造
+的后缀分解，有
+`isInclusionNormalized (toBar b) (toBar a) (toBar c)`。
 
-对 ℕ 索引的元素序列 `[lo, hi]`：
+**Lean 证明。**
+[`Chanlun.Pipeline.pipeline_inclusion_normalized`](lean/Chanlun/Pipeline.lean)。
+桥接引理 `not_contained_iff_bar` 加上从
+`normalize_no_adjacent_containment` 中提取头部对。
 
-* 从 `i = 0` 开始扫描；
-* 若 `els.length ≤ i + 2` → 停止;
-* 令 `ZD := max(els[i].lo, els[i+1].lo, els[i+2].lo)` 和
-  `ZG := min(els[i].hi, els[i+1].hi, els[i+2].hi)`；
-* 若 `ZD ≤ ZG`（真重叠） → 发射中枢 `⟨i, extendEnd(i+3), ZD, ZG⟩`，
-  从 `extendEnd + 1` 续；
-* 否则 → 滑动 `i := i + 1`。
+### 定理 2.5 —— `pipeline_fractal_classification_well_defined`
 
-扩展函数 `extendEnd els g zd zg j` 在 `els[j]` 重叠在线 zone 时向前
-走 `j`。参数 `g : ZoneGate ∈ {first3, all_}` 控制再收紧：
+**叙述。** 结合定理 1.3、2.2、2.4：在算法 N 之后的任何输出上，每个
+内部 3 K 线窗口的种类都是确定的。
 
-* `first3` 保持 `(zd, zg)` 不变；
-* `all_` 收紧为 `(max zd els[j].lo, min zg els[j].hi)`。
-
-缠论原文对此选择未明确，我们提供两种读法并证明两者均有效（见
-`README.zh.md` 的「已知限制」）。
-
-### 定理 7.1（`zhongshu_valid`）
-
-对 `zhongshu` 产生的每个中枢 `c`，`c.ZD ≤ c.ZG`。由构造的成型 gate
-直接保证。
-
-### 定理 7.2（`zhongshu_disjoint`）
-
-相邻中枢 `c₁ :: c₂ :: rest` 满足 `c₁.end_ < c₂.start`。
-
-### 定理 7.3（`extendEnd_ge`）
-
-`j - 1 ≤ extendEnd els g zd zg j`。中心终止引理，赋予 `zhongshu` 在
-`els.length − i` 测度上的良基终止。
-
-Lean 模块：[`Chanlun.Zhongshu`](lean/Chanlun/Zhongshu.lean)。
+**Lean 证明。**
+`Chanlun.Pipeline.pipeline_fractal_classification_well_defined`。
 
 ---
 
-## §8 走势类型（17 课）
+## §3 笔 —— 定义 4
 
-### 分类
+### 定义 3.1（最左贪心的笔构造）
 
-```
-classify : List Center → WalkType
-classify []           = none_
-classify [_]          = consolidation
-classify (c₁::c₂::rs) = if allUp then trend_up
-                      else if allDown then trend_down
-                      else mixed
-```
+**叙述。** 走分型列表，维护至多一个*锚点*。每个同向到达的分型把锚点
+更新到更"极值"的代表；反向到达且与锚点的间隔 ≥ δmin 的分型，发射一
+笔（锚点 → 当前）并重锚；间隔 < δmin 的反向分型被丢弃。
 
-`allUp` / `allDown` 是相邻 `stepDir` 函数（`up` iff 下个中枢
-`ZD > 前一个 ZG`；`down` iff 下个 `ZG < 前一个 ZD`；否则 `neither`）的
-可判定谓词。
+**形式。** 状态 `s = { anchor : Option Fractal, out : List Stroke }`。
 
-### 定理 8.1（`classify_total`）
+    step δmin s f :=
+      match s.anchor with
+      | none    ⇒ { anchor := some f, out := s.out }
+      | some a  ⇒
+        if a.kind = f.kind then { anchor := some (pickRep a f), out := s.out }
+        else if f.idx - a.idx ≥ δmin then
+          { anchor := some f, out := { from_idx := a.idx, to_idx := f.idx, dir := emitDir f } :: s.out }
+        else s  -- 丢弃
 
-`classify cs` 对每个 `cs` 都是
-`{none_, consolidation, trend_up, trend_down, mixed}` 之一。Total +
-绝不静默。
+    strokes frs δmin := reverse (foldl (step δmin) StrokeState.empty frs).out.
 
-### 定理 8.2（`classify_trend_monotone`）
+**Lean 实现。** `Chanlun.Stroke.step`、`Chanlun.Stroke.strokes`，位于
+[`lean/Chanlun/Stroke.lean`](lean/Chanlun/Stroke.lean)。
 
-```
-(classify cs = trend_up   → allStepsAreUp cs) ∧
-(classify cs = trend_down → allStepsAreDown cs).
-```
+### 定理 3.2 —— `stroke_emits_separated`（性质 B：间隔性）
 
-「依次同向」限定词被真正执行。
+**叙述。** 每条发射的笔至少跨过 δmin 个单位。最小间隔门是真正起
+作用的。
 
-Lean 模块：[`Chanlun.TrendType`](lean/Chanlun/TrendType.lean)。
+**形式。**
 
----
+    ∀ frs δmin, ∀ s ∈ strokes frs δmin, δmin ≤ s.to_idx - s.from_idx.
 
-## §9 笔可达域确定性
+**Lean 证明。** `Chanlun.Stroke.stroke_emits_separated`，经
+`List.mem_reverse` 提升到用户面输出 `Chanlun.Stroke.strokes_separated`。
 
-### `noAdjBarContainment`
+### 定理 3.3 —— `stroke_emits_alternate`（性质 A：交替性）
 
-K 线层面的 `noAdjContainment` 提升。在包含处理后的可达域上成立。
+**叙述。** 输出中相邻两笔方向相反。走势真正在锯齿状摆动。
 
-### 定理 9.1（`fractals_alternate_on_containment_free`）
+**形式。**
 
-```
-∀ bars, noAdjBarContainment bars → AlternateKinds (fractalKinds bars).
-```
+    ∀ frs δmin, allAlternate ((foldl (step δmin) StrokeState.empty frs).out).
 
-在可达（无包含）域上，分型种类严格交替 —— 所以三种笔端点读法
-（leftmost / extremal / keep-latter）在每个可达输入上**完全重合**。
-对任意输入的 gate 相对性发现（44–55% 不一致率）是输入域编码的伪影；
-**在可达域上缠论的唯一性主张是真实的**。
+**Lean 证明。** `Chanlun.Stroke.stroke_emits_alternate`。`reverse` 之后
+的用户面提升是
+`Chanlun.BiEndpointSubResidues.strokes_alternate`，经 `allAlternate_reverse`。
 
+### 定理 3.4 —— `strokes_unique`（引理 2 的强形式）
+
+**叙述。** 任何在结构上合法的笔序列 —— from 端点是同向 run 的极值代表，
+to 端点是最左可接纳的反向分型 —— 必须等于规范的流式输出。贪心构造没有
+做任意选择：它是**唯一**的分解。
+
+**形式。** 令 `IsValidBi` 为捕获结构约束的递归谓词，
+
+    ∀ frs δmin alt, IsValidBi frs δmin alt → alt = strokes frs δmin.
+
+**Lean 证明。** `Chanlun.StrokeUniqueness.strokes_unique`，位于
+[`lean/Chanlun/StrokeUniqueness.lean`](lean/Chanlun/StrokeUniqueness.lean)。
+证明走广义化的 fold-vs-alt 不变量 `fold_consumes_alt`，沿 `frs` 归纳。
+非空性（对每个输入都存在合法 `alt`）由
+`Chanlun.StrokesIsValidBiCorollary.strokes_isValidBi` 给出；双向版本
+`IsValidBi ↔ alt = strokes ...` 是
+`Chanlun.StrokesIsValidBiCorollary.strokes_iff_IsValidBi`。
+
+### 定理 3.5 —— 端点子结果
+
+**叙述。** 三条小而承重的等价命题支撑定理 3.4：(a) 在可达输入上，
+"最左可接纳的反向分型"读法等于"极值字面"读法；(b) 丢弃分支不改变 fold
+状态；(c) 反转输出保持交替性。
+
+**形式。**
+
+    (a) to_endpoint_leftmost_eq_extremal_on_reachable
+        : 在严格交替的可达列表上两种读法一致。
+    (b) dropBranch_step_no_op  : step δmin s f = s（在丢弃分支上）。
+    (c) allAlternate_reverse   : allAlternate l → allAlternate l.reverse.
+
+**Lean 证明。** 位于
+[`lean/Chanlun/BiEndpointSubResidues.lean`](lean/Chanlun/BiEndpointSubResidues.lean)：
+`to_endpoint_leftmost_eq_extremal_on_reachable`、
+`dropBranch_step_no_op`、`dropBranch_preserves_IsValidBi`、
+`allAlternate_reverse`，以及提升 `strokes_alternate`。
+
+### 定理 3.6 —— `fractals_alternate_on_containment_free`（可达域确定性）
+
+**叙述。** 在可达域上 —— 即无相邻包含的 K 线列表，也恰恰是算法 N 的
+输出 —— 分型种类严格交替。因此三种先验不同的笔端点读法（leftmost /
+extremal / keep-latter）在每个可达输入上**完全重合**。在任意输入上
+观察到的不一致是输入域编码的伪影，而非缠论本身的歧义。
+
+**形式。**
+
+    ∀ bars : List Bar, noAdjBarContainment bars → AlternateKinds (fractalKinds bars).
+
+**Lean 证明。**
+[`Chanlun.BiReachableDeterminism.fractals_alternate_on_containment_free`](lean/Chanlun/BiReachableDeterminism.lean)。
 证明链：
 
-1. `dichotomy_of_no_containment` —— 任何不包含的对在 `h` 和 `l` 都严格
-   单向（`goesUp` 或 `goesDown`）。
-2. `neither_preserves_direction` —— 无包含输入上 `.neither` 窗口强制
-   `dir(b, c) = dir(a, b)`。
-3. `fractalKinds_first_kind_after_{up,down}` —— 先导方向强制首次发射
+1. `dichotomy_of_no_containment`：任意不包含对在 h 和 l 都严格单向。
+2. `neither_preserves_direction`：无包含输入上 `.neither` 窗口强制
+   方向延续。
+3. `fractalKinds_first_kind_after_{up,down}`：先导方向强制首次发射
    种类。
-4. 主定理归纳。
+4. 主定理对 K 线列表归纳。
 
-Lean 模块：
-[`Chanlun.BiReachableDeterminism`](lean/Chanlun/BiReachableDeterminism.lean)。
-
----
-
-## §10 级别递归（24 课） —— 「走势必完美」
-
-### `centerSize`
-
-```
-centerSize c := c.end_ + 1 − c.start.
-```
-
-### 定理 10.1（`centerSize_ge_3`）
-
-`zhongshu` 发射的每个中枢满足 `centerSize c ≥ 3`。`extendEnd_ge`
-（定理 7.3）的直接推论：扩展从 `i + 3` 开始，不会早于 `i + 2`
-返回，所以 `end_ ≥ start + 2` 且 `size ≥ 3`。
-
-### 定理 10.2（`lift_strict_drop`）
-
-```
-∀ els g, zhongshu els g 0 ≠ [] →
-  (zhongshu els g 0).length + 2 ≤ ((zhongshu els g 0).map centerSize).sum.
-```
-
-若任何中枢形成，下一级元素数至少下降 2。配合 `ℕ` 在 `els.length` 上的
-良基性，级别递归在 ≤ `n / 2` 级别内终止 —— **「走势必完美」（24 课）的
-形式内容**。
-
-Lean 模块：
-[`Chanlun.LevelRecursion`](lean/Chanlun/LevelRecursion.lean)。
+将 §1 的归一化与此交替定理串接的用户面推论是
+`Chanlun.BiReachableDeterminismBridge.normalize_then_fractals_alternate`。
 
 ---
 
-## §11 走势分解（17 课）
+## §4 线段 —— 定义 5–16 + 定理 1
 
-### `decompose : List Center → List Walk`
+### 定义 4.1（BoundedFix 递归）
 
-走中枢序列，在每一步发射**极大** Walk：
+**叙述。** 线段把笔索引区间 [a, n) 划分为共享特征方向的极大连续子区间。
+递归发射器以*推进预言* `find_term` 为参数，返回下一个最左 ≥ a 的终止
+索引。
 
-* 单个中枢剩下 → `consolidation`；
-* 极大向上 stepping 的 run → `trend_up`；
-* 极大向下 stepping 的 run → `trend_down`。
+**形式。** 给定 `find_term : ℕ → Option ℕ` 与契约
+`find_term_ge : ∀ a j, find_term a = some j → a ≤ j`，
 
-边界规则：当加上下一个中枢会改变 WalkType（或打破同向不变量）的那一刻，
-新 Walk 启动。
+    segments find_term find_term_ge a n :=
+      if h : a ≥ n then []
+      else match h' : find_term a with
+        | none   ⇒ [⟨a, n - 1⟩]
+        | some j ⇒ ⟨a, j⟩ :: segments find_term find_term_ge (j + 1) n.
 
-### 定理 11.1（`decompose_partition`）
+终止由严格下降 `n - (j + 1) < n - a` 保证。
 
-```
-Σ (walks.map walkSize) = centers.length.
-```
+**Lean 实现。** `Chanlun.Segment.segments`，位于
+[`lean/Chanlun/Segment.lean`](lean/Chanlun/Segment.lean)。完整的特征
+序列 Φ + 重叠 admissibility 内部细节在此未重新推导；Lean 递归只需要
+最左 ≥ a 的契约。
 
-每个中枢索引恰好属于一个 Walk。
+### 定理 4.2 —— `segment_advance_strictly_increasing`
 
-### 定理 11.2（`decompose_monotonic`）
+**叙述。** 核心终止引理。每当 `find_term a` 返回某个 j 且 a ≤ j，
+测度 n − a 在递归步骤上严格下降。
 
-Walk 边界在 `start` 上严格递增：对相邻 walk `w₁, w₂`，
-`w₁.end_ + 1 = w₂.start`。
+**形式。**
 
-### 定理 11.3（`decompose_type_homogeneous`)
+    find_term a = some j → a ≤ j → n - (j + 1) < n - a.
 
-每个发射的 Walk 有齐次 WalkType：Walk 跨度内的每个中枢都按 Walk 的
-类型分类。`decompose` 不能发射 `mixed` WalkType（由 split 准则证得）；
-`mixed` 仅来自下游 merge —— 列为后续工作。
+**Lean 证明。** `Chanlun.Segment.segment_advance_strictly_increasing`。
+短整数算术。
 
-Lean 模块：
-[`Chanlun.WalkDecomposition`](lean/Chanlun/WalkDecomposition.lean)。
+### 定理 4.3 —— `segments_partition`（性质 P）
+
+**叙述。** 发射的线段连续平铺 [a, n) —— 每个索引恰属于一条线段。
+
+**形式。**
+
+    ∀ a n, partitionFrom (segments find_term find_term_ge a n) a n.
+
+**Lean 证明。** `Chanlun.Segment.segments_partition`，经强形式
+`segments_partitionFrom`。
+
+### 定理 4.4 —— `segments_terminate`（性质 T）
+
+**叙述。** 至多发射 n − a + 1 条线段；递归产生有限列表。
+
+**形式。**
+
+    ∀ a n, (segments find_term find_term_ge a n).length ≤ n - a + 1.
+
+**Lean 证明。** `Chanlun.Segment.segments_terminate`，经
+`segments_length_le`。
+
+### 定理 4.5 —— 预言接口的非空性
+
+**叙述。** 平凡推进预言 `a ↦ some a` 满足最左 ≥ a 的契约，故递归
+非空地可实例化。
+
+**形式。**
+
+    ∃ find_term, ∀ a j, find_term a = some j → a ≤ j.
+
+**Lean 证明。** `Chanlun.Segment.find_term_contract_nonvacuous`，由
+`trivialFindTerm` 见证。
+
+### 状态 —— 定理 1（参数化唯一分解）
+
+**开放。** 原文定理 1 主张线段分解对一类满足 Φ-重叠-admissibility 的
+预言是**唯一**分解。Lean 编码抽象地解决了最左 ≥ a 契约下的递归，并
+给出对任何固定 `find_term` 的确定性（函数即定义）。剩下的参数化唯一性
+—— 任意两个满足原文 Φ-重叠-admissibility 规范的预言产生相同线段列表
+—— 命名为 `[chanlun_segment_phi_uniqueness_OPEN]`，因为原文未唯一
+固定 Φ；备选读法列于 [`README.md`](README.md) 的「已知限制」。
 
 ---
 
-## §12 其它已形式化的层
+## §5 中枢 —— 17/20 课
 
-后续提交增加的模块包括：
+### 定义 5.1（中枢形成）
 
-* `Chanlun.StrokesIsValidBiCorollary`（`strokes_isValidBi`、
-  `strokes_iff_IsValidBi`） —— `strokes_unique` 的非空 + 双向。
-* `Chanlun.BiEndpointSubResidues` —— 关闭与 `Chanlun.StrokeUniqueness`
-  相关的三个子结果：TO 端点最左 vs 极值、drop-branch 保持、输出顺序
-  交替性提升。
-* `Chanlun.BiReachableDeterminismBridge` —— §9 交替定理的
-  `Interval → Bar` 管道。
-* `Chanlun.ZhongshuExtension` —— 四向命名转移（延伸 / 扩展 / 新生 /
-  endNoRebirth）+ 9-段升级触发。
-* `Chanlun.Beichi` —— 背驰力度比较（24/27/29 课），整数精确位移 +
-  斜率。
-* `Chanlun.PanzhengBeichi` —— 盘整背驰（37 课）单中枢 A-vs-C 分类器。
-* `Chanlun.ThirdBuysell` —— 第三类买卖点（20 课）。
-* `Chanlun.FirstSecondBuysell` —— 第一/第二类买卖点（24 课）+
-  measure-gate 继承。
-* `Chanlun.RecursiveSubBspBeichi` —— 递归三买卖 + 背驰（20/24/27/29 课
-  推广至次级别）。
-* `Chanlun.IntervalNesting` —— 65/66 课区间套基础分类器和严格下降终止
-  测度。
+**叙述。** 当三个连续子元素共享一个非空重叠区间时形成一个中枢。从
+i = 0 开始扫描：若至少剩三个元素，取
+
+    ZD := max(els[i].lo, els[i+1].lo, els[i+2].lo)
+    ZG := min(els[i].hi, els[i+1].hi, els[i+2].hi).
+
+若 ZD ≤ ZG（真重叠），发射中枢 ⟨i, extendEnd(i+3), ZD, ZG⟩ 并在
+extendEnd 之后续；否则滑动 i := i + 1。
+
+**形式。**
+
+    zhongshu els g i :=
+      if els.length ≤ i + 2 then []
+      else
+        let ZD := max ... ; let ZG := min ...
+        if ZD ≤ ZG then ⟨i, extendEnd ..., ZD, ZG⟩ :: zhongshu els g (extendEnd + 1)
+        else zhongshu els g (i + 1).
+
+**Lean 实现。** `Chanlun.Zhongshu.zhongshu`，位于
+[`lean/Chanlun/Zhongshu.lean`](lean/Chanlun/Zhongshu.lean)。
+
+### 定义 5.2（扩展与 zone 门）
+
+**叙述。** 扩展函数 `extendEnd g zd zg j` 在第 j 个元素与活动 zone
+重叠时向前走 j。参数 g : ZoneGate ∈ {first3, all_} 控制活动 zone
+是否随新元素加入而再收紧：
+
+- `first3` 把 zone 固定在初始 (ZD, ZG)；
+- `all_` 每步收紧为 (max zd els[j].lo, min zg els[j].hi)。
+
+原文对此选择未明确，我们提供两种读法并证明两者均合法。
+
+**Lean 实现。** `Chanlun.Zhongshu.extendEnd`、`Chanlun.Zhongshu.ZoneGate`。
+
+### 定理 5.3 —— `zhongshu_valid`
+
+**叙述。** 每个发射的中枢都有良形 zone（ZD ≤ ZG）。
+
+**形式。**
+
+    ∀ els g i, ∀ c ∈ zhongshu els g i, c.ZD ≤ c.ZG.
+
+**Lean 证明。** `Chanlun.Zhongshu.zhongshu_valid`。构造性的形成门
+`ZD ≤ ZG` 守护每次发射。
+
+### 定理 5.4 —— `zhongshu_disjoint`
+
+**叙述。** 相邻中枢索引区间不重叠：c₁.end_ < c₂.start。
+
+**形式。**
+
+    ∀ els g i, DisjointConsec (zhongshu els g i).
+
+**Lean 证明。** `Chanlun.Zhongshu.zhongshu_disjoint`，经
+`zhongshu_head_start_ge` 串接。
+
+### 定理 5.5 —— `extendEnd_ge`（扩展终止）
+
+**叙述。** 扩展索引不会倒退：extendEnd(j) ≥ j − 1。这是赋予
+`zhongshu` 在 els.length − i 上良基性的测度。
+
+**形式。**
+
+    ∀ els g zd zg j, j - 1 ≤ extendEnd els g zd zg j.
+
+**Lean 证明。** `Chanlun.Zhongshu.extendEnd_ge`。
+
+### 定义 5.6（四向转移：延伸 / 扩展 / 新生 / endNoRebirth）
+
+**叙述。** 当一个新元素到来于刚发射的中枢之后，发生四种命名事件之一：
+**延伸**（在核心 [ZD, ZG] 内扩展）、**扩展**（在外包络 [DD, GG] 内
+扩展）、**新生**（一个新的不相交中枢开始）、**endNoRebirth**（序列
+结束而无新生）。当同一中枢内累计 9 个子元素时，**升级**信号触发 ——
+中枢已足够大以提升到更高层（30 课）。
+
+**形式。** 令 `upgradeSegments := 9` 且 `CenterExt` 同时持有核心
+(ZD, ZG) 和外包络 (DD, GG)，
+
+    classifyExtension : CenterExt → Element → List Element → ExtensionEvent.
+
+**Lean 实现。** `Chanlun.ZhongshuExtension.classifyExtension`，位于
+[`lean/Chanlun/ZhongshuExtension.lean`](lean/Chanlun/ZhongshuExtension.lean)。
+
+### 定理 5.7 —— 扩展分类是 total 的
+
+**叙述。** 每个输入恰落入一个命名事件类 —— 分类 total 且绝不静默。
+
+**形式。**
+
+    ∀ c e post, classifyExtension c e post ∈
+        {extension, expansion, rebirth, endNoRebirth, upgrade}.
+
+**Lean 证明。** `Chanlun.ZhongshuExtension.classifyExtension_total`。
+
+### 定理 5.8 —— 核心与外包络的承重性
+
+**叙述。** 延伸事件保持核心 (ZD, ZG)；扩展事件加宽外包络 (DD, GG)；
+新生事件创建一个与旧中枢不相交的新核心。
+
+**形式。**
+
+    extension_preserves_core_ZD_ZG : 返回 extension ⇒ (ZD, ZG) 不变。
+    expansion_widens_GG_DD         : 返回 expansion ⇒ DD' ≤ DD ∧ GG ≤ GG'。
+    rebirth_creates_disjoint_core  : 返回 rebirth ⇒ 新核心与旧不相交。
+
+**Lean 证明。** `extension_preserves_core_ZD_ZG`、
+`expansion_widens_GG_DD`、`rebirth_creates_disjoint_core`，均位于
+`Chanlun.ZhongshuExtension`。
+
+### 定理 5.9 —— `upgrade_trigger_iff_9_segments`
+
+**叙述。** 9 段升级信号当且仅当子元素计数越过阈值时触发；与下一个
+到达元素的值无关。
+
+**形式。**
+
+    classifyExtension c e post = upgrade ↔ subSegmentCount c ≥ 9.
+
+**Lean 证明。** `upgrade_trigger_iff_9_segments` 与
+`upgrade_trigger_element_independent`。
+
+### 定理 5.10 —— `zhongshu_zone_gate_divergence_witness`（构造性歧义见证）
+
+**叙述。** first3 与 all_ 门（定义 5.2）真正是多值的，并非记号上的
+小别。存在一个具体的五元素序列，其 first3 与 all_ 输出在 `end_` 上
+不同。两个输出都合法（ZD ≤ ZG）且不相交 —— 歧义是两种合法读法之间
+的差异，不是一对一错。这把经验观察到的约 12% 不一致率提升为 Lean 级的
+构造性见证。
+
+**形式。** 取
+
+    els := [⟨0, 10⟩, ⟨3, 13⟩, ⟨5, 8⟩, ⟨7, 12⟩, ⟨5, 6⟩]
+
+（见 `Chanlun.DivergenceWitnesses.zoneGateWitnessEls`），
+
+    ∃ zd zg zd' zg' e, overlapsZone zd zg e ∧ ¬ overlapsZone zd' zg' e.
+
+**Lean 证明。**
+[`Chanlun.DivergenceWitnesses.zhongshu_zone_gate_divergence_witness`](lean/Chanlun/DivergenceWitnesses.lean)。
+见证 (5, 8)（first3 zone） vs (7, 8)（all_ 收紧后的 zone），元素
+⟨5, 6⟩：6 ≥ 5 成立但 6 ≥ 7 失败。两个门的合法性由配套定理
+`zhongshu_zone_gate_witness_valid_disjoint` 给出。
 
 ---
 
-## §13 开放问题
+## §6 走势 —— 类型与分解（17 课）
 
-尚未在 Lean 库中证明的限制与开放问题列在 [`README.zh.md`](README.zh.md)
-的「已知限制与待证问题」中。每条都明示，而非隐藏。
+### 定义 6.1（WalkType 与 stepDir）
+
+**叙述。** 相邻两中枢之间的方向：若下一中枢的 ZD 严格大于上一中枢的
+ZG 为 `up`；若下一 ZG 小于上一 ZD 为 `down`；否则为 `neither`。中枢
+列表按其步幅模式分类为 `consolidation`、`trend_up`、`trend_down`、
+`mixed` 或 `none_`。
+
+**形式。**
+
+    stepDir prev cur := if prev.ZG < cur.ZD then up
+                        else if cur.ZG < prev.ZD then down
+                        else neither
+
+    classify : List Center → WalkType
+    classify []           = none_
+    classify [_]          = consolidation
+    classify (c₁::c₂::rs) = if allUp  then trend_up
+                            else if allDown then trend_down
+                            else mixed.
+
+**Lean 实现。** `Chanlun.TrendType.stepDir`、
+`Chanlun.TrendType.classify`，位于
+[`lean/Chanlun/TrendType.lean`](lean/Chanlun/TrendType.lean)。
+
+### 定理 6.2 —— `classify_total`
+
+**叙述。** 分类 total：每个中枢列表恰好落入
+{none_, consolidation, trend_up, trend_down, mixed} 中之一。
+
+**形式。**
+
+    ∀ cs : List Center, classify cs ∈ {none_, consolidation, trend_up, trend_down, mixed}.
+
+**Lean 证明。** `Chanlun.TrendType.classify_total`。
+
+### 定理 6.3 —— `classify_trend_monotone`
+
+**叙述。** 趋势标签不静默 —— 它强制依次同向。
+
+**形式。**
+
+    (classify cs = trend_up   → allStepsAreUp   cs)
+    ∧ (classify cs = trend_down → allStepsAreDown cs).
+
+**Lean 证明。** `Chanlun.TrendType.classify_trend_monotone`，经双向
+`allUp_iff_allStepsAreUp` 与 `allDown_iff_allStepsAreDown`。
+
+### 定义 6.4（走势分解）
+
+**叙述。** 给定中枢列表，`decompose` 将其划分为极大走势。单个残留
+中枢成为 `consolidation`；连续 `up` 步形成 `trend_up` 走势；连续
+`down` 步形成 `trend_down` 走势。新走势在加入下一个中枢会改变走势
+类型的那一刻启动。
+
+**形式。** 令 `extendRun centers d j` 在步方向等于 d 时向前走 j，
+
+    decompose : List Center → List Walk.
+
+**Lean 实现。**
+[`Chanlun.WalkDecomposition.decompose`](lean/Chanlun/WalkDecomposition.lean)。
+
+### 定理 6.5 —— `decompose_partition`
+
+**叙述。** 发射的走势恰好平铺中枢列表：每个中枢索引属于一个走势。
+
+**形式。**
+
+    Σ (walks.map walkSize) = centers.length.
+
+**Lean 证明。** `Chanlun.WalkDecomposition.decompose_partition`。
+
+### 定理 6.6 —— `decompose_monotonic`
+
+**叙述。** 走势边界串接：每个走势的 end_ + 1 等于下一走势的 start。
+
+**形式。**
+
+    对所有相邻 (w₁, w₂) ∈ walks，w₁.end_ + 1 = w₂.start.
+
+**Lean 证明。** `Chanlun.WalkDecomposition.decompose_monotonic`，经
+`decomposeFrom_chain` 与 `WalksChain` 谓词。
+
+### 定理 6.7 —— `decompose_type_homogeneous`
+
+**叙述。** 每个发射的走势有齐次类型。`trend_up` 走势内每一步都是
+`up`；`trend_down` 内每一步都是 `down`。分类器永远不会发射 `mixed`
+或 `none_`。
+
+**形式。**
+
+    ∀ w ∈ decompose centers, w.kind ∈ {consolidation, trend_up, trend_down}
+    ∧ 走势内所有 stepDir 与 w.kind 一致.
+
+**Lean 证明。** `Chanlun.WalkDecomposition.decompose_type_homogeneous`，
+经辅助 `decomposeFrom_type_well_formed`。
+
+### 定理 6.8 —— `decompose_spec_unique_extensional`
+
+**叙述。** `decompose` 是**这个**分解：任何在空输入上与 `decompose`
+外延一致、且在索引 0 处行为相同的函数，在每个输入上都等于 `decompose`。
+
+**形式。**
+
+    ∀ f : List Center → List Walk,
+      f [] = decompose [] →
+      (∀ cs, f cs 在 decompose cs 的头走势上启动) →
+      ∀ cs, f cs = decompose cs.
+
+**Lean 证明。** `decompose_unique`、
+`decompose_spec_unique_extensional`、`decompose_spec_unique_empty`、
+`decompose_spec_unique_head_at_zero`。
+
+### 状态 —— `mixed` 合并
+
+**开放。** 独立的下游合并步骤可以把相邻走势黏合成 `mixed` 超级走势。
+我们不在 Lean 库里执行该合并；命名为
+`[chanlun_walk_mixed_merge_OPEN]`，列于 [`README.md`](README.md)。
 
 ---
 
-## §14 致谢
+## §7 背驰 —— 24/27/29 课
 
-缠论本身属于缠中说禅的传承。上述形式系统和 `lean/Chanlun/` 下的 Lean
-编码是本仓库的贡献。可达域审计修正（§9）和 lift 终止测度（§10）是
-形式化的非显然数学贡献；其余都是发表理论的 Lean 形式。
+### 定义 7.1（移动、位移、measure）
+
+**叙述。** 方向性移动是三元组 (lo, hi, dur) —— 带显式持续时间的位移
+载体。移动的 **力度** 可由位移本身（`disp`）或斜率（`disp / dur`）
+度量；原文在不同章节调用两者。我们对命名 `Measure ∈ {disp, slope}`
+做参数化。
+
+**形式。**
+
+    Move := { lo : ℤ, hi : ℤ, dur : ℤ }
+    disp m := m.hi - m.lo
+    lhsRhs a c disp  := (disp a, disp c)
+    lhsRhs a c slope := (disp a · c.dur, disp c · a.dur)   -- 整数精确交叉积
+
+**Lean 实现。** `Chanlun.Beichi.Move`、`Chanlun.Beichi.disp`、
+`Chanlun.Beichi.lhsRhs`，位于
+[`lean/Chanlun/Beichi.lean`](lean/Chanlun/Beichi.lean)。
+
+### 定义 7.2（背驰分类器）
+
+**叙述。** C 比 A 弱（lhs < rhs）—— 背驰；力度相等 —— `tie`；C 强于
+A —— `no_beichi`。
+
+**形式。**
+
+    classifyBeichi a c m :=
+      let (lhs, rhs) := lhsRhs a c m
+      if lhs < rhs then beichi
+      else if lhs = rhs then tie
+      else no_beichi.
+
+### 定理 7.3 —— `classifyBeichi_total` 与 `beichi_irrefl`
+
+**叙述。** 分类对 {beichi, no_beichi, tie} 是 total 的，且反身性
+不成立：一个移动永远不会与自己背驰。
+
+**形式。**
+
+    ∀ a c m, classifyBeichi a c m ∈ {beichi, no_beichi, tie}
+    ∀ a m, classifyBeichi a a m ≠ beichi.
+
+**Lean 证明。** `classifyBeichi_total`、`beichi_irrefl`，经辅助
+`lhsRhs_self_eq`。
+
+### 定理 7.4 —— `beichi_load_bearing`
+
+**叙述。** 分类器确实在比较力度。在 disp 下，`beichi a c` 等价于
+`disp c < disp a`；在 slope 下，等价于整数精确交叉积比较。
+
+**形式。**
+
+    classifyBeichi a c disp  = beichi ↔ disp c < disp a
+    classifyBeichi a c slope = beichi ↔ disp c · a.dur < disp a · c.dur.
+
+**Lean 证明。** `beichi_load_bearing_slope`、`beichi_load_bearing_disp`，
+合并为 `beichi_load_bearing`。配套的 no-beichi/tie 形式：
+`no_beichi_disp_strict`、`no_beichi_slope_strict`、`tie_disp_iff`、
+`tie_slope_iff`。
+
+### 定理 7.5 —— `beichi_measure_gate_witness`（构造性歧义见证）
+
+**叙述。** disp 与 slope 的选择真正是多值的。存在移动 a, c 使得 disp
+说背驰而 slope 说 no_beichi —— 原文对 measure 选择的沉默是真实的歧义，
+而非记号上的。
+
+**形式。**
+
+    ∃ a c, classifyBeichi a c disp = beichi
+         ∧ classifyBeichi a c slope = no_beichi.
+
+**Lean 证明。** `Chanlun.Beichi.beichi_measure_gate_witness`，
+跨命名空间重新导出为
+`Chanlun.DivergenceWitnesses.beichi_measure_gate_divergence_witness`。
+
+### 定义 7.6（盘整背驰，37 课）
+
+**叙述。** 在单个中枢内，进入中枢的 A 段与离开中枢的 C 段组成一个
+`PanzhengTriple`。盘整背驰分类器：在所选 measure 下 C 弱于 A 时声明
+panzheng_beichi，否则 no_panzheng_beichi；平衡情形为 incomplete。
+
+**形式。** `classifyPanzheng : PanzhengTriple → Measure → PanzhengVerdict`。
+
+**Lean 实现。** `Chanlun.PanzhengBeichi.classifyPanzheng`，位于
+[`lean/Chanlun/PanzhengBeichi.lean`](lean/Chanlun/PanzhengBeichi.lean)。
+
+### 定理 7.7 —— 盘整背驰的 total 与承重性
+
+**叙述。** 分类器 total；在每个 measure 下都真正比较力度；incomplete
+判定恰好对应平衡情形。
+
+**形式。**
+
+    classify_panzheng_total       : 每个输入落入四类判定之一。
+    panzheng_load_bearing_disp    : panzheng_beichi ⇒ disp c < disp a。
+    panzheng_load_bearing_slope   : panzheng_beichi ⇒ 交叉积比较成立。
+    panzheng_incomplete_iff       : incomplete ↔ disp c · a.dur = disp a · c.dur（在 slope 下）。
+
+**Lean 证明。** `classify_panzheng_total`、`panzheng_load_bearing_disp`、
+`panzheng_load_bearing_slope`、`panzheng_incomplete_iff`。
+
+### 定理 7.8 —— `panzheng_measure_gate_witness` 与 intra-vs-inter
+
+**叙述。** 关于盘整背驰的两个进一步构造性见证：(a) disp-vs-slope 门
+即使在盘整层次也真实 —— 存在三元组使 disp 说 panzheng_beichi 而 slope
+说 no_panzheng_beichi；(b) 在单中枢三元组上使用 inter-中枢 measure 是
+一个真正不同的分类器 —— 存在三元组，intra-中枢分类器说
+panzheng_beichi 而 inter-中枢变种说 no_panzheng_beichi。
+
+**形式。**
+
+    panzheng_measure_gate_witness : ∃ t, intra-disp = panzheng_beichi ∧ intra-slope = no_panzheng_beichi。
+    panzheng_intra_vs_inter_load_bearing : ∃ t, intra ≠ inter-变种.
+
+**Lean 证明。** `panzheng_measure_gate_witness`、
+`panzheng_intra_vs_inter_load_bearing`，提升为歧义见证面
+`panzheng_measure_gate_propagation_witness`。
+
+### MACD 作为辅助 measure（27 课，经验性 grounding）
+
+**叙述。** 27 课明确把 MACD 作为**辅助** measure —— 不是规范的 disp/
+slope，而是一种再加工。在 7 年实盘 NQ 1h 数据上，MACD 的背驰判定与
+disp 在约 46.4% 的提取 (A, C) 窗口上一致，与 slope 在约 17.9% 上一致。
+不一致位置以显式 (a_idx, c_idx, disp_says, macd_says) 见证报告。
+不一致本身就是"MACD 是辅助，不是规范"的经验内容。
+
+**Lean 状态。** 开放为 `[chanlun_beichi_macd_measure_lean_OPEN]`：把
+`Chanlun.Beichi.Measure` 扩展到第三个构造器 `macd` 在结构上是干净的
+（代数延伸；交叉积比较的是 MACD 能量）。grounding 脚本
+[`grounding/chanlun_macd_grounding.py`](grounding/chanlun_macd_grounding.py)
+计算一致率并发射不一致见证；Lean 构造性提升被命名为开放。
 
 ---
 
-## §15 许可
+## §8 三类买卖点 —— 20、24 课
 
-形式化、本文档、参考实现脚本和 CI 工作流按 MIT 许可发布；如有
+### 定义 8.1（第一/第二类分类器，24 课）
+
+**叙述。** 一个 `TerminalWindow` 打包中枢间的 A 段、候选回拉段、入场
+水平。分类器先问 A 段是否背驰（背景背驰）；若是，声明
+`first_buy`/`first_sell`；回拉段随后被测试是否非破首点，若是则升级为
+`second_buy`/`second_sell`。回拉破首点为 `first_point_failed`；
+静默情形为 `incomplete`。
+
+**形式。** `classifyBsp : TerminalWindow → Measure → BspKind`，其中
+`BspKind ∈ {first_buy, first_sell, second_buy, second_sell,
+first_point_failed, incomplete}`。
+
+**Lean 实现。** `Chanlun.FirstSecondBuysell.classifyBsp`，位于
+[`lean/Chanlun/FirstSecondBuysell.lean`](lean/Chanlun/FirstSecondBuysell.lean)。
+
+### 定理 8.2 —— total 与非破首点
+
+**叙述。** 分类 total。`second_buy` 判定意味着回拉真正没有跌破首点
+极值；`second_sell` 对称；`first_point_failed` 意味着回拉确实破点。
+
+**形式。**
+
+    classify_total          : 每个输入的判定 ∈ BspKind。
+    second_buy_non_breaking : second_buy  → pull.lo ≥ firstExtreme。
+    second_sell_non_breaking: second_sell → pull.hi ≤ firstExtreme。
+    first_point_failed_iff  : first_point_failed ↔ 回拉破点。
+
+**Lean 证明。** `classify_total`、`classify_first_point_only_total`、
+`second_buy_non_breaking`、`second_sell_non_breaking`、
+`second_not_breaking_iff`、`first_point_failed_iff`。
+
+### 定理 8.3 —— `first_second_inheritance_load_bearing`
+
+**叙述。** measure-门的传递抵达买卖点层。存在 `TerminalWindow` 使
+disp-measure 分类器返回 `second_buy` 而 slope-measure 分类器返回
+`incomplete` —— 力度 measure 的选择沿管道传递到面向交易者的判定。
+
+**形式。**
+
+    ∃ w, classifyBsp w disp = second_buy ∧ classifyBsp w slope = incomplete.
+
+**Lean 证明。** `first_second_inheritance_load_bearing`，提升到
+`Chanlun.DivergenceWitnesses.first_second_measure_gate_divergence_witness`。
+
+### 定理 8.4 —— `classify_implies_beichi_and_pull`
+
+**叙述。** 非 incomplete 判定要求所选 measure 下背景背驰成立且回拉段
+有定义。
+
+**形式。**
+
+    classifyBsp w m ≠ incomplete → (m 下背驰成立 ∧ pull 有定义).
+
+**Lean 证明。** `classify_implies_beichi_and_pull`。
+
+### 定义 8.5（第三类分类器，20 课）
+
+**叙述。** 中枢完成后，下一离开段要么向上突破 ZG（给出
+`third_buy`）、要么向下突破 ZD（`third_sell`）、要么从上方回入
+（`reenter_above`）、要么从下方回入（`reenter_below`）。再加一个无
+离开段的 incomplete 状态。
+
+**形式。** `classifyBsp : Departure → BspKind`，其中
+`BspKind ∈ {third_buy, third_sell, reenter_above, reenter_below,
+incomplete}`。
+
+**Lean 实现。** `Chanlun.ThirdBuysell.classifyBsp`，位于
+[`lean/Chanlun/ThirdBuysell.lean`](lean/Chanlun/ThirdBuysell.lean)。
+
+### 定理 8.6 —— 第三类的 total 与 zone 含义
+
+**叙述。** 分类 total。`third_buy` 真正意味着离开段向上突破 ZG；
+`third_sell` 真正意味着向下突破 ZD。
+
+**形式。**
+
+    classifyBsp_total          : 每个输入的判定 ∈ BspKind。
+    bsp_zone_load_bearing_up   : third_buy  → dep.move.lo > c.ZG。
+    bsp_zone_load_bearing_down : third_sell → dep.move.hi < c.ZD。
+
+**Lean 证明。** `classifyBsp_total`、`bsp_zone_load_bearing_up`、
+`bsp_zone_load_bearing_down`。
+
+### 定理 8.7 —— 递归次级买卖点
+
+**叙述。** 次级别上的第三类分类 total，在有界燃料下终止，并以追踪的
+`RecursiveVerdict` 标签继承父级判定。燃料界源自级别递归的严格下降
+测度（下方定理 9.2）。
+
+**形式。**
+
+    recursive_subBsp_total           : 每次调用落入四个命名判定之一。
+    recursive_subBsp_terminates      : 充足燃料 → 无 incomplete。
+    recursive_subBsp_inheritance     : 当子判定一致时，级别 n 判定被保持。
+    recursive_subBsp_fuel_stationary : 燃料 ≥ 级别深度后判定燃料不变。
+    recursive_subBsp_fuel_bound_via_levelRecursion : 燃料 ≤ n / 2 足够。
+
+**Lean 证明。** 均位于
+[`lean/Chanlun/RecursiveSubBspBeichi.lean`](lean/Chanlun/RecursiveSubBspBeichi.lean)：
+`recursive_subBsp_total`、`recursive_subBsp_terminates`、
+`recursive_subBsp_inheritance`、`recursive_subBsp_fuel_stationary`、
+`recursive_subBsp_fuel_bound_via_levelRecursion`。
+
+---
+
+## §9 级别递归 —— 24 课「走势必完美」
+
+### 定义 9.1（`centerSize` 与级别提升）
+
+**叙述。** 每个中枢有大小 `c.end_ + 1 - c.start`，即覆盖的子元素
+个数。下一层由把每个中枢提升为承载核心 [ZD, ZG] 的 Element 而成；
+`liftStep` 为一轮 `zhongshu` 后跟 `liftCenters`。
+
+**形式。**
+
+    centerSize c   := c.end_ + 1 - c.start
+    liftCenter c   := { lo := c.ZD, hi := c.ZG }
+    liftCenters cs := cs.map liftCenter
+    liftStep els g := liftCenters (zhongshu els g 0)
+    levelTower els g 0       := els
+    levelTower els g (n + 1) := levelTower (liftStep els g) g n.
+
+**Lean 实现。** 定义位于
+[`lean/Chanlun/LevelRecursion.lean`](lean/Chanlun/LevelRecursion.lean)。
+
+### 定理 9.2 —— `lift_strict_drop`（「走势必完美」）
+
+**叙述。** 一旦有任何中枢形成，中枢列表所覆盖的子元素个数至少超过
+中枢个数 2。所以提升到下一层严格下降元素个数 —— 由 ℕ 上的良基性，
+级别递归在 ≤ n/2 层内终止。这就是 24 课「走势必完美」的形式内容。
+
+**形式。**
+
+    ∀ els g, zhongshu els g 0 ≠ [] →
+      (zhongshu els g 0).length + 2 ≤ ((zhongshu els g 0).map centerSize).sum.
+
+**Lean 证明。** `Chanlun.LevelRecursion.lift_strict_drop`。证明把
+`centerSize_ge_3`（每个中枢覆盖 ≥ 3 个子元素）与算术
+`total_size_ge_3_times_count` 串起来。推论
+`level_recursion_count_decreases` 直接打包严格下降。
+
+### 定理 9.3 —— `centerSize_ge_3`
+
+**叙述。** 每个发射的中枢覆盖至少 3 个子元素。`extendEnd_ge`
+（定理 5.5）的直接推论：扩展从 i + 3 开始，永远不会早于 i + 2 返回。
+
+**形式。**
+
+    ∀ els g, ∀ c ∈ zhongshu els g 0, 3 ≤ centerSize c.
+
+**Lean 证明。** `Chanlun.LevelRecursion.centerSize_ge_3`。
+
+### 定理 9.4 —— 外包络承重性
+
+**叙述。** 每个提升的 Element 继承其源中枢的良形 zone（lo ≤ hi）。
+
+**形式。**
+
+    liftCenter_lo_le_hi : c.ZD ≤ c.ZG → (liftCenter c).lo ≤ (liftCenter c).hi.
+    liftCenters_all_valid : liftCenters (zhongshu els g 0) 中的每个元素都有 lo ≤ hi.
+    liftCenters_mem_iff : e ∈ liftCenters cs ↔ ∃ c ∈ cs, e = liftCenter c.
+
+**Lean 证明。** `liftCenter_range_eq_core`、`liftCenter_lo_le_hi`、
+`liftCenters_all_valid`、`liftCenters_mem_iff`。
+
+### 定理 9.5 —— 跨层级的确定性保持
+
+**叙述。** 级别提升是确定性的：层 0 上输入相等导致每一层的塔都相等。
+次级别上的分歧只能来自层 0 输入的分歧。
+
+**形式。**
+
+    liftStep_deterministic   : els = els' → liftStep els g = liftStep els' g.
+    levelTower_deterministic : els = els' → ∀ n, levelTower els g n = levelTower els' g n.
+    levelTower_input_eq      : 输入相等 → 塔相等.
+    levelTower_agreement_lifts: 层 0 一致沿层级传递.
+
+**Lean 证明。** `liftStep_deterministic`、`levelTower_deterministic`、
+`levelTower_input_eq`、`levelTower_agreement_lifts`。
+
+---
+
+## §10 走势分解 —— 17 课的完整形式
+
+### 定义 10.1（规范 —— 分划 / 单调 / 类型齐次 / 唯一）
+
+**叙述。** `decompose` 函数（定义 6.4）由四个性质约束：(1) 分划 ——
+走势平铺中枢列表；(2) 单调性 —— 走势边界严格串接；(3) 类型齐次 ——
+每个走势有唯一非 mixed 类型，且每个内部步骤一致；(4) 规范唯一性 ——
+任何在索引 0 处行为相同的头扩展函数都等于 `decompose`。
+
+### 定理 10.2 —— 四个性质成立
+
+**叙述。** 上述四个性质对 `decompose` 全部成立。
+
+**形式。** 把 §6 重述为形式化的「走势分解定理」：
+
+    decompose_partition           : Σ walkSize = centers.length.
+    decompose_monotonic           : w₁.end_ + 1 = w₂.start.
+    decompose_type_homogeneous    : 每个走势的类型非 mixed 且内部齐次。
+    decompose_spec_unique_extensional : 任何符合规范的函数 = decompose.
+
+**Lean 证明。** 同 §6：`decompose_partition`、`decompose_monotonic`、
+`decompose_type_homogeneous`、`decompose_unique`、
+`decompose_spec_unique_extensional`、`decompose_spec_unique_empty`、
+`decompose_spec_unique_head_at_zero`，辅以 `decomposeFrom_nonempty`。
+
+---
+
+## §11 区间套 —— 65/66 课（多分辨率）
+
+### 定义 11.1（合成塔行走器）
+
+**叙述。** `LevelWindow` 是一层上的连续索引区间。区间套行走器使用
+`descend` 预言下沉穿过层次，预言提出一个更细的子窗口。当下沉停止时，
+行走器以一个命名判定终止。
+
+**形式。**
+
+    LevelWindow := { level : ℕ, start : ℕ, end_ : ℕ }
+    DescendValid descend := ∀ w w', descend w = some w' → w'.level < w.level
+    walk descend w := if descend w = some w' then walk descend w' else terminate w.
+
+**Lean 实现。** `Chanlun.IntervalNesting.LevelWindow`、`walk`，位于
+[`lean/Chanlun/IntervalNesting.lean`](lean/Chanlun/IntervalNesting.lean)。
+
+### 定理 11.2 —— 终止、绝不静默、pin 单调
+
+**叙述。** 给定一个合法的下沉预言（每次下沉严格下降层级），行走器
+终止，返回命名判定，且每个下沉的窗口的层级严格低于其父。成功下沉链
+在每一步都严格下降层级。
+
+**形式。**
+
+    intervalnesting_terminates       : 在 DescendValid descend 下行走器总是停止.
+    walk_always_has_verdict          : 每个输出状态都有命名判定.
+    intervalnesting_pin_monotone     : descend w = some w' → w'.level < w.level.
+    intervalnesting_chain_strict_drop: ∀ chain, 层级严格下降.
+
+**Lean 证明。** `intervalnesting_terminates`、`walk_always_has_verdict`、
+`intervalnesting_pin_monotone`、`intervalnesting_chain_strict_drop`。
+
+### 定理 11.3 —— 终态形式
+
+**叙述。** 在层 0 且无进一步下沉时，行走器返回 gate-limit 判定；
+在正层且无进一步下沉时，返回 pinned 判定。
+
+**形式。**
+
+    walk_at_zero_returns_gate_limit
+    walk_at_positive_returns_pinned.
+
+**Lean 证明。** 同名定理位于 `Chanlun.IntervalNesting`。
+
+### 状态 —— 多分辨率真实数据 grounding
+
+**叙述。** 单分辨率合成塔行走器在 Lean 中完全证明。真正的多分辨率
+主张 —— 下沉对应于切换到真实市场数据的更细时间周期，跨层用时间戳
+对应 —— 用经验数据而非 Lean 解决。在 7 年 NQ 数据的 1d、1h、1m 三个
+分辨率上，下沉成立：一个 1d 层中枢按时间戳映射到 1h 层时，包含
+1h 层子中枢，进一步下沉到 1m。一些 1d 中枢在其时间戳跨度内没有 1h
+子中枢 —— 这些是「本资金最低级」剩余，作为命名见证报告。
+
+两个命名开放项是 `[chanlun_intervalnesting_multiscale_OPEN]` 与
+`[chanlun_intervalnesting_lowest_level_OPEN]`，经验性地由
+[`grounding/chanlun_multiscale_real_grounding.py`](grounding/chanlun_multiscale_real_grounding.py)
+解决；Lean 提升需要一个真实时间戳映射模型，超出整数算术内核的范围。
+
+---
+
+## §12 MACD 辅助 measure（27 课，经验性 grounding）
+
+**叙述。** 27 课与 disp/slope 并列地调用 MACD 作为显式辅助 measure。
+grounding 解决两个经验性主张：
+
+1. 在 7 年实盘 NQ 1h 数据上提取的 (A, C) 背驰窗口上，MACD 的判定与
+   disp 在约 46.4%、与 slope 在约 17.9% 的窗口上一致 —— MACD 是
+   再加工，不是替代。不一致位置以显式 (a_idx, c_idx, disp_says,
+   macd_says) 见证发射。
+2. 一个错误周期的 MACD（fast EMA 周期 9 而非 12）在同一输入上必然
+   与规范 MACD 分歧 —— 参数选择是承重的。
+
+**Lean 状态。** 命名开放为
+`[chanlun_beichi_macd_measure_lean_OPEN]`。把
+`Chanlun.Beichi.Measure` 扩展到第三个构造器在结构上是干净的；
+障碍在于需要真实 MACD 能量值，整数算术内核无法在不引入单独数据接口
+的情况下表达。
+
+**脚本。**
+[`grounding/chanlun_macd_grounding.py`](grounding/chanlun_macd_grounding.py)。
+
+---
+
+## §X 已合并的限制与开放问题
+
+五条作为可外部审计的开放保留。每条都有外部读者可核对的具体理由。
+
+1. **`[chanlun_segment_phi_uniqueness_OPEN]`** —— 线段分解在所有
+   满足 Φ-重叠-admissibility 的预言上的参数化唯一性。**开放原因：**
+   原文未唯一固定 Φ；备选读法列于 [`README.md`](README.md)。对任何
+   单一预言的确定性在 Lean 中已解决（函数即定义）。
+
+2. **`[chanlun_zhongshu_zone_gate_OPEN]`** —— first3 vs all_ 扩展
+   规则。**已解决为多值**：构造性歧义见证为
+   `Chanlun.DivergenceWitnesses.zhongshu_zone_gate_divergence_witness`；
+   两种读法的合法性由定理 5.3 给出，不相交性由定理 5.4 给出。原文
+   同时支持两种读法，所以这是真正的分叉，不是缺失证明。
+
+3. **`[chanlun_beichi_macd_measure_lean_OPEN]`** —— 在 Lean 中把
+   MACD 作为第三个 `Measure` 构造器。**开放原因：** 整数算术内核不
+   直接建模 MACD 能量。经验一致率位于
+   `grounding/chanlun_macd_grounding.py`；disp vs slope 的构造性
+   歧义见证已经在 Lean 中
+   （`Chanlun.Beichi.beichi_measure_gate_witness`）。
+
+4. **`[chanlun_intervalnesting_multiscale_OPEN]`** 与
+   **`[chanlun_intervalnesting_lowest_level_OPEN]`** —— 跨真实时间
+   周期的真正多分辨率下沉。**Lean 中开放原因：** 真实时间戳映射超出
+   整数内核范围；**经验性已解决：**
+   `grounding/chanlun_multiscale_real_grounding.py` 在 7 年 NQ 数据
+   上。
+
+5. **`[chanlun_walk_mixed_merge_OPEN]`** —— 把相邻走势合并为
+   `mixed` 超级走势的下游步骤。**作为独立组件开放**；`decompose`
+   按构造不会发射 `mixed`（定理 6.7），所以合并不是 `decompose`
+   本身的性质。
+
+---
+
+## §A 致谢
+
+缠论属于缠中说禅的传承。上述数学重述与 `lean/Chanlun/` 下的 Lean
+编码是本仓库的贡献。其中非显然的贡献是：可达域交替定理（定理 3.6）、
+lift 严格下降终止测度（定理 9.2）、以及 zone-gate 的构造性歧义见证
+（定理 5.10）。其余都是已发表理论的 Lean 形式。
+
+---
+
+## §L 许可
+
+形式化、本文档、参考实现脚本与 CI 工作流按 MIT 许可发布。如有
 `LICENSE` 文件以其为准。
