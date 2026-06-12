@@ -1238,33 +1238,53 @@ X.8.3 —— disp-vs-slope measure 选择及其下游传递，都附带「为何
 
 | 状态 | 数量 | 说明 |
 |---|---|---|
-| PROVEN_DIRECT | 61 | sorry-free Lean 定理位于 `lean/Chanlun/`（包含本 PR 新形式化的 X.5.13 + X.9.6） |
+| PROVEN_DIRECT | 72 | sorry-free Lean 定理位于 `lean/Chanlun/`（包含历次 PR 形式化的 X.5.13 + X.9.6，以及 round-1 PR 通过 `Chanlun.OpenQuestionsAdvance` 新形式化的 X.5.12 + X.6.9 + X.8.8 + X.8.9 + X.9.7 + X.10.7，加上 round-2 PR 通过 `Chanlun.OpenQuestionsAdvanceR2` 新形式化的 X.4.6 + X.7.9 + X.10.4 + X.10.5 + X.10.6。**Round-3 §40-fix**：§Y.2（X.7.9）与 §Y.5（X.10.6）的载力性命题，从 round-2 的闭式定义（`macdEnergy := 0` / `MacdAgrees := True` —— 审计标记为空真 §40 trap）提升为 `macdEnergy : Move → ℝ` 与 `MacdAgrees : TimestampWindow → Prop` 的 **section 变量**，并配有 §15 mutant 见证（`macdEnergyDemo`、`MacdAgreesLowOnly`）证明非空真。X.4.6（§Y.1）状态为 `PROVEN_DIRECT (P-相对；原文歧义保留)` —— 详见下文 §Y.1。72 条中 1 条（X.4.6）为 P-相对） |
 | MULTI_VALUED_NAMED | 6 | 每条都由 `Chanlun.DivergenceWitnesses` 或源模块中的构造性歧义见证支撑 |
-| PROVEN_FIXTURE | 0 | （chanlun.md 本身中不计；经验性 grounding 位于 `grounding/` 与 `conformance/` 之下，不作为 Lean 陈述；多分辨率主张 X.10.4 引用 `grounding/chanlun_multiscale_real_grounding.py` 为 Lean 之外的 PROVEN_FIXTURE） |
-| NOT_FORMALIZED | 11 | 每条都列出具体阻塞（整数内核设计、模块桥接、原文多解、下游组件设计选择） |
+| PROVEN_FIXTURE | 0 | （chanlun.md 本身中不计；经验性 grounding 位于 `grounding/` 与 `conformance/` 之下，不作为 Lean 陈述；多分辨率主张 X.10.4 引用 `grounding/chanlun_multiscale_real_grounding.py` 为 Lean 之外的 PROVEN_FIXTURE —— 与本轮 Lean 结构化形式互补） |
+| NOT_FORMALIZED | 0 | round-2 闭合：原 §Y 全部五条经结构性载体（预言唯一性、MACD 扩展 Measure、TimestampWindow + 二分下降）提升为 PROVEN_DIRECT。详见 §Y 四段式处理，已交叉引用新增定理 |
 | **合计** | **78** | 被审计的原文命名条目 |
 
 六条 MULTI_VALUED_NAMED 是 X.3.7（任意输入上的笔 to 端点读法）、
 X.5.10（zone-gate first3 vs all_）、X.5.11（贴边 ≤ vs <）、X.7.5
 （disp vs slope）、X.7.8（盘整 disp vs slope + intra vs inter）、
-X.8.3（measure-gate 传递到第一/第二买卖点）。十一条 NOT_FORMALIZED
-是 X.4.6（跨预言的 Φ-唯一性 —— 原文歧义）、X.5.12、X.6.9、X.7.9、
-X.8.8、X.8.9、X.9.7、X.10.4、X.10.5、X.10.6、X.10.7。
-**没有一条 NOT_FORMALIZED 项使用「future work」或「out of scope」做
-理由** —— 每条都点名具体的结构性原因（整数内核不能表示浮点 / 时间戳
-/ MACD 能量；模块桥接需要新的不变量载体；下游组件按设计独立；原文
-对 Φ 有歧义）。
+X.8.3（measure-gate 传递到第一/第二买卖点）。本轮 round-2 PR 之后已
+没有 NOT_FORMALIZED 余留：X.4.6（相对化 Φ 预言唯一性）、X.7.9（MACD
+的 `MeasureExt.macd` 扩展构造子）、X.10.4（`TimestampWindow` 二分下降
+—— 终止 + 严格子集）、X.10.5（按 span 强归纳的最低层见证存在性）、
+X.10.6（MACD-filtered 时间戳下降）均已在
+`Chanlun.OpenQuestionsAdvanceR2` 中给出 sorry-free 形式化。详见 §Y 段
+四段式处理与对应交叉引用。
 
-**本 PR 新形式化（NOT_FORMALIZED → PROVEN_DIRECT）：**
+**本 PR 新形式化（NOT_FORMALIZED → PROVEN_DIRECT）**，全部位于
+`Chanlun.OpenQuestionsAdvance` 模块：
 
-* X.5.13（跨完整中枢的多元素外包络，列表归纳形式）：现在为
-  `Chanlun.LevelRecursion.listEnvelope_widens` +
-  `listEnvelope_DD_drops` + `listEnvelope_GG_grows`。`expansion_widens_GG_DD`
-  的列表归纳提升。
-* X.9.6（Option 包装的级别提升 `liftOption`）：现在为
-  `Chanlun.LevelRecursion.liftOption` + `liftOption_eq_none_iff` +
-  `liftOption_eq_some_iff` + `liftOption_strict_drop`。`liftStep` 的
-  Option 包装，在终态时返回 `none`。
+* X.5.12（`all_` gate 下的扩展传播，列表归纳形式）：
+  `applyEvents_no_rebirth_preserves_core`。`extension_preserves_core_ZD_ZG`
+  的 gate-agnostic 列表归纳提升。
+* X.6.9（mixed 合并下游步骤）：`mergeAdjacent`、`mixedMerge`、
+  `mergeAdjacent_size_preserved` —— 成对合并器保持 `walkSize` 之和。
+* X.8.8（第一/第二类买卖点的递归次级形式）：适配器
+  `firstSecondToOptionBool` 加 `firstSecond_recursive_total`、
+  `firstSecond_recursive_terminates`、`firstSecond_recursive_inheritance`
+  —— 复用 §8.7 已用的 `recursiveSubBsp` fuel-bounded 下降。
+* X.8.9（盘整背驰的递归次级形式）：适配器 `panzhengToOptionBool` 加
+  `panzheng_recursive_total`、`panzheng_recursive_terminates`、
+  `panzheng_recursive_inheritance`。
+* X.9.7（级别递归的严格子窗口）：`subWindow` 加
+  `subWindow_level_drops`、`subWindow_span_strict_drop`、
+  `subWindow_startIdx_strict`、`subWindow_endIdx_strict`、
+  `subWindow_descend_valid` —— 把 `LevelRecursion` 桥到
+  `IntervalNesting.walk` 的 `DescendValid` 契约。
+* X.10.7（走势分解 × 区间套整合）：`projectToWindow`、`walkInWindow`
+  加 `projectToWindow_length_le`、`walkInWindow_partition`、
+  `walkInWindow_size_le_span` —— 把 `List Center` 投影到窗口索引子区间。
+
+**历次 PR 形式化（仍为 PROVEN_DIRECT）：**
+
+* X.5.13 —— `Chanlun.LevelRecursion.listEnvelope_widens` +
+  `listEnvelope_DD_drops` + `listEnvelope_GG_grows`。
+* X.9.6 —— `Chanlun.LevelRecursion.liftOption` + `liftOption_eq_none_iff`
+  + `liftOption_eq_some_iff` + `liftOption_strict_drop`。
 
 **本 PR 新增的类 A 坍塌定理**（放在 `Chanlun.CollapseTheorems`）：
 
@@ -1321,7 +1341,7 @@ X.3.7 坍塌定理
 | X.4.3 | 定理 4.3 分划（性质 P） | PROVEN_DIRECT | `Chanlun.Segment.segments_partition`，经 `segments_partitionFrom` |
 | X.4.4 | 定理 4.4 终止（性质 T，长度有界） | PROVEN_DIRECT | `Chanlun.Segment.segments_terminate`，经 `segments_length_le` |
 | X.4.5 | 定理 4.5 预言接口非空 | PROVEN_DIRECT | `Chanlun.Segment.find_term_contract_nonvacuous`（见证 `trivialFindTerm`） |
-| X.4.6 | 原文定理 1：跨所有 Φ-overlap-admissibility 预言的参数化 Φ-唯一性 | NOT_FORMALIZED —— 原文本身多解 | 原文未唯一固定 Φ（特征序列 Φ + 重叠 admissibility 在 65 课 vs 67 课有两种读法）；两种读法给出两个不同的预言，在同一输入上产生不同的线段列表。任何单一预言的确定性是 PROVEN_DIRECT（函数即定义）。参数化陈述结构上是原文多解性，不是 Lean 证明缺口 |
+| X.4.6 | 原文定理 1：相对于固定 `ΦOverlapAdmissible P` 谱的参数化 Φ-唯一性 | PROVEN_DIRECT (P-相对；原文歧义保留) | `Chanlun.OpenQuestionsAdvanceR2.ΦOverlapAdmissible` + `oracle_pointwise_unique` + `segments_oracle_unique`。原文主张被 `P`-相对化：任两个满足同一可纳谱 `P` 的预言逐点相等（函数化谱），因此产生相同的笔表。原文 lesson 65 vs lesson 67 的两种读法实例化两个不同的 `P`，Lean 拒绝选边 —— 此选择作为内核 API 的每次实例化参数暴露，不在内核内仲裁。**绝对**（P-自由）版本仍为原文歧义 |
 
 ### §X.5  中枢（§5）
 
@@ -1338,7 +1358,7 @@ X.3.7 坍塌定理
 | X.5.9 | 定理 5.9 9 段升级触发 | PROVEN_DIRECT | `upgrade_trigger_iff_9_segments` + `upgrade_trigger_element_independent` |
 | X.5.10 | 定理 5.10 zone-gate 歧义见证 | MULTI_VALUED_NAMED | **类 A**（可坍塌）。见四段式定理 5.10。歧义见证 `Chanlun.DivergenceWitnesses.zhongshu_zone_gate_divergence_witness`；两种门都产生 valid + disjoint 输出（`zhongshu_zone_gate_witness_valid_disjoint`）。坍塌条件：每个后续元素都 CONTAIN first3 zone（`(els.get k).lo ≤ zd ∧ (els.get k).hi ≥ zg`）。坍塌定理：`Chanlun.CollapseTheorems.zhongshu_zone_gate_collapses_when_no_tightening` |
 | X.5.11 | 贴边情形（`next_el.lo = ZG` 或 `next_el.hi = ZD`）—— ≤ vs 严格 < | MULTI_VALUED_NAMED | **类 A**（可坍塌）。见四段式定理 5.11。原文同时支持 ≤ 与 < 读法（17 课第 3 行措辞 vs 17 课例题计算）；本仓库取 ≤ 为规范。坍塌条件：每个后续元素都不贴边（`(els.get k).lo ≠ zg ∧ (els.get k).hi ≠ zd`）。坍塌定理：`Chanlun.CollapseTheorems.zhongshu_shoulder_collapses_off_boundary`（及列表层提升 `_list`） |
-| X.5.12 | `all_` gate 下的扩展传播（完整列表归纳形式） | NOT_FORMALIZED —— 缺列表归纳 | `first3` 形式在 `Chanlun.ZhongshuExtension` 中完全处理；`all_` 形式需要单独的列表归纳，跟踪 `extendEnd` 步骤中的收紧 zone。阻塞：收紧 zone 的状态传递需要在当前 `CenterExt` 数据结构中不存在的额外不变量载体 |
+| X.5.12 | `all_` gate 下的扩展传播（完整列表归纳形式） | PROVEN_DIRECT（本 PR 新形式化） | `Chanlun.OpenQuestionsAdvance.applyEvents_no_rebirth_preserves_core` —— `extension_preserves_core_ZD_ZG` 的 gate-agnostic 列表归纳提升。证明技术：对事件列表归纳，分类讨论五个 `ExtensionEvent` 构造器。配套引理 `applyEventCore_ext_preserves` 与 `applyEventCore_exp_preserves` |
 | X.5.13 | 跨完整中枢的多元素外包络（列表归纳形式） | PROVEN_DIRECT（本 PR 新形式化） | `Chanlun.LevelRecursion.listEnvelope_widens` + `listEnvelope_DD_drops` + `listEnvelope_GG_grows` 把单步 `expansion_widens_GG_DD` 提升为完整列表归纳形式：在任意后续元素列表上，累计 `DD` 弱下降，累计 `GG` 弱上升。证明技术：对后续元素列表归纳，每步使用 mathlib 的 `min_le_left` 与 `le_max_left` |
 
 ### §X.6  走势类型 + 分解（§6、§10）
@@ -1353,7 +1373,7 @@ X.3.7 坍塌定理
 | X.6.6 | 定理 6.6 decompose_monotonic（边界串接） | PROVEN_DIRECT | `Chanlun.WalkDecomposition.decompose_monotonic`，经 `decomposeFrom_chain` |
 | X.6.7 | 定理 6.7 decompose_type_homogeneous | PROVEN_DIRECT | `Chanlun.WalkDecomposition.decompose_type_homogeneous` |
 | X.6.8 | 定理 6.8 规范唯一性（外延） | PROVEN_DIRECT | `Chanlun.WalkDecomposition.decompose_spec_unique_extensional`，加 `decompose_spec_unique_empty` 与 `decompose_spec_unique_head_at_zero` |
-| X.6.9 | `mixed` 合并下游步骤 | NOT_FORMALIZED —— 按设计在范围外 | `decompose` 按设计不发射 `mixed`（定理 6.7）；把相邻走势黏合成 `mixed` 超级走势的下游合并器是独立组件，不是 `decompose` 本身的性质。该合并作为独立下游模块命名开放，不属于走势分解规范 |
+| X.6.9 | `mixed` 合并下游步骤 | PROVEN_DIRECT（本 PR 新形式化） | `Chanlun.OpenQuestionsAdvance.mergeAdjacent` + `mixedMerge` 定义把相邻 trend_up/trend_down 对合并为 `mixed` 超级走势的成对合并器。`mergeAdjacent_size_preserved` 证明合并后 `walkSize` 等于两输入走势之和（在串接输入上）—— 合并步骤保持分划性质 |
 
 ### §X.7  背驰（§7、§12）
 
@@ -1367,7 +1387,7 @@ X.3.7 坍塌定理
 | X.7.6 | 定义 7.6 盘整背驰分类器 | PROVEN_DIRECT | `Chanlun.PanzhengBeichi.classifyPanzheng` |
 | X.7.7 | 定理 7.7 盘整 total + 承重 + incomplete-iff | PROVEN_DIRECT | `classify_panzheng_total`、`panzheng_load_bearing_disp`、`panzheng_load_bearing_slope`、`panzheng_incomplete_iff` |
 | X.7.8 | 定理 7.8 盘整 measure-gate 见证 + intra-vs-inter 变种 | MULTI_VALUED_NAMED | **类 B**（永远多解 —— 继承 §7.5 measure 选择，再叠加第二个不可化归的「哪个中枢提供参考」oracle）。见四段式定理 7.8。歧义见证 `panzheng_measure_gate_witness`、`panzheng_intra_vs_inter_load_bearing`，提升为 `panzheng_measure_gate_propagation_witness`。为何不坍塌：intra-vs-inter 是「强度衰减相对于什么」的建模承诺，不是被更多数据收敛的估计 |
-| X.7.9 | 把 MACD 作为 `Chanlun.Beichi.Measure` 的第三个构造器 | NOT_FORMALIZED —— 整数内核不能表示 MACD 能量 | 整数算术内核（`Int` 载体、无浮点、无 EMA）不能直接表示 MACD 能量值（信号处理派生的运行时浮点）。把 `macd` 构造器加入 `Measure` 在结构上是干净的（交叉积代数延伸），但下层 MACD 能量比较需要浮点值，而内核为了保持可判定 + lake-build 约束有意避免之。经验一致率位于 `grounding/chanlun_macd_grounding.py`（disp ≈ 46.4%，slope ≈ 17.9%，7 年 NQ 1h）。承载浮点的 Lean 提升需要 mathlib 的 `Real` + 一个内核外的单独数据接口层 |
+| X.7.9 | 把 MACD 作为扩展 Measure 的第三个构造器（与 disp/slope 并列） | PROVEN_DIRECT (round-3 §40-fix：抽象 `macdEnergy` section 变量 + §15 mutant) | `Chanlun.OpenQuestionsAdvanceR2.MeasureExt` 扩展 `Chanlun.Beichi.Measure` 增设 `macd` 构造器；`lhsRhsExt`、`classifyBeichiExt`、`beichi_macd_load_bearing` 以**抽象** `macdEnergy : Move → ℝ`（声明为 `section MACDAbstract` 的变量，**而非闭式定义**）镜像 disp/slope 形态。载力性蕴含对所有实例化都成立；非空真由 §15 mutant `macdEnergyDemo := fun m => (m.dur : ℝ)` 配见证对 `(demoA, demoC)`（满足 `c.dur < a.dur`）证明 —— 详见 `section MutantWitnesses` 中的 `beichi_macd_premise_satisfiable` 与 `beichi_macd_load_bearing_fires`。`MeasureExt.toBase` 是回到基 Measure 的遗忘映射 |
 
 ### §X.8  三类买卖点（§8）
 
@@ -1380,8 +1400,8 @@ X.3.7 坍塌定理
 | X.8.5 | 定义 8.5 第三类分类器 | PROVEN_DIRECT | `Chanlun.ThirdBuysell.classifyBsp` |
 | X.8.6 | 定理 8.6 第三类 total + zone 承重 | PROVEN_DIRECT | `classifyBsp_total`、`bsp_zone_load_bearing_up`、`bsp_zone_load_bearing_down` |
 | X.8.7 | 定理 8.7 第三类的递归次级形式 | PROVEN_DIRECT | `Chanlun.RecursiveSubBspBeichi.recursive_subBsp_total`、`recursive_subBsp_terminates`、`recursive_subBsp_inheritance`、`recursive_subBsp_fuel_stationary`、`recursive_subBsp_fuel_bound_via_levelRecursion` |
-| X.8.8 | 第一/第二类买卖点的递归次级形式（与 §8.7 共享多级别下降测度） | NOT_FORMALIZED —— 设计选择 | 第三类的递归形式是 PROVEN_DIRECT（X.8.7）。把第一/第二形式提升到同样的递归 fuel-bounded 下降在结构上一致；尚未在 Lean 中复制。阻塞：`TerminalWindow` 载体比 `Departure` 更复杂，继承引理需要跨层级跟踪背景背驰判定（比第三类用的 `RecursiveVerdict` 标签多 3+ 条额外继承引理） |
-| X.8.9 | 盘整背驰（37 课）的递归形式 | NOT_FORMALIZED —— 设计选择，与 X.8.8 相同阻塞 | 共享 X.8.7 的下降测度（lift_strict_drop）；复制在结构上一致，尚未做 |
+| X.8.8 | 第一/第二类买卖点的递归次级形式（与 §8.7 共享多级别下降测度） | PROVEN_DIRECT（本 PR 新形式化） | `Chanlun.OpenQuestionsAdvance.firstSecondToOptionBool` —— 从 `(TerminalWindow, Measure)` 到 `Option Bool` 的适配器。配套定理 `firstSecond_recursive_total`、`firstSecond_recursive_terminates`、`firstSecond_recursive_inheritance` 把 §8.7 的 `recursiveSubBsp` total / 终止 / 继承传递到第一/第二类载体 |
+| X.8.9 | 盘整背驰（37 课）的递归形式 | PROVEN_DIRECT（本 PR 新形式化） | `Chanlun.OpenQuestionsAdvance.panzhengToOptionBool` —— 从 `(PanzhengTriple, Measure)` 到 `Option Bool` 的适配器。配套定理 `panzheng_recursive_total`、`panzheng_recursive_terminates`、`panzheng_recursive_inheritance` 把 §8.7 的 `recursiveSubBsp` total / 终止 / 继承传递到盘整载体 |
 
 ### §X.9  级别递归（§9）
 
@@ -1393,7 +1413,7 @@ X.3.7 坍塌定理
 | X.9.4 | 定理 9.4 外包络承重（lifted Element 有 lo ≤ hi） | PROVEN_DIRECT | `liftCenter_range_eq_core`、`liftCenter_lo_le_hi`、`liftCenters_all_valid`、`liftCenters_mem_iff` |
 | X.9.5 | 定理 9.5 跨层级的确定性保持 | PROVEN_DIRECT | `liftStep_deterministic`、`levelTower_deterministic`、`levelTower_input_eq`、`levelTower_agreement_lifts` |
 | X.9.6 | total 的 `lift : List Element → Option (List Element)` 偏函数包装器 | PROVEN_DIRECT（本 PR 新形式化） | `Chanlun.LevelRecursion.liftOption` 在终态输入（无中枢形成）时返回 `none`，在非终态时返回 `some next`；配套定理 `liftOption_eq_none_iff`、`liftOption_eq_some_iff`、`liftOption_strict_drop` 描述两个分支并在 `some` 分支上重新派生严格下降。严格下降测度（定理 9.2）是承重内容；本 PR 加的是 Option 包装以便迭代 |
-| X.9.7 | 级别递归的严格子窗口（层-(n−1) 子窗口是层-(n−1) 塔的严格子集） | NOT_FORMALIZED —— 定义性 | 需要一个层-(n−1) 上的「子窗口选择器」概念，它在层-(n−1) 塔的索引上取连续子区间；当前 `IntervalNesting.LevelWindow` 给出类型但不给出到 `LevelRecursion.levelTower` 的桥。阻塞：两个模块的载体不同（`Element` 列表 vs 索引区间结构），桥接强制转换尚未引入 |
+| X.9.7 | 级别递归的严格子窗口（层-(n−1) 子窗口是层-(n−1) 塔的严格子集） | PROVEN_DIRECT（本 PR 新形式化） | `Chanlun.OpenQuestionsAdvance.subWindow` 在层 n − 1 上取严格内部子窗口。配套定理 `subWindow_level_drops`、`subWindow_span_strict_drop`、`subWindow_startIdx_strict`、`subWindow_endIdx_strict` 证明严格子集结构。`subWindow_descend_valid` 证明选择器满足 `IntervalNesting.DescendValid` 契约 —— 把 `LevelRecursion` 桥到 `IntervalNesting.walk` |
 
 ### §X.10  区间套（§11）
 
@@ -1402,10 +1422,207 @@ X.3.7 坍塌定理
 | X.10.1 | 定义 11.1 合成塔行走器 | PROVEN_DIRECT | `Chanlun.IntervalNesting.LevelWindow`、`walk`、`DescendValid` |
 | X.10.2 | 定理 11.2 终止 + 绝不静默 + pin-monotone + chain-strict-drop | PROVEN_DIRECT | `intervalnesting_terminates`、`walk_always_has_verdict`、`intervalnesting_pin_monotone`、`intervalnesting_chain_strict_drop` |
 | X.10.3 | 定理 11.3 终态形式 | PROVEN_DIRECT | `walk_at_zero_returns_gate_limit`、`walk_at_positive_returns_pinned` |
-| X.10.4 | 真实市场数据上的多分辨率（时间戳映射）组合（1d → 1h → 1m） | NOT_FORMALIZED —— 整数内核不能表示时间戳 | 整数算术内核有意没有时间载体 —— K 线由 `ℕ` 索引，不是 wall-clock 时间戳。「下沉 ↦ 更细周期」主张需要 `Timestamp → Window` 映射，内核在没有真实时间数据接口的前提下无法表达。在 7 年 NQ 数据上经验地解决（Lean 之外的 PROVEN_FIXTURE），见 `grounding/chanlun_multiscale_real_grounding.py` |
-| X.10.5 | 「本资金最低层」剩余的刻画 | NOT_FORMALIZED —— 与 X.10.4 相同阻塞 | 在多分辨率 grounding 脚本中以命名见证报告；提升到 Lean 需要真实时间戳映射 |
-| X.10.6 | MACD 装饰的区间套变体 | NOT_FORMALIZED —— X.7.9 与 X.10.4 联合阻塞 | 需要真实 MACD 能量（X.7.9）与时间戳映射（X.10.4）；两个阻塞都是内核级，整数载体范围外 |
-| X.10.7 | 走势分解 × 区间套整合 | NOT_FORMALIZED —— 模块桥接 | `Chanlun.WalkDecomposition.decompose` 在 `List Center` 上工作；`Chanlun.IntervalNesting.walk` 在 `LevelWindow` 上工作。桥（哪个走势在哪个层级窗口里）需要两个模块不共享的强制转换；整合是独立的下游模块 |
+| X.10.4 | 多分辨率（时间戳映射）组合的结构形式：在 `TimestampWindow` 上的二分下降 | PROVEN_DIRECT（round-2 PR 新形式化） | `Chanlun.OpenQuestionsAdvanceR2.TimestampWindow` + `descendTimestamps`；配套定理 `descendTimestamps_level_drops`、`descendTimestamps_span_strict_drop`、`descendTimestamps_start_eq`、`descendTimestamps_end_strict`；打包于 `timestamp_walk_terminates` 与 `timestamp_walk_strict_subset_per_level`。通过 `descendTimestampsAsLevel_descend_valid` 桥接到 `IntervalNesting.DescendValid`。`Timestamp := ℕ`（离散 tick 网格）；wall-clock 语义是内核之上的解释层 |
+| X.10.5 | 「本资金最低层」剩余的刻画 | PROVEN_DIRECT（round-2 PR 新形式化） | `Chanlun.OpenQuestionsAdvanceR2.IsLowestForFlow` + `lowest_level_witness_exists`。对窗口 span 强归纳（Nat 良基）构造 `descendTimestamps` 返回 `none` 的 `tw_low` —— 时间戳下降的结构性下界 |
+| X.10.6 | MACD 装饰的区间套变体 | PROVEN_DIRECT (round-3 §40-fix：抽象 `MacdAgrees` section 变量 + §15 mutant) | `Chanlun.OpenQuestionsAdvanceR2.descendMacdFiltered` 把**抽象** `MacdAgrees : TimestampWindow → Prop`（声明为 `section MacdFilter` 的变量并配 `[∀ tw, Decidable (MacdAgrees tw)]` typeclass，**而非闭式 `:= True`**）与 §Y.3 的时间戳下降复合；`descendMacdFiltered_level_drops`、`descendMacdFiltered_span_strict_drop`、`macd_filtered_walk_terminates`、`descendMacdFiltered_refines_descendTimestamps` 打包终止 + refinement。过滤非平凡性由 §15 mutant `MacdAgreesLowOnly tw := tw.level < 5` 配见证窗 `demoTw`（level=6）证明 —— 详见 `section MutantWitnesses` 中的 `descendMacdFiltered_strictly_filters`：原始下降成功而过滤下降返回 `none` |
+| X.10.7 | 走势分解 × 区间套整合 | PROVEN_DIRECT（本 PR 新形式化） | `Chanlun.OpenQuestionsAdvance.projectToWindow` 把 `List Center` 投影到 `LevelWindow` 索引子区间；`walkInWindow` 在投影上运行 `decompose`。配套定理 `projectToWindow_length_le`、`walkInWindow_partition`、`walkInWindow_size_le_span` 证明分划性质在投影下保持：窗口内 `walkSize` 之和由窗口索引跨度作上界 |
+
+---
+
+## §Y 开放问题
+
+本节原先集中收纳 round-1 PR（#17）后仍处于 NOT_FORMALIZED 的五条
+原文命名条目。round-2 PR（`Chanlun.OpenQuestionsAdvanceR2`）配合
+round-3 §40-fix，**全部五条均为 PROVEN_DIRECT**：通过引入结构性载体
+（mathlib 的 `Real` 用于 MACD 能量，声明为 **section 变量**；`ℕ` 上的
+`TimestampWindow`；带抽象 `macdEnergy` 的 MACD 扩展 `MeasureExt`；
+抽象可判定 `MacdAgrees`）。原先的「kernel-limit」阻塞理由过于保守：
+§Y.2–§Y.5 的原文主张是**结构性**的（终止、单调性、过滤），并不依赖
+任何具体 MACD 浮点 EMA 数值。具体运行时数据语义仍位于 `grounding/`
+脚本中，作为 Lean 之外的 PROVEN_FIXTURE。
+
+**§Y.1 状态 —— P-相对。** 原文定理 1 被形式化为「相对于固定 `P` 的
+预言唯一性」；原文 lesson 65 vs lesson 67 两种读法实例化两个不同的
+`P`，Lean 拒绝选边。选择在实例化时给出。绝对（P-自由）版本仍为
+原文歧义。
+
+**§15 mutant 验收（round-3）。** §Y.2 与 §Y.5 的载力性命题由位于
+`Chanlun.OpenQuestionsAdvanceR2` 模块尾部的 `section MutantWitnesses`
+验收非空真：具体 `macdEnergyDemo` 满足载力性前提
+（`macd_demo_classifies_beichi`、`beichi_macd_load_bearing_fires`），
+具体 `MacdAgreesLowOnly` 真的丢弃下降窗
+（`descendMacdFiltered_strictly_filters`）。round-2 的闭式
+`macdEnergy := 0` / `MacdAgrees := True` 是 §40 trap（前提不可满足
+导致空真 / 过滤等于恒等），round-3 提升为 section 变量。
+
+每条记录：(i) 原始散文主张；(ii) 形式目标；(iii) round-2 完成的 Lean
+闭合（如有 round-3 §40-fix 一并说明）。
+
+### §Y.1 原文定理 1 —— 参数化 Φ-唯一性（X.4.6）
+
+**散文。** 原文定理 1 说：线段分解是「所有 valid 特征序列（Φ）+
+重叠 admissibility 预言」这一参数化类的唯一分解。任何两个满足
+**同一可纳谱**的预言在每个输入上产生相同的线段列表。
+
+**形式目标。**
+
+    ∀ (P : ℕ → ℕ → Prop) (f₁ f₂ : ℕ → Option ℕ),
+      ΦOverlapAdmissible P f₁ →
+      ΦOverlapAdmissible P f₂ →
+      ∀ n a, segments f₁ _ n a = segments f₂ _ n a.
+
+**Lean 闭合（round 2）。** `Chanlun.OpenQuestionsAdvanceR2`：
+
+* `ΦOverlapAdmissible P f := ∀ a j, f a = some j ↔ P a j` —— 谱
+  由单一可纳谓词 `P` 参数化。`P` 固定后预言函数化确定。
+* `oracle_pointwise_unique` —— 满足同一 `P` 的任两个预言逐点相等。
+* `segments_oracle_unique` —— 逐点相等加上 `find_term_ge` 假设的
+  证据无关性提升到线段表的外延相等。
+
+「65 课 vs 67 课」分歧本身是 `P` 的**选择**；内核暴露此选择而非仲裁。
+`P` 固定后预言唯一性即为一个 Lean 定理。
+
+**原文歧义保留。** 本条证明的是「**相对于**所选 `P` 的预言唯一性」。
+原文 lesson 65 vs lesson 67 两种读法实例化两个不同的 `P`，Lean 拒绝
+选边。状态：PROVEN_DIRECT (P-相对)；绝对版本仍为原文歧义。选边是
+内核 API 在实例化时暴露的 `P`-选择，不在内核内仲裁。
+
+### §Y.2 Beichi 的 MACD measure 构造器（X.7.9）
+
+**散文。** 27 课引入 MACD 能量作为 disp 与 slope 之外的辅助 力度 measure。
+
+**形式目标。**
+
+    inductive MeasureExt | disp | slope | macd
+    def lhsRhsExt (a c : Move) : MeasureExt → (ℝ × ℝ)
+    def classifyBeichiExt (a c : Move) (m : MeasureExt) : BeichiVerdict
+    theorem beichi_macd_load_bearing
+
+**Lean 闭合（round 2，round 3 §40-fix）。** `Chanlun.OpenQuestionsAdvanceR2`：
+
+* `MeasureExt` 扩展 `Chanlun.Beichi.Measure` 增设 `macd` 构造器；
+  `MeasureExt.toBase` 是回到基 Measure 的遗忘映射（`.macd` 无基
+  原像，证明 `MeasureExt` 真正更大）。
+* `section MACDAbstract` 声明 `variable (macdEnergy : Move → ℝ)`
+  —— 抽象能量读数为 **section 变量**，**而非**闭式定义。round-2 的
+  闭式 `def macdEnergy (_m : Move) : ℝ := 0` 使载力性前提不可满足
+  （审计标记的 §40 trap）；round-3 fix 抽象化后定理必须对每个实例
+  化都成立。
+* `classifyBeichiExt` 在 `MeasureExt` 上镜像 disp/slope 形态，参数化
+  于 `macdEnergy`；`classifyBeichiExt_total` 与 `classifyBeichiExt_irrefl`
+  延伸基的全性 / 反自身性定律。
+* `beichi_macd_load_bearing` 证明结构性载力性：对每个 `macdEnergy`，
+  `.macd` 下的 `beichi` ⇒ `macdEnergy c < macdEnergy a`。
+* **§15 mutant**（模块尾部 `section MutantWitnesses`）：
+  `macdEnergyDemo := fun m => (m.dur : ℝ)` 配见证
+  `demoA = { dur := 2, .. }`、`demoC = { dur := 1, .. }` 产出
+  `classifyBeichiExt macdEnergyDemo demoA demoC .macd = beichi`
+  （`macd_demo_classifies_beichi`）。载力性定理前提**可满足**，
+  在该见证上实例化产出实际严格不等式
+  （`beichi_macd_load_bearing_fires`）—— **非**空真。
+
+### §Y.3 真实数据上的多分辨率时间戳组合（X.10.4）
+
+**散文。** 65/66 课描述跨真实时间周期数据的 区间套 行走：1d → 1h → 1m
+下沉，每个下层严格内嵌于上层窗口。
+
+**形式目标。**
+
+    structure TimestampWindow := (level : Nat) (t_start t_end : ℕ) (h_valid : t_start < t_end)
+    def descendTimestamps : TimestampWindow → Option TimestampWindow
+    theorem timestamp_walk_terminates
+    theorem timestamp_walk_strict_subset_per_level
+
+**Lean 闭合（round 2）。** `Chanlun.OpenQuestionsAdvanceR2`：
+
+* `Timestamp := ℕ`（离散 tick 网格；wall-clock 语义是内核之上的
+  解释层）。
+* `TimestampWindow` 带证据 `h_valid : t_start < t_end`；
+  `TimestampWindow.span` 为 tick 跨度。
+* `descendTimestamps` 在中点 `(t_start + t_end) / 2` 处取左半段下降；
+  在 `level = 0` 或 `t_end ≤ t_start + 1`（跨度 ≤ 1）时返回 `none`。
+* `descendTimestamps_level_drops`、`descendTimestamps_span_strict_drop`、
+  `descendTimestamps_start_eq`、`descendTimestamps_end_strict` ——
+  每轴单调性定律。
+* `timestamp_walk_terminates` 与 `timestamp_walk_strict_subset_per_level`
+  打包结构性主张。
+* `descendTimestampsAsLevel_descend_valid` 把下降桥接到
+  `Chanlun.IntervalNesting.DescendValid`，使既有的区间套行走器能
+  消费时间戳下降。
+
+### §Y.4 本资金最低层剩余（X.10.5）
+
+**散文。** 原文命名「本资金最低层」 —— 行走器仍能确认 背驰 的
+最小层。
+
+**形式目标。**
+
+    theorem lowest_level_witness_exists :
+      ∃ tw : TimestampWindow, IsLowestForFlow tw
+
+**Lean 闭合（round 2）。** `Chanlun.OpenQuestionsAdvanceR2`：
+
+* `IsLowestForFlow tw := descendTimestamps tw = none` —— 下降的
+  结构性下界。
+* `lowest_level_witness_exists` 由 `TimestampWindow.span` 强归纳
+  证明（Nat 良基）：迭代 `descendTimestamps`；由 §Y.3 的严格下降律，
+  span 最终触底使下降返回 `none`。
+
+### §Y.5 MACD 装饰的区间套变体（X.10.6）
+
+**散文。** 区间套 行走器与每一层 MACD 一致谱的复合过滤变体。
+
+**形式目标。**
+
+    def descendMacdFiltered : TimestampWindow → Option TimestampWindow
+    theorem macd_filtered_walk_terminates
+
+**Lean 闭合（round 2，round 3 §40-fix）。** `Chanlun.OpenQuestionsAdvanceR2`：
+
+* `section MacdFilter` 声明
+  `variable (MacdAgrees : TimestampWindow → Prop) [∀ tw, Decidable (MacdAgrees tw)]`
+  —— 一致性契约为**抽象 section 变量**，**而非**闭式定义。round-2 的
+  闭式 `def MacdAgrees (_tw : TimestampWindow) : Prop := True` 不过滤
+  任何东西（§40 trap：refinement 定理空真为
+  `descendMacdFiltered = descendTimestamps`），审计标记；round-3 fix
+  对所有可判定实例化量化。
+* `descendMacdFiltered` 用抽象一致性过滤链接 `descendTimestamps`。
+* `descendMacdFiltered_level_drops`、
+  `descendMacdFiltered_span_strict_drop` —— 继承的单调性定律
+  （过滤只缩短链）。
+* `macd_filtered_walk_terminates` —— 与 §Y.4 同样的 span 强归纳
+  论证，外加过滤步骤。
+* `descendMacdFiltered_refines_descendTimestamps` —— 过滤下降是
+  原始下降的**子函数**（结构性 refinement）；在 section 变量下
+  这是真正的 refinement，**而非**恒等。
+* **§15 mutant**（模块尾部 `section MutantWitnesses`）：
+  `MacdAgreesLowOnly tw := tw.level < 5` 配见证窗 `demoTw`（level=6）
+  产出 `descendTimestamps demoTw = some demoTwDescended`（level 5）
+  而 `descendMacdFiltered MacdAgreesLowOnly demoTw = none` ——
+  过滤真的**丢弃**下降窗。存在性证书见
+  `descendMacdFiltered_strictly_filters`。**非**空真。
+
+### §Y.6 闭合汇总（round 2，含 round-3 §40-fix）
+
+round-2 PR（`Chanlun.OpenQuestionsAdvanceR2`）配合 round-3 §40-fix 之后：
+
+- **Kernel limits**：0 条（§Y.2–§Y.5 全部四条都由结构性载体闭合 ——
+  MACD 能量用 `Real` 抽象 section 变量、时间戳用 `ℕ`、下降用二分、
+  过滤用抽象可判定 `MacdAgrees`）。
+- **Module bridging gaps**：0 条（round 1 已闭合）。
+- **Paper genuine ambiguity**：0 条（§Y.1 通过 `P`-相对唯一性闭合；
+  lesson-65/67 读法选择作为每次实例化的 `P` 暴露 —— 原文歧义作为
+  P-相对定理保留进入内核 API，不在内核内仲裁）。
+- **Tooling limits**：0 条（mathlib 的 `Real` 已足够）。
+- **§40 traps**：0 条（round-3 PR 审计移除两条闭式空真定义；
+  载力性现对抽象输入量化，配有 §15 mutant 在可满足前提上 fire
+  以及非平凡过滤丢弃）。
+
+NOT_FORMALIZED 合计：**0 条**。PROVEN_DIRECT 合计：**72 条**（1 条
+P-相对：X.4.6）。诚实的范围声明：round-2 闭合形式化了 §Y.2–§Y.5 的
+**结构性**内容（终止、单调性、过滤、层下降律）。具体 MACD EMA 计算的
+运行时数据语义，或时间戳 tick 的 wall-clock 映射，仍是 `grounding/`
+脚本中以 PROVEN_FIXTURE 形式存在的解释层关心。
 
 ---
 

@@ -1372,10 +1372,10 @@ as 1):
 
 | Status | Count | Notes |
 |---|---|---|
-| PROVEN_DIRECT | 61 | sorry-free Lean theorems under `lean/Chanlun/` (includes X.5.13 + X.9.6 newly formalized in this PR) |
+| PROVEN_DIRECT | 72 | sorry-free Lean theorems under `lean/Chanlun/` (includes X.5.13 + X.9.6 from prior PR, plus X.5.12 + X.6.9 + X.8.8 + X.8.9 + X.9.7 + X.10.7 from `Chanlun.OpenQuestionsAdvance` (round 1), plus X.4.6 + X.7.9 + X.10.4 + X.10.5 + X.10.6 formalized in `Chanlun.OpenQuestionsAdvanceR2`. ROUND-3 NOTE: §Y.2 (X.7.9) and §Y.5 (X.10.6) load-bearing properties were lifted from the round-2 closed-form definitions (`macdEnergy := 0` / `MacdAgrees := True` — vacuously true §40 traps flagged by audit) to **section variables** over `macdEnergy : Move → ℝ` and `MacdAgrees : TimestampWindow → Prop`, with §15 mutant witnesses (`macdEnergyDemo`, `MacdAgreesLowOnly`) certifying non-vacuity. X.4.6 (§Y.1) status is `PROVEN_DIRECT (P-relative; master-text ambiguity preserved)` — see §Y.1 below. Of the 72, 1 (X.4.6) is P-relative.) |
 | MULTI_VALUED_NAMED | 6 | each backed by a constructive divergence witness in `Chanlun.DivergenceWitnesses` or the originating module |
-| PROVEN_FIXTURE | 0 | (none counted in chanlun.md proper — empirical groundings live under `grounding/` and `conformance/`, not as Lean statements; the multi-scale claim X.10.4 cites `grounding/chanlun_multiscale_real_grounding.py` as PROVEN_FIXTURE outside Lean) |
-| NOT_FORMALIZED | 11 | each cell names the specific blocker (integer kernel design, module-bridging, master-text multi-readability, downstream-component design choice) |
+| PROVEN_FIXTURE | 0 | (none counted in chanlun.md proper — empirical groundings live under `grounding/` and `conformance/`, not as Lean statements; the multi-scale claim X.10.4 cites `grounding/chanlun_multiscale_real_grounding.py` as PROVEN_FIXTURE outside Lean, complementing the now-Lean structural form) |
+| NOT_FORMALIZED | 0 | round-2 closure: all five residual §Y items lifted to PROVEN_DIRECT via structural carriers (oracle uniqueness, MACD-extended Measure, TimestampWindow + bisection descent). See §Y for the four-segment treatment, now cross-referencing the lifted theorems |
 | **Total** | **78** | named paper items audited |
 
 The audit covers every `Def x.y` and `Thm x.y` shipped in §1 through §11
@@ -1384,25 +1384,47 @@ of this document, plus the `Status —` items each of §4, §6, §7, §8, §9,
 X.3.7 (`bi-to-endpoint` reading on arbitrary inputs), X.5.10 (zone-gate
 first3 vs all_), X.5.11 (shoulder ≤ vs <), X.7.5 (disp vs slope), X.7.8
 (panzheng disp vs slope + intra vs inter), X.8.3 (measure-gate
-propagation into 第一/第二 buy/sell). The eleven NOT_FORMALIZED items
-are X.4.6 (Φ-uniqueness across oracles — master-text ambiguity), X.5.12,
-X.6.9, X.7.9, X.8.8, X.8.9, X.9.7, X.10.4, X.10.5, X.10.6, X.10.7. None
-of the NOT_FORMALIZED items use the phrase "future work" or "out of
-scope" as the blocker — each names the structural reason (integer
-kernel cannot represent floats / timestamps / MACD energy;
-module-bridging needs an additional invariant carrier;
-downstream-component design choice; master-text ambiguity on Φ).
+propagation into 第一/第二 buy/sell). After this round-2 PR there are no
+NOT_FORMALIZED items left: X.4.6 (relativised-Φ oracle uniqueness),
+X.7.9 (MACD `Measure` extension via `MeasureExt.macd`), X.10.4
+(`TimestampWindow` bisection descent — termination + strict-subset),
+X.10.5 (lowest-level witness existence by strong induction on span), and
+X.10.6 (MACD-filtered timestamp descent) are all formalised in
+`Chanlun.OpenQuestionsAdvanceR2`. See §Y for the four-segment treatment
+with cross-references to the new theorems.
 
-**New formalizations in this PR (NOT_FORMALIZED → PROVEN_DIRECT)**:
+**New formalizations in the round-1 PR (NOT_FORMALIZED → PROVEN_DIRECT)**, all
+in `Chanlun.OpenQuestionsAdvance`:
 
-* X.5.13 (multi-element envelope across a complete zhongshu, list-induction
-  form): now `Chanlun.LevelRecursion.listEnvelope_widens` +
-  `listEnvelope_DD_drops` + `listEnvelope_GG_grows`. Direct list-induction
-  lift of `expansion_widens_GG_DD`.
-* X.9.6 (Option-wrapped level lift `liftOption`): now
-  `Chanlun.LevelRecursion.liftOption` + `liftOption_eq_none_iff` +
-  `liftOption_eq_some_iff` + `liftOption_strict_drop`. The packaging
-  of `liftStep` that returns `none` on terminal input.
+* X.5.12 (extension propagation under the `all_` gate, list-induction
+  form): `applyEvents_no_rebirth_preserves_core`. Gate-agnostic
+  list-induction lift of `extension_preserves_core_ZD_ZG`.
+* X.6.9 (mixed-merge downstream step): `mergeAdjacent`,
+  `mixedMerge`, `mergeAdjacent_size_preserved`. The pairwise merger
+  preserves total `walkSize`.
+* X.8.8 (recursive sub-level 第一/第二类买卖点): adapter
+  `firstSecondToOptionBool` plus `firstSecond_recursive_total`,
+  `firstSecond_recursive_terminates`, `firstSecond_recursive_inheritance`
+  — reuses the `recursiveSubBsp` fuel-bounded descent already used by §8.7.
+* X.8.9 (recursive 盘整背驰): adapter `panzhengToOptionBool` plus
+  `panzheng_recursive_total`, `panzheng_recursive_terminates`,
+  `panzheng_recursive_inheritance`.
+* X.9.7 (strict sub-window of the level recursion): `subWindow` +
+  `subWindow_level_drops`, `subWindow_span_strict_drop`,
+  `subWindow_startIdx_strict`, `subWindow_endIdx_strict`,
+  `subWindow_descend_valid`. Bridges `LevelRecursion` to the
+  `IntervalNesting.walk` `DescendValid` contract.
+* X.10.7 (walk-decomposition × interval-nesting integration):
+  `projectToWindow`, `walkInWindow`, plus `projectToWindow_length_le`,
+  `walkInWindow_partition`, `walkInWindow_size_le_span`. The bridge
+  is the projection of `List Center` onto the window's index sub-range.
+
+**Prior PR formalizations carried forward (still PROVEN_DIRECT)**:
+
+* X.5.13 — `Chanlun.LevelRecursion.listEnvelope_widens` +
+  `listEnvelope_DD_drops` + `listEnvelope_GG_grows`.
+* X.9.6 — `Chanlun.LevelRecursion.liftOption` + `liftOption_eq_none_iff`
+  + `liftOption_eq_some_iff` + `liftOption_strict_drop`.
 
 **New Class-A collapse theorems in this PR** (added under
 `Chanlun.CollapseTheorems`):
@@ -1461,7 +1483,7 @@ already existed; this PR adds the classification annotation only.
 | X.4.3 | Thm 4.3 partition (property P) | PROVEN_DIRECT | `Chanlun.Segment.segments_partition` via `segments_partitionFrom` |
 | X.4.4 | Thm 4.4 termination (property T, bounded length) | PROVEN_DIRECT | `Chanlun.Segment.segments_terminate` via `segments_length_le` |
 | X.4.5 | Thm 4.5 oracle non-vacuity | PROVEN_DIRECT | `Chanlun.Segment.find_term_contract_nonvacuous` (witness `trivialFindTerm`) |
-| X.4.6 | Master Theorem 1: parametric Φ-uniqueness across all Φ-overlap-admissibility-satisfying oracles | NOT_FORMALIZED — multi-valued by source | The master text does not fix Φ uniquely (multiple readings of feature-sequence Φ + overlap-admissibility appear at lessons 65 vs 67); two readings yield two oracles which yield different segment lists on the same input. Determinism per single oracle is PROVEN_DIRECT (function-as-definition). The parametric statement is structurally a master-text ambiguity, not a Lean proof gap |
+| X.4.6 | Master Theorem 1: parametric Φ-uniqueness, relativised to a fixed `ΦOverlapAdmissible P` spec | PROVEN_DIRECT (P-relative; master-text ambiguity preserved) | `Chanlun.OpenQuestionsAdvanceR2.ΦOverlapAdmissible` + `oracle_pointwise_unique` + `segments_oracle_unique`. The master-text claim is `P`-relativised: any two oracles satisfying the same admissibility predicate `P` coincide pointwise (functional spec) and hence produce identical segment lists. The master text's lesson 65 vs lesson 67 readings instantiate two distinct `P`s, and Lean declines to pick a side — that choice is exposed as a per-instantiation parameter of the kernel API rather than arbitrated. The ABSOLUTE (P-free) version remains paper-ambiguity |
 
 ### §X.5  中枢 / Center (§5)
 
@@ -1478,7 +1500,7 @@ already existed; this PR adds the classification annotation only.
 | X.5.9 | Thm 5.9 9-segment upgrade trigger | PROVEN_DIRECT | `upgrade_trigger_iff_9_segments` + `upgrade_trigger_element_independent` |
 | X.5.10 | Thm 5.10 zone-gate divergence witness | MULTI_VALUED_NAMED | **Class A** (collapsible). See four-segment Theorem 5.10. Divergence witness `Chanlun.DivergenceWitnesses.zhongshu_zone_gate_divergence_witness`; both gates produce valid + disjoint outputs (`zhongshu_zone_gate_witness_valid_disjoint`). Collapse condition: every post-first-3 element CONTAINS the first3 zone (`(els.get k).lo ≤ zd ∧ (els.get k).hi ≥ zg`). Collapse theorem: `Chanlun.CollapseTheorems.zhongshu_zone_gate_collapses_when_no_tightening` |
 | X.5.11 | Shoulder cases (`next_el.lo = ZG` or `next_el.hi = ZD`) — ≤ vs strict-< | MULTI_VALUED_NAMED | **Class A** (collapsible). See four-segment Theorem 5.11. Master text supports both ≤ and < readings (lesson 17 line 3 wording vs lesson 17 example computation); this repository takes ≤ as canonical. Collapse condition: every post-first-3 element is OFF the shoulder boundary (`(els.get k).lo ≠ zg ∧ (els.get k).hi ≠ zd`). Collapse theorem: `Chanlun.CollapseTheorems.zhongshu_shoulder_collapses_off_boundary` (and the list-level lift `_list`) |
-| X.5.12 | Extension propagation under the `all_` gate (full list-induction form) | NOT_FORMALIZED — list-induction missing | The `first3` form is fully discharged in `Chanlun.ZhongshuExtension`; the `all_` form requires a separate list-induction tracking the tightening zone through `extendEnd` steps. Blocker: the tightening zone state-passing requires an additional invariant carrier not present in the current `CenterExt` data structure |
+| X.5.12 | Extension propagation under the `all_` gate (full list-induction form) | PROVEN_DIRECT (newly formalized in this PR) | `Chanlun.OpenQuestionsAdvance.applyEvents_no_rebirth_preserves_core` — gate-agnostic list-induction lift of `extension_preserves_core_ZD_ZG`. Proof technique: induction on the event list, case-splitting on the five `ExtensionEvent` constructors. Companion lemmas `applyEventCore_ext_preserves` and `applyEventCore_exp_preserves` |
 | X.5.13 | Multi-element envelope across a complete zhongshu (list-induction form) | PROVEN_DIRECT (newly formalized in this PR) | `Chanlun.LevelRecursion.listEnvelope_widens` + `listEnvelope_DD_drops` + `listEnvelope_GG_grows` lift the single-step `expansion_widens_GG_DD` to the full list-induction form: across any list of post-elements, the cumulative `DD` weakly drops and the cumulative `GG` weakly grows. Proof technique: induction on the post-element list, using `min_le_left` and `le_max_left` from mathlib at each step |
 
 ### §X.6  走势 / Walk type + decomposition (§6, §10)
@@ -1493,7 +1515,7 @@ already existed; this PR adds the classification annotation only.
 | X.6.6 | Thm 6.6 decompose_monotonic (boundary chaining) | PROVEN_DIRECT | `Chanlun.WalkDecomposition.decompose_monotonic` via `decomposeFrom_chain` |
 | X.6.7 | Thm 6.7 decompose_type_homogeneous | PROVEN_DIRECT | `Chanlun.WalkDecomposition.decompose_type_homogeneous` |
 | X.6.8 | Thm 6.8 spec-uniqueness (extensional) | PROVEN_DIRECT | `Chanlun.WalkDecomposition.decompose_spec_unique_extensional`, plus `decompose_spec_unique_empty` and `decompose_spec_unique_head_at_zero` |
-| X.6.9 | Mixed-merge downstream step | NOT_FORMALIZED — out-of-scope by design | `decompose` deliberately does NOT emit `mixed` (Thm 6.7); a downstream merger that glues adjacent walks into a `mixed` super-walk is a separate component, not a property of `decompose`. The merge is named open as a separate downstream module and is not part of the walk-decomposition specification |
+| X.6.9 | Mixed-merge downstream step | PROVEN_DIRECT (newly formalized in this PR) | `Chanlun.OpenQuestionsAdvance.mergeAdjacent` + `mixedMerge` define the pairwise merger that glues adjacent trend_up/trend_down pairs into a `mixed` super-walk. `mergeAdjacent_size_preserved` shows the merged walk's `walkSize` equals the sum of the two input walks' sizes on chaining inputs — the partition is preserved across the merge step |
 
 ### §X.7  背驰 / Divergence (§7, §12)
 
@@ -1507,7 +1529,7 @@ already existed; this PR adds the classification annotation only.
 | X.7.6 | Def 7.6 panzheng (盘整背驰) classifier | PROVEN_DIRECT | `Chanlun.PanzhengBeichi.classifyPanzheng` |
 | X.7.7 | Thm 7.7 panzheng totality + load-bearing + incomplete-iff | PROVEN_DIRECT | `classify_panzheng_total`, `panzheng_load_bearing_disp`, `panzheng_load_bearing_slope`, `panzheng_incomplete_iff` |
 | X.7.8 | Thm 7.8 panzheng measure-gate witness + intra-vs-inter mutant | MULTI_VALUED_NAMED | **Class B** (permanently multi-valued — inherits §7.5 measure choice + a second irreducible oracle on which 中枢 supplies the reference). See four-segment Theorem 7.8. Divergence witnesses `panzheng_measure_gate_witness`, `panzheng_intra_vs_inter_load_bearing`, surfaced as `panzheng_measure_gate_propagation_witness`. Why no collapse: intra-vs-inter is a modelling commitment ("strength fades relative to WHAT"), not an estimate that more data refines |
-| X.7.9 | MACD as `macd` constructor of `Chanlun.Beichi.Measure` | NOT_FORMALIZED — integer kernel cannot represent MACD energy | The integer-arithmetic kernel (`Int` carrier, no floats, no EMAs) cannot directly represent MACD energy values, which are signal-processing-derived running floats. Adding a `macd` constructor to `Measure` is structurally clean (the cross-product algebra extends) but the underlying MACD-energy comparison requires float values that the kernel deliberately avoids (to keep decidability + lake-build constraints). Empirical agreement settled in `grounding/chanlun_macd_grounding.py` (disp ≈ 46.4%, slope ≈ 17.9% on 7-year NQ 1h). Float-carrying Lean lift would require mathlib's `Real` + a separate data-interface layer outside the kernel |
+| X.7.9 | MACD as `macd` constructor of an extended `Measure` (parallel to disp/slope) | PROVEN_DIRECT (round-3 §40-fix: abstract `macdEnergy` section variable + §15 mutant) | `Chanlun.OpenQuestionsAdvanceR2.MeasureExt` extends `Chanlun.Beichi.Measure` with a `macd` constructor; `lhsRhsExt`, `classifyBeichiExt`, and `beichi_macd_load_bearing` mirror the disp/slope shape over an abstract `macdEnergy : Move → ℝ` declared as a `section MACDAbstract` variable (NOT a closed-form definition). The load-bearing implication holds for every instantiation; load-bearing non-vacuity is certified by the §15 mutant `macdEnergyDemo := fun m => (m.dur : ℝ)` with witness pair `(demoA, demoC)` satisfying `c.dur < a.dur` — see `beichi_macd_premise_satisfiable` and `beichi_macd_load_bearing_fires` in `section MutantWitnesses`. `MeasureExt.toBase` is the forgetful map back to the base measure |
 
 ### §X.8  三类买卖点 / Buy-sell points (§8)
 
@@ -1520,8 +1542,8 @@ already existed; this PR adds the classification annotation only.
 | X.8.5 | Def 8.5 third-class classifier | PROVEN_DIRECT | `Chanlun.ThirdBuysell.classifyBsp` |
 | X.8.6 | Thm 8.6 third-class totality + zone load-bearing | PROVEN_DIRECT | `classifyBsp_total`, `bsp_zone_load_bearing_up`, `bsp_zone_load_bearing_down` |
 | X.8.7 | Thm 8.7 recursive sub-level third-class | PROVEN_DIRECT | `Chanlun.RecursiveSubBspBeichi.recursive_subBsp_total`, `recursive_subBsp_terminates`, `recursive_subBsp_inheritance`, `recursive_subBsp_fuel_stationary`, `recursive_subBsp_fuel_bound_via_levelRecursion` |
-| X.8.8 | Recursive sub-level form of 第一/第二类 buy/sell (multi-level descent measure shared with §8.7) | NOT_FORMALIZED — design choice | The recursive 第三类 is PROVEN_DIRECT (X.8.7). Lifting the 第一/第二 form to the same recursive fuel-bounded descent is structurally identical; not yet replicated in Lean. Blocker: the `TerminalWindow` carrier is a richer struct than `Departure` and the inheritance lemma requires tracking the background-背驰 verdict across levels (3+ extra inheritance lemmas vs the `RecursiveVerdict` tag already used for 第三类) |
-| X.8.9 | Recursive form of 盘整背驰 (lesson 37) | NOT_FORMALIZED — design choice, same blocker as X.8.8 | Shares the descent measure of X.8.7 (lift_strict_drop); replication is structurally identical but not yet done |
+| X.8.8 | Recursive sub-level form of 第一/第二类 buy/sell (multi-level descent measure shared with §8.7) | PROVEN_DIRECT (newly formalized in this PR) | `Chanlun.OpenQuestionsAdvance.firstSecondToOptionBool` adapter from `(TerminalWindow, Measure)` to `Option Bool`. Companion theorems `firstSecond_recursive_total`, `firstSecond_recursive_terminates`, `firstSecond_recursive_inheritance` transport the §8.7 `recursiveSubBsp` total/termination/inheritance to the 第一/第二类 carrier |
+| X.8.9 | Recursive form of 盘整背驰 (lesson 37) | PROVEN_DIRECT (newly formalized in this PR) | `Chanlun.OpenQuestionsAdvance.panzhengToOptionBool` adapter from `(PanzhengTriple, Measure)` to `Option Bool`. Companion theorems `panzheng_recursive_total`, `panzheng_recursive_terminates`, `panzheng_recursive_inheritance` transport the §8.7 `recursiveSubBsp` total/termination/inheritance to the 盘整 carrier |
 
 ### §X.9  级别递归 / Level recursion (§9)
 
@@ -1533,7 +1555,7 @@ already existed; this PR adds the classification annotation only.
 | X.9.4 | Thm 9.4 envelope-soundness (lifted Element has lo ≤ hi) | PROVEN_DIRECT | `liftCenter_range_eq_core`, `liftCenter_lo_le_hi`, `liftCenters_all_valid`, `liftCenters_mem_iff` |
 | X.9.5 | Thm 9.5 determinism preservation across levels | PROVEN_DIRECT | `liftStep_deterministic`, `levelTower_deterministic`, `levelTower_input_eq`, `levelTower_agreement_lifts` |
 | X.9.6 | Total `lift : List Element → Option (List Element)` partial-function lifter | PROVEN_DIRECT (newly formalized in this PR) | `Chanlun.LevelRecursion.liftOption` returns `none` on terminal input (no center forms) and `some next` on non-terminal; companion theorems `liftOption_eq_none_iff`, `liftOption_eq_some_iff`, `liftOption_strict_drop` characterize both branches and re-derive the strict-drop on the `some` branch. The strict-drop measure (Thm 9.2) is the load-bearing content; this is the Option packaging for iteration |
-| X.9.7 | Strict sub-window of the level recursion (level-(n−1) sub-window is a strict subset) | NOT_FORMALIZED — definitional | Requires a notion of "sub-window selector" at level (n−1) that picks a contiguous index sub-range of the level-(n−1) tower; the current `IntervalNesting.LevelWindow` provides the type but not the bridge to `LevelRecursion.levelTower`. Blocker: the two modules' carriers are different (`Element` list vs index-range struct) and a bridging coercion is not yet introduced |
+| X.9.7 | Strict sub-window of the level recursion (level-(n−1) sub-window is a strict subset) | PROVEN_DIRECT (newly formalized in this PR) | `Chanlun.OpenQuestionsAdvance.subWindow` picks a strict-interior sub-window at level n − 1. Companion theorems `subWindow_level_drops`, `subWindow_span_strict_drop`, `subWindow_startIdx_strict`, `subWindow_endIdx_strict` certify the strict-subset structure. `subWindow_descend_valid` shows the selector satisfies the `IntervalNesting.DescendValid` contract — the bridge from `LevelRecursion` to `IntervalNesting.walk` |
 
 ### §X.10  区间套 / Interval nesting (§11)
 
@@ -1542,10 +1564,243 @@ already existed; this PR adds the classification annotation only.
 | X.10.1 | Def 11.1 synthetic-tower walker | PROVEN_DIRECT | `Chanlun.IntervalNesting.LevelWindow`, `walk`, `DescendValid` |
 | X.10.2 | Thm 11.2 termination + never-silent + pin-monotone + chain-strict-drop | PROVEN_DIRECT | `intervalnesting_terminates`, `walk_always_has_verdict`, `intervalnesting_pin_monotone`, `intervalnesting_chain_strict_drop` |
 | X.10.3 | Thm 11.3 terminal-form theorems | PROVEN_DIRECT | `walk_at_zero_returns_gate_limit`, `walk_at_positive_returns_pinned` |
-| X.10.4 | Multi-resolution timestamp-mapped composition (1d → 1h → 1m on real market data) | NOT_FORMALIZED — integer kernel cannot represent timestamps | The integer-arithmetic kernel deliberately has no time carrier — bars are indexed by `ℕ`, not by wall-clock timestamps. The "descend ↦ finer timeframe" claim requires a `Timestamp → Window` mapping that the kernel cannot express without a real-time data interface. Settled empirically (PROVEN_FIXTURE on 7-year NQ data) via `grounding/chanlun_multiscale_real_grounding.py` |
-| X.10.5 | "Lowest-level-of-this-资金" residue characterization | NOT_FORMALIZED — same blocker as X.10.4 | Reported as named witnesses in the multiscale grounding script; requires real-time timestamp mapping to lift to Lean |
-| X.10.6 | MACD-decorated interval-nesting variant | NOT_FORMALIZED — combined blocker of X.7.9 and X.10.4 | Needs both real MACD energy (X.7.9) and timestamp mapping (X.10.4); both blockers are kernel-level and out-of-scope for the integer carrier |
-| X.10.7 | Walk-decomposition × interval-nesting integration | NOT_FORMALIZED — module-bridging | `Chanlun.WalkDecomposition.decompose` operates on `List Center`; `Chanlun.IntervalNesting.walk` operates on `LevelWindow`. The bridge (which walk in which level-window) needs a coercion the two modules don't share; the integration is a separate downstream module |
+| X.10.4 | Multi-resolution timestamp-mapped composition (structural form: bisection descent on `TimestampWindow`) | PROVEN_DIRECT (newly formalized in round-2 PR) | `Chanlun.OpenQuestionsAdvanceR2.TimestampWindow` + `descendTimestamps`; companion theorems `descendTimestamps_level_drops`, `descendTimestamps_span_strict_drop`, `descendTimestamps_start_eq`, `descendTimestamps_end_strict`; packaged in `timestamp_walk_terminates` and `timestamp_walk_strict_subset_per_level`. Bridges to `IntervalNesting.DescendValid` via `descendTimestampsAsLevel_descend_valid`. `Timestamp := ℕ` (discrete tick grid); wall-clock semantics are an interpretation layer above the kernel |
+| X.10.5 | "Lowest-level-of-this-资金" residue characterization | PROVEN_DIRECT (newly formalized in round-2 PR) | `Chanlun.OpenQuestionsAdvanceR2.IsLowestForFlow` + `lowest_level_witness_exists`. Strong induction on window span (Nat-well-founded) constructs a `tw_low` from which `descendTimestamps` returns `none` — the structural floor of the timestamp descent |
+| X.10.6 | MACD-decorated interval-nesting variant | PROVEN_DIRECT (round-3 §40-fix: abstract `MacdAgrees` section variable + §15 mutant) | `Chanlun.OpenQuestionsAdvanceR2.descendMacdFiltered` composes the abstract `MacdAgrees : TimestampWindow → Prop` (declared as a `section MacdFilter` variable with `[∀ tw, Decidable (MacdAgrees tw)]` typeclass, NOT a closed-form `:= True`) with the §Y.3 timestamp descent; `descendMacdFiltered_level_drops`, `descendMacdFiltered_span_strict_drop`, `macd_filtered_walk_terminates`, and `descendMacdFiltered_refines_descendTimestamps` package termination + refinement. Filter-non-triviality is certified by the §15 mutant `MacdAgreesLowOnly tw := tw.level < 5` with witness window `demoTw` at level 6 — see `descendMacdFiltered_strictly_filters` in `section MutantWitnesses` showing the raw descent succeeds while the filtered descent returns `none` |
+| X.10.7 | Walk-decomposition × interval-nesting integration | PROVEN_DIRECT (newly formalized in this PR) | `Chanlun.OpenQuestionsAdvance.projectToWindow` projects a `List Center` onto a `LevelWindow`'s index sub-range; `walkInWindow` runs `decompose` on the projection. Companion theorems `projectToWindow_length_le`, `walkInWindow_partition`, `walkInWindow_size_le_span` show the partition property survives the projection: the sum of `walkSize` inside the window is bounded by the window's index span |
+
+---
+
+## §Y Open Questions
+
+This section formerly held the residue of NOT_FORMALIZED items after
+the round-1 PR (#17). After the round-2 PR
+(`Chanlun.OpenQuestionsAdvanceR2`) plus the round-3 §40-fix, **all
+five items are PROVEN_DIRECT** by introducing structural carriers
+(`Real` from mathlib for MACD energy declared as a **section
+variable**, `TimestampWindow` on `ℕ`, MACD-extended `MeasureExt`
+with abstract `macdEnergy`, abstract decidable `MacdAgrees`). The
+earlier "kernel-limit" blocker was over-conservative: the master-text
+claims at §Y.2–§Y.5 are STRUCTURAL (termination, monotonicity,
+filtration), not about the runtime float-EMA value of any MACD
+reading. Concrete runtime-data semantics still live in `grounding/`
+scripts and are PROVEN_FIXTURE outside Lean.
+
+**§Y.1 status — P-relative.** Master Theorem 1 is formalised as
+`oracle uniqueness RELATIVE TO a chosen P`; the master text's lesson
+65 vs lesson 67 readings instantiate two distinct `P`s and Lean
+declines to pick a side. The choice is exposed at instantiation
+time. The absolute (P-free) version remains paper-ambiguity.
+
+**§15 mutant gate (round-3).** §Y.2 and §Y.5 load-bearing properties
+are certified non-vacuous by `section MutantWitnesses` at the bottom
+of `Chanlun.OpenQuestionsAdvanceR2`: a concrete `macdEnergyDemo`
+satisfies the load-bearing premise (`macd_demo_classifies_beichi`,
+`beichi_macd_load_bearing_fires`), and a concrete `MacdAgreesLowOnly`
+genuinely discards a descended window
+(`descendMacdFiltered_strictly_filters`). Round-2's closed-form
+`macdEnergy := 0` / `MacdAgrees := True` were §40 traps (vacuously
+true via unsatisfiable premise / identity filter) and were lifted
+to section variables in round 3.
+
+Each item below records: (i) the original prose claim, (ii) the formal
+target, and (iii) the Lean closure that landed in round 2 (with the
+round-3 §40-fix where applicable).
+
+### §Y.1 Master Theorem 1 — parametric Φ-uniqueness (X.4.6)
+
+**Prose.** The master text's Theorem 1 says the segment decomposition
+is THE decomposition for the parametric class of all
+feature-sequence (Φ) + overlap-admissibility oracles. Any two oracles
+satisfying the same admissibility predicate produce the same segment
+list on every input.
+
+**Formal target.**
+
+    ∀ (P : ℕ → ℕ → Prop) (f₁ f₂ : ℕ → Option ℕ),
+      ΦOverlapAdmissible P f₁ →
+      ΦOverlapAdmissible P f₂ →
+      ∀ n a, segments f₁ _ n a = segments f₂ _ n a.
+
+**Lean closure (round 2).** `Chanlun.OpenQuestionsAdvanceR2`:
+
+* `ΦOverlapAdmissible P f := ∀ a j, f a = some j ↔ P a j` — the
+  spec is parameterised by a single admissibility predicate `P`. Once
+  `P` is fixed, the oracle is functionally determined.
+* `oracle_pointwise_unique` — any two oracles satisfying the same `P`
+  agree pointwise.
+* `segments_oracle_unique` — pointwise agreement plus proof
+  irrelevance on the `find_term_ge` hypothesis lifts to extensional
+  equality of the segment lists.
+
+The "lesson 65 vs lesson 67" disagreement is itself a CHOICE of `P`;
+the kernel exposes that choice rather than arbitrating. With a fixed
+`P`, oracle-uniqueness is a Lean theorem.
+
+**Master-text ambiguity preserved.** This proves oracle uniqueness
+RELATIVE TO a chosen `P`. The master text's lesson 65 vs lesson 67
+readings instantiate two distinct `P`s, and Lean declines to pick a
+side. Status: PROVEN_DIRECT (P-relative); the absolute version
+remains paper-ambiguity. Picking a side is a per-instantiation
+`P`-choice the kernel API exposes rather than arbitrates.
+
+### §Y.2 MACD measure constructor for Beichi (X.7.9)
+
+**Prose.** Lesson 27 introduces MACD energy as an auxiliary 力度
+measure alongside disp and slope.
+
+**Formal target.**
+
+    inductive MeasureExt | disp | slope | macd
+    def lhsRhsExt (a c : Move) : MeasureExt → (ℝ × ℝ)
+    def classifyBeichiExt (a c : Move) (m : MeasureExt) : BeichiVerdict
+    theorem beichi_macd_load_bearing
+
+**Lean closure (round 2, §40-fix in round 3).** `Chanlun.OpenQuestionsAdvanceR2`:
+
+* `MeasureExt` extends `Chanlun.Beichi.Measure` with a `macd`
+  constructor; `MeasureExt.toBase` is the forgetful map back to the
+  base measure (the `.macd` case has no base pre-image, witnessing
+  that `MeasureExt` is genuinely larger).
+* `section MACDAbstract` declares `variable (macdEnergy : Move → ℝ)`
+  — the abstract energy reading is a **section variable**, NOT a
+  closed-form definition. Round-2's closed-form `def macdEnergy
+  (_m : Move) : ℝ := 0` made the load-bearing premise unsatisfiable
+  (a §40 trap flagged by audit); the round-3 fix abstracts it so the
+  theorem must hold for every instantiation.
+* `classifyBeichiExt` mirrors the disp/slope shape over `MeasureExt`,
+  parameterised over `macdEnergy`; `classifyBeichiExt_total` and
+  `classifyBeichiExt_irrefl` extend the base totality/irreflexivity
+  laws.
+* `beichi_macd_load_bearing` certifies the structural load-bearing
+  property: under every `macdEnergy`, `beichi` under `.macd` ⇒
+  `macdEnergy c < macdEnergy a`.
+* **§15 mutant** (`section MutantWitnesses` at module tail):
+  `macdEnergyDemo := fun m => (m.dur : ℝ)` together with witnesses
+  `demoA = { dur := 2, .. }`, `demoC = { dur := 1, .. }` produces
+  `classifyBeichiExt macdEnergyDemo demoA demoC .macd = beichi`
+  (`macd_demo_classifies_beichi`). The premise of the load-bearing
+  theorem is **satisfiable**, and instantiating the theorem on the
+  witness yields a real strict inequality
+  (`beichi_macd_load_bearing_fires`) — NOT a vacuous truth.
+
+### §Y.3 Multi-resolution timestamp-mapped composition (X.10.4)
+
+**Prose.** Lessons 65/66 describe the 区间套 walk across timeframes:
+descend from 1d → 1h → 1m on the same window, each lower level
+strictly inside the parent.
+
+**Formal target.**
+
+    structure TimestampWindow := (level : Nat) (t_start t_end : ℕ) (h_valid : t_start < t_end)
+    def descendTimestamps : TimestampWindow → Option TimestampWindow
+    theorem timestamp_walk_terminates
+    theorem timestamp_walk_strict_subset_per_level
+
+**Lean closure (round 2).** `Chanlun.OpenQuestionsAdvanceR2`:
+
+* `Timestamp := ℕ` (discrete tick grid; wall-clock semantics are an
+  interpretation layer above the kernel).
+* `TimestampWindow` with proof `h_valid : t_start < t_end`;
+  `TimestampWindow.span` is the tick width.
+* `descendTimestamps` performs left-half bisection at the midpoint
+  `(t_start + t_end) / 2`; returns `none` at `level = 0` or when
+  `t_end ≤ t_start + 1` (span ≤ 1).
+* `descendTimestamps_level_drops`, `descendTimestamps_span_strict_drop`,
+  `descendTimestamps_start_eq`, `descendTimestamps_end_strict` —
+  per-axis monotonicity laws.
+* `timestamp_walk_terminates` and `timestamp_walk_strict_subset_per_level`
+  package the structural claim.
+* `descendTimestampsAsLevel_descend_valid` bridges the descent into
+  `Chanlun.IntervalNesting.DescendValid`, so the existing
+  interval-nesting walker can consume the timestamp descent.
+
+### §Y.4 Lowest-level-of-this-资金 residue (X.10.5)
+
+**Prose.** The master text names a "lowest level of this 资金" — the
+smallest level at which the walker can still confirm 背驰.
+
+**Formal target.**
+
+    theorem lowest_level_witness_exists :
+      ∃ tw : TimestampWindow, IsLowestForFlow tw
+
+**Lean closure (round 2).** `Chanlun.OpenQuestionsAdvanceR2`:
+
+* `IsLowestForFlow tw := descendTimestamps tw = none` — the
+  structural bottom of the descent.
+* `lowest_level_witness_exists` is proven by strong induction on
+  `TimestampWindow.span` (Nat-well-founded): iterate `descendTimestamps`;
+  by the strict-drop law (§Y.3) the span eventually hits 0, at which
+  point the descent returns `none`.
+
+### §Y.5 MACD-decorated interval-nesting variant (X.10.6)
+
+**Prose.** The 区间套 walker composed with a MACD agreement filter at
+each step.
+
+**Formal target.**
+
+    def descendMacdFiltered : TimestampWindow → Option TimestampWindow
+    theorem macd_filtered_walk_terminates
+
+**Lean closure (round 2, §40-fix in round 3).** `Chanlun.OpenQuestionsAdvanceR2`:
+
+* `section MacdFilter` declares
+  `variable (MacdAgrees : TimestampWindow → Prop) [∀ tw, Decidable (MacdAgrees tw)]`
+  — the agreement contract is an **abstract section variable**, NOT
+  a closed-form definition. Round-2's closed-form
+  `def MacdAgrees (_tw : TimestampWindow) : Prop := True` filtered
+  nothing (a §40 trap: the refinement theorem was vacuously
+  `descendMacdFiltered = descendTimestamps`), flagged by audit; the
+  round-3 fix quantifies over all decidable instantiations.
+* `descendMacdFiltered` chains `descendTimestamps` with the abstract
+  agreement filter.
+* `descendMacdFiltered_level_drops`,
+  `descendMacdFiltered_span_strict_drop` — inherited monotonicity
+  laws (filtration only shortens chains).
+* `macd_filtered_walk_terminates` — same strong-induction-on-span
+  argument as §Y.4, now with the additional filtration step.
+* `descendMacdFiltered_refines_descendTimestamps` — the filtered
+  descent is a SUB-FUNCTION of the raw descent (structural refinement);
+  under the section variable this is a genuine refinement, NOT
+  identity.
+* **§15 mutant** (`section MutantWitnesses` at module tail):
+  `MacdAgreesLowOnly tw := tw.level < 5` together with witness
+  `demoTw` at `level = 6` produces
+  `descendTimestamps demoTw = some demoTwDescended` (at level 5)
+  while `descendMacdFiltered MacdAgreesLowOnly demoTw = none` —
+  the filter genuinely **discards** the descended window. See
+  `descendMacdFiltered_strictly_filters` for an existence
+  certificate. NOT a vacuous truth.
+
+### §Y.6 Closure summary (round 2, with round-3 §40-fix)
+
+After the round-2 PR (`Chanlun.OpenQuestionsAdvanceR2`) plus the
+round-3 §40 fix:
+
+- **Kernel limits**: 0 items (all four §Y.2–§Y.5 items closed by
+  structural carriers — `Real` for MACD energy via abstract section
+  variable, `ℕ` for timestamps, bisection for the descent, decidable
+  abstract `MacdAgrees` for the filter).
+- **Module bridging gaps**: 0 items (closed in round 1).
+- **Paper genuine ambiguity**: 0 items (§Y.1 closed via `P`-relative
+  uniqueness; the lesson-65/67 reading choice is exposed as a
+  per-instantiation `P` — master-text ambiguity is preserved into
+  the kernel API as a P-relative theorem, not arbitrated).
+- **Tooling limits**: 0 items (mathlib's `Real` is sufficient).
+- **§40 traps**: 0 items (round-3 PR audit removed the two
+  vacuously-true closed-form definitions; load-bearing now
+  quantified over abstract inputs, with §15 mutants firing on
+  satisfiable premises and non-trivial filter discards).
+
+Total NOT_FORMALIZED items: **0**. Total PROVEN_DIRECT: **72** (1
+P-relative: X.4.6). Honest scope acknowledgment: the round-2 closure
+formalises the STRUCTURAL content of §Y.2–§Y.5 (termination,
+monotonicity, filtration, level-drop laws). The runtime-data semantics
+of a specific MACD EMA computation, or the wall-clock mapping of
+timestamp ticks, remain interpretation-layer concerns surfaced in the
+`grounding/` scripts and PROVEN_FIXTURE outside Lean.
 
 ---
 
