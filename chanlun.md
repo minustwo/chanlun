@@ -1372,7 +1372,7 @@ as 1):
 
 | Status | Count | Notes |
 |---|---|---|
-| PROVEN_DIRECT | 72 | sorry-free Lean theorems under `lean/Chanlun/` (includes X.5.13 + X.9.6 from prior PR, plus X.5.12 + X.6.9 + X.8.8 + X.8.9 + X.9.7 + X.10.7 from `Chanlun.OpenQuestionsAdvance` (round 1), plus X.4.6 + X.7.9 + X.10.4 + X.10.5 + X.10.6 newly formalized in this round-2 PR via `Chanlun.OpenQuestionsAdvanceR2`) |
+| PROVEN_DIRECT | 72 | sorry-free Lean theorems under `lean/Chanlun/` (includes X.5.13 + X.9.6 from prior PR, plus X.5.12 + X.6.9 + X.8.8 + X.8.9 + X.9.7 + X.10.7 from `Chanlun.OpenQuestionsAdvance` (round 1), plus X.4.6 + X.7.9 + X.10.4 + X.10.5 + X.10.6 formalized in `Chanlun.OpenQuestionsAdvanceR2`. ROUND-3 NOTE: §Y.2 (X.7.9) and §Y.5 (X.10.6) load-bearing properties were lifted from the round-2 closed-form definitions (`macdEnergy := 0` / `MacdAgrees := True` — vacuously true §40 traps flagged by audit) to **section variables** over `macdEnergy : Move → ℝ` and `MacdAgrees : TimestampWindow → Prop`, with §15 mutant witnesses (`macdEnergyDemo`, `MacdAgreesLowOnly`) certifying non-vacuity. X.4.6 (§Y.1) status is `PROVEN_DIRECT (P-relative; master-text ambiguity preserved)` — see §Y.1 below. Of the 72, 1 (X.4.6) is P-relative.) |
 | MULTI_VALUED_NAMED | 6 | each backed by a constructive divergence witness in `Chanlun.DivergenceWitnesses` or the originating module |
 | PROVEN_FIXTURE | 0 | (none counted in chanlun.md proper — empirical groundings live under `grounding/` and `conformance/`, not as Lean statements; the multi-scale claim X.10.4 cites `grounding/chanlun_multiscale_real_grounding.py` as PROVEN_FIXTURE outside Lean, complementing the now-Lean structural form) |
 | NOT_FORMALIZED | 0 | round-2 closure: all five residual §Y items lifted to PROVEN_DIRECT via structural carriers (oracle uniqueness, MACD-extended Measure, TimestampWindow + bisection descent). See §Y for the four-segment treatment, now cross-referencing the lifted theorems |
@@ -1483,7 +1483,7 @@ already existed; this PR adds the classification annotation only.
 | X.4.3 | Thm 4.3 partition (property P) | PROVEN_DIRECT | `Chanlun.Segment.segments_partition` via `segments_partitionFrom` |
 | X.4.4 | Thm 4.4 termination (property T, bounded length) | PROVEN_DIRECT | `Chanlun.Segment.segments_terminate` via `segments_length_le` |
 | X.4.5 | Thm 4.5 oracle non-vacuity | PROVEN_DIRECT | `Chanlun.Segment.find_term_contract_nonvacuous` (witness `trivialFindTerm`) |
-| X.4.6 | Master Theorem 1: parametric Φ-uniqueness, relativised to a fixed `ΦOverlapAdmissible P` spec | PROVEN_DIRECT (newly formalized in round-2 PR) | `Chanlun.OpenQuestionsAdvanceR2.ΦOverlapAdmissible` + `oracle_pointwise_unique` + `segments_oracle_unique`. The master-text claim is `P`-relativised: any two oracles satisfying the same admissibility predicate `P` coincide pointwise (functional spec) and hence produce identical segment lists. Picking a specific `P` (lesson 65 vs 67 reading) is a per-instantiation choice the kernel exposes rather than arbitrates |
+| X.4.6 | Master Theorem 1: parametric Φ-uniqueness, relativised to a fixed `ΦOverlapAdmissible P` spec | PROVEN_DIRECT (P-relative; master-text ambiguity preserved) | `Chanlun.OpenQuestionsAdvanceR2.ΦOverlapAdmissible` + `oracle_pointwise_unique` + `segments_oracle_unique`. The master-text claim is `P`-relativised: any two oracles satisfying the same admissibility predicate `P` coincide pointwise (functional spec) and hence produce identical segment lists. The master text's lesson 65 vs lesson 67 readings instantiate two distinct `P`s, and Lean declines to pick a side — that choice is exposed as a per-instantiation parameter of the kernel API rather than arbitrated. The ABSOLUTE (P-free) version remains paper-ambiguity |
 
 ### §X.5  中枢 / Center (§5)
 
@@ -1529,7 +1529,7 @@ already existed; this PR adds the classification annotation only.
 | X.7.6 | Def 7.6 panzheng (盘整背驰) classifier | PROVEN_DIRECT | `Chanlun.PanzhengBeichi.classifyPanzheng` |
 | X.7.7 | Thm 7.7 panzheng totality + load-bearing + incomplete-iff | PROVEN_DIRECT | `classify_panzheng_total`, `panzheng_load_bearing_disp`, `panzheng_load_bearing_slope`, `panzheng_incomplete_iff` |
 | X.7.8 | Thm 7.8 panzheng measure-gate witness + intra-vs-inter mutant | MULTI_VALUED_NAMED | **Class B** (permanently multi-valued — inherits §7.5 measure choice + a second irreducible oracle on which 中枢 supplies the reference). See four-segment Theorem 7.8. Divergence witnesses `panzheng_measure_gate_witness`, `panzheng_intra_vs_inter_load_bearing`, surfaced as `panzheng_measure_gate_propagation_witness`. Why no collapse: intra-vs-inter is a modelling commitment ("strength fades relative to WHAT"), not an estimate that more data refines |
-| X.7.9 | MACD as `macd` constructor of an extended `Measure` (parallel to disp/slope) | PROVEN_DIRECT (newly formalized in round-2 PR) | `Chanlun.OpenQuestionsAdvanceR2.MeasureExt` extends `Chanlun.Beichi.Measure` with a `macd` constructor; `lhsRhsExt`, `classifyBeichiExt`, and `beichi_macd_load_bearing` mirror the disp/slope shape over an abstract `macdEnergy : Move → ℝ` field (uses `Real` from mathlib). The structural load-bearing property — `beichi` under `.macd` ⇔ `macdEnergy c < macdEnergy a` — is invariant under the choice of energy implementation. `MeasureExt.toBase` is the forgetful map back to the base measure |
+| X.7.9 | MACD as `macd` constructor of an extended `Measure` (parallel to disp/slope) | PROVEN_DIRECT (round-3 §40-fix: abstract `macdEnergy` section variable + §15 mutant) | `Chanlun.OpenQuestionsAdvanceR2.MeasureExt` extends `Chanlun.Beichi.Measure` with a `macd` constructor; `lhsRhsExt`, `classifyBeichiExt`, and `beichi_macd_load_bearing` mirror the disp/slope shape over an abstract `macdEnergy : Move → ℝ` declared as a `section MACDAbstract` variable (NOT a closed-form definition). The load-bearing implication holds for every instantiation; load-bearing non-vacuity is certified by the §15 mutant `macdEnergyDemo := fun m => (m.dur : ℝ)` with witness pair `(demoA, demoC)` satisfying `c.dur < a.dur` — see `beichi_macd_premise_satisfiable` and `beichi_macd_load_bearing_fires` in `section MutantWitnesses`. `MeasureExt.toBase` is the forgetful map back to the base measure |
 
 ### §X.8  三类买卖点 / Buy-sell points (§8)
 
@@ -1566,7 +1566,7 @@ already existed; this PR adds the classification annotation only.
 | X.10.3 | Thm 11.3 terminal-form theorems | PROVEN_DIRECT | `walk_at_zero_returns_gate_limit`, `walk_at_positive_returns_pinned` |
 | X.10.4 | Multi-resolution timestamp-mapped composition (structural form: bisection descent on `TimestampWindow`) | PROVEN_DIRECT (newly formalized in round-2 PR) | `Chanlun.OpenQuestionsAdvanceR2.TimestampWindow` + `descendTimestamps`; companion theorems `descendTimestamps_level_drops`, `descendTimestamps_span_strict_drop`, `descendTimestamps_start_eq`, `descendTimestamps_end_strict`; packaged in `timestamp_walk_terminates` and `timestamp_walk_strict_subset_per_level`. Bridges to `IntervalNesting.DescendValid` via `descendTimestampsAsLevel_descend_valid`. `Timestamp := ℕ` (discrete tick grid); wall-clock semantics are an interpretation layer above the kernel |
 | X.10.5 | "Lowest-level-of-this-资金" residue characterization | PROVEN_DIRECT (newly formalized in round-2 PR) | `Chanlun.OpenQuestionsAdvanceR2.IsLowestForFlow` + `lowest_level_witness_exists`. Strong induction on window span (Nat-well-founded) constructs a `tw_low` from which `descendTimestamps` returns `none` — the structural floor of the timestamp descent |
-| X.10.6 | MACD-decorated interval-nesting variant | PROVEN_DIRECT (newly formalized in round-2 PR) | `Chanlun.OpenQuestionsAdvanceR2.descendMacdFiltered` composes the §Y.2 MACD-agreement predicate with the §Y.3 timestamp descent; `descendMacdFiltered_level_drops`, `descendMacdFiltered_span_strict_drop`, `macd_filtered_walk_terminates`, and `descendMacdFiltered_refines_descendTimestamps` package termination + refinement |
+| X.10.6 | MACD-decorated interval-nesting variant | PROVEN_DIRECT (round-3 §40-fix: abstract `MacdAgrees` section variable + §15 mutant) | `Chanlun.OpenQuestionsAdvanceR2.descendMacdFiltered` composes the abstract `MacdAgrees : TimestampWindow → Prop` (declared as a `section MacdFilter` variable with `[∀ tw, Decidable (MacdAgrees tw)]` typeclass, NOT a closed-form `:= True`) with the §Y.3 timestamp descent; `descendMacdFiltered_level_drops`, `descendMacdFiltered_span_strict_drop`, `macd_filtered_walk_terminates`, and `descendMacdFiltered_refines_descendTimestamps` package termination + refinement. Filter-non-triviality is certified by the §15 mutant `MacdAgreesLowOnly tw := tw.level < 5` with witness window `demoTw` at level 6 — see `descendMacdFiltered_strictly_filters` in `section MutantWitnesses` showing the raw descent succeeds while the filtered descent returns `none` |
 | X.10.7 | Walk-decomposition × interval-nesting integration | PROVEN_DIRECT (newly formalized in this PR) | `Chanlun.OpenQuestionsAdvance.projectToWindow` projects a `List Center` onto a `LevelWindow`'s index sub-range; `walkInWindow` runs `decompose` on the projection. Companion theorems `projectToWindow_length_le`, `walkInWindow_partition`, `walkInWindow_size_le_span` show the partition property survives the projection: the sum of `walkSize` inside the window is bounded by the window's index span |
 
 ---
@@ -1575,17 +1575,37 @@ already existed; this PR adds the classification annotation only.
 
 This section formerly held the residue of NOT_FORMALIZED items after
 the round-1 PR (#17). After the round-2 PR
-(`Chanlun.OpenQuestionsAdvanceR2`), **all five items have been lifted to
-PROVEN_DIRECT** by introducing structural carriers (`Real` from mathlib,
-`TimestampWindow` on `ℕ`, MACD-extended `MeasureExt`). The earlier
-"kernel-limit" blocker was over-conservative: the master-text claims at
-§Y.2–§Y.5 are STRUCTURAL (termination, monotonicity, filtration), not
-about the runtime float-EMA value of any MACD reading. Concrete
-runtime-data semantics still live in `grounding/` scripts and are
-PROVEN_FIXTURE outside Lean.
+(`Chanlun.OpenQuestionsAdvanceR2`) plus the round-3 §40-fix, **all
+five items are PROVEN_DIRECT** by introducing structural carriers
+(`Real` from mathlib for MACD energy declared as a **section
+variable**, `TimestampWindow` on `ℕ`, MACD-extended `MeasureExt`
+with abstract `macdEnergy`, abstract decidable `MacdAgrees`). The
+earlier "kernel-limit" blocker was over-conservative: the master-text
+claims at §Y.2–§Y.5 are STRUCTURAL (termination, monotonicity,
+filtration), not about the runtime float-EMA value of any MACD
+reading. Concrete runtime-data semantics still live in `grounding/`
+scripts and are PROVEN_FIXTURE outside Lean.
+
+**§Y.1 status — P-relative.** Master Theorem 1 is formalised as
+`oracle uniqueness RELATIVE TO a chosen P`; the master text's lesson
+65 vs lesson 67 readings instantiate two distinct `P`s and Lean
+declines to pick a side. The choice is exposed at instantiation
+time. The absolute (P-free) version remains paper-ambiguity.
+
+**§15 mutant gate (round-3).** §Y.2 and §Y.5 load-bearing properties
+are certified non-vacuous by `section MutantWitnesses` at the bottom
+of `Chanlun.OpenQuestionsAdvanceR2`: a concrete `macdEnergyDemo`
+satisfies the load-bearing premise (`macd_demo_classifies_beichi`,
+`beichi_macd_load_bearing_fires`), and a concrete `MacdAgreesLowOnly`
+genuinely discards a descended window
+(`descendMacdFiltered_strictly_filters`). Round-2's closed-form
+`macdEnergy := 0` / `MacdAgrees := True` were §40 traps (vacuously
+true via unsatisfiable premise / identity filter) and were lifted
+to section variables in round 3.
 
 Each item below records: (i) the original prose claim, (ii) the formal
-target, and (iii) the Lean closure that landed in round 2.
+target, and (iii) the Lean closure that landed in round 2 (with the
+round-3 §40-fix where applicable).
 
 ### §Y.1 Master Theorem 1 — parametric Φ-uniqueness (X.4.6)
 
@@ -1617,6 +1637,13 @@ The "lesson 65 vs lesson 67" disagreement is itself a CHOICE of `P`;
 the kernel exposes that choice rather than arbitrating. With a fixed
 `P`, oracle-uniqueness is a Lean theorem.
 
+**Master-text ambiguity preserved.** This proves oracle uniqueness
+RELATIVE TO a chosen `P`. The master text's lesson 65 vs lesson 67
+readings instantiate two distinct `P`s, and Lean declines to pick a
+side. Status: PROVEN_DIRECT (P-relative); the absolute version
+remains paper-ambiguity. Picking a side is a per-instantiation
+`P`-choice the kernel API exposes rather than arbitrates.
+
 ### §Y.2 MACD measure constructor for Beichi (X.7.9)
 
 **Prose.** Lesson 27 introduces MACD energy as an auxiliary 力度
@@ -1629,21 +1656,33 @@ measure alongside disp and slope.
     def classifyBeichiExt (a c : Move) (m : MeasureExt) : BeichiVerdict
     theorem beichi_macd_load_bearing
 
-**Lean closure (round 2).** `Chanlun.OpenQuestionsAdvanceR2`:
+**Lean closure (round 2, §40-fix in round 3).** `Chanlun.OpenQuestionsAdvanceR2`:
 
 * `MeasureExt` extends `Chanlun.Beichi.Measure` with a `macd`
   constructor; `MeasureExt.toBase` is the forgetful map back to the
   base measure (the `.macd` case has no base pre-image, witnessing
   that `MeasureExt` is genuinely larger).
-* `macdEnergy : Move → ℝ` is the abstract energy field — a `Real`
-  reading the runtime data interface supplies. The kernel formalisation
-  does not commit to a specific EMA computation.
-* `classifyBeichiExt` mirrors the disp/slope shape over `MeasureExt`;
-  `classifyBeichiExt_total` and `classifyBeichiExt_irrefl` extend
-  the base totality/irreflexivity laws.
+* `section MACDAbstract` declares `variable (macdEnergy : Move → ℝ)`
+  — the abstract energy reading is a **section variable**, NOT a
+  closed-form definition. Round-2's closed-form `def macdEnergy
+  (_m : Move) : ℝ := 0` made the load-bearing premise unsatisfiable
+  (a §40 trap flagged by audit); the round-3 fix abstracts it so the
+  theorem must hold for every instantiation.
+* `classifyBeichiExt` mirrors the disp/slope shape over `MeasureExt`,
+  parameterised over `macdEnergy`; `classifyBeichiExt_total` and
+  `classifyBeichiExt_irrefl` extend the base totality/irreflexivity
+  laws.
 * `beichi_macd_load_bearing` certifies the structural load-bearing
-  property: `beichi` under `.macd` ⇔ `macdEnergy c < macdEnergy a` —
-  invariant under the choice of energy implementation.
+  property: under every `macdEnergy`, `beichi` under `.macd` ⇒
+  `macdEnergy c < macdEnergy a`.
+* **§15 mutant** (`section MutantWitnesses` at module tail):
+  `macdEnergyDemo := fun m => (m.dur : ℝ)` together with witnesses
+  `demoA = { dur := 2, .. }`, `demoC = { dur := 1, .. }` produces
+  `classifyBeichiExt macdEnergyDemo demoA demoC .macd = beichi`
+  (`macd_demo_classifies_beichi`). The premise of the load-bearing
+  theorem is **satisfiable**, and instantiating the theorem on the
+  witness yields a real strict inequality
+  (`beichi_macd_load_bearing_fires`) — NOT a vacuous truth.
 
 ### §Y.3 Multi-resolution timestamp-mapped composition (X.10.4)
 
@@ -1705,11 +1744,17 @@ each step.
     def descendMacdFiltered : TimestampWindow → Option TimestampWindow
     theorem macd_filtered_walk_terminates
 
-**Lean closure (round 2).** `Chanlun.OpenQuestionsAdvanceR2`:
+**Lean closure (round 2, §40-fix in round 3).** `Chanlun.OpenQuestionsAdvanceR2`:
 
-* `MacdAgrees : TimestampWindow → Prop` (decidable; abstract
-  contract — runtime data supplies the actual computation).
-* `descendMacdFiltered` chains `descendTimestamps` with the
+* `section MacdFilter` declares
+  `variable (MacdAgrees : TimestampWindow → Prop) [∀ tw, Decidable (MacdAgrees tw)]`
+  — the agreement contract is an **abstract section variable**, NOT
+  a closed-form definition. Round-2's closed-form
+  `def MacdAgrees (_tw : TimestampWindow) : Prop := True` filtered
+  nothing (a §40 trap: the refinement theorem was vacuously
+  `descendMacdFiltered = descendTimestamps`), flagged by audit; the
+  round-3 fix quantifies over all decidable instantiations.
+* `descendMacdFiltered` chains `descendTimestamps` with the abstract
   agreement filter.
 * `descendMacdFiltered_level_drops`,
   `descendMacdFiltered_span_strict_drop` — inherited monotonicity
@@ -1717,23 +1762,40 @@ each step.
 * `macd_filtered_walk_terminates` — same strong-induction-on-span
   argument as §Y.4, now with the additional filtration step.
 * `descendMacdFiltered_refines_descendTimestamps` — the filtered
-  descent is a SUB-FUNCTION of the raw descent (structural refinement).
+  descent is a SUB-FUNCTION of the raw descent (structural refinement);
+  under the section variable this is a genuine refinement, NOT
+  identity.
+* **§15 mutant** (`section MutantWitnesses` at module tail):
+  `MacdAgreesLowOnly tw := tw.level < 5` together with witness
+  `demoTw` at `level = 6` produces
+  `descendTimestamps demoTw = some demoTwDescended` (at level 5)
+  while `descendMacdFiltered MacdAgreesLowOnly demoTw = none` —
+  the filter genuinely **discards** the descended window. See
+  `descendMacdFiltered_strictly_filters` for an existence
+  certificate. NOT a vacuous truth.
 
-### §Y.6 Closure summary (round 2)
+### §Y.6 Closure summary (round 2, with round-3 §40-fix)
 
-After the round-2 PR (`Chanlun.OpenQuestionsAdvanceR2`):
+After the round-2 PR (`Chanlun.OpenQuestionsAdvanceR2`) plus the
+round-3 §40 fix:
 
 - **Kernel limits**: 0 items (all four §Y.2–§Y.5 items closed by
-  structural carriers — `Real` for MACD energy, `ℕ` for timestamps,
-  bisection for the descent).
+  structural carriers — `Real` for MACD energy via abstract section
+  variable, `ℕ` for timestamps, bisection for the descent, decidable
+  abstract `MacdAgrees` for the filter).
 - **Module bridging gaps**: 0 items (closed in round 1).
 - **Paper genuine ambiguity**: 0 items (§Y.1 closed via `P`-relative
   uniqueness; the lesson-65/67 reading choice is exposed as a
-  per-instantiation `P`).
+  per-instantiation `P` — master-text ambiguity is preserved into
+  the kernel API as a P-relative theorem, not arbitrated).
 - **Tooling limits**: 0 items (mathlib's `Real` is sufficient).
+- **§40 traps**: 0 items (round-3 PR audit removed the two
+  vacuously-true closed-form definitions; load-bearing now
+  quantified over abstract inputs, with §15 mutants firing on
+  satisfiable premises and non-trivial filter discards).
 
-Total NOT_FORMALIZED items after the round-2 PR: **0**. Total
-PROVEN_DIRECT: **72**. Honest scope acknowledgment: the round-2 closure
+Total NOT_FORMALIZED items: **0**. Total PROVEN_DIRECT: **72** (1
+P-relative: X.4.6). Honest scope acknowledgment: the round-2 closure
 formalises the STRUCTURAL content of §Y.2–§Y.5 (termination,
 monotonicity, filtration, level-drop laws). The runtime-data semantics
 of a specific MACD EMA computation, or the wall-clock mapping of

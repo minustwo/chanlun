@@ -5,7 +5,7 @@
   NOT_FORMALIZED items from PR #17's §Y to PROVEN_DIRECT where the kernel
   can be extended structurally (without floating-point computation).
 
-  ## What this module discharges (PR round-2 of #17)
+  ## What this module discharges (round-3 of #17, post §40-trap audit)
 
   All five §Y items reduce to STRUCTURAL claims that the integer kernel
   (with mathlib's `Real` and `Nat` already imported) can express:
@@ -13,25 +13,46 @@
   * **§Y.1 / X.4.6** — `ΦOverlapAdmissible`-uniqueness: if two oracles
     both satisfy a single functional Φ-overlap-admissibility spec they
     coincide pointwise, hence produce identical segment lists.
+    Status: PROVEN_DIRECT (P-relative); the absolute version remains
+    paper-ambiguity preserved into the kernel API.
   * **§Y.2 / X.7.9** — `Measure` extended with a third `.macd`
-    constructor; load-bearing form via an abstract `macdEnergy` field.
+    constructor; load-bearing form via an **abstract section variable**
+    `macdEnergy : Move → ℝ` rather than a closed-form definition. Round-3
+    fix: §40-trap (vacuous via `:= 0`) eliminated — the load-bearing
+    theorem now quantifies over all instantiations of `macdEnergy`.
   * **§Y.3 / X.10.4** — `TimestampWindow` carrier + `descendTimestamps`
     binary midpoint descent; termination + strict-subset-per-level.
   * **§Y.4 / X.10.5** — Lowest-level witness existence by well-founded
     recursion on the `descendTimestamps` measure (window width).
-  * **§Y.5 / X.10.6** — MACD-filtered timestamp descent: composition of
-    §Y.2 + §Y.3; termination of the composed walker.
+  * **§Y.5 / X.10.6** — MACD-filtered timestamp descent via an **abstract
+    section variable** `MacdAgrees : TimestampWindow → Prop`. Round-3
+    fix: §40-trap (vacuous via `:= True`) eliminated — the filtered
+    walker quantifies over all decidable instantiations.
+
+  ## §15 MUTANT WITNESSES
+
+  At the bottom (`section MutantWitnesses`) two concrete instantiations
+  certify the abstractions are NOT vacuous:
+
+  * `macdEnergyDemo := fun m => (m.dur : ℝ)` together with `(a, c)` such
+    that `a.dur = 2 ∧ c.dur = 1` produces a `.macd`-classified `beichi`
+    verdict — the load-bearing theorem actually **fires** on a non-empty
+    premise instance.
+  * `MacdAgreesLowOnly tw := tw.level < 5` together with a window of
+    `level = 6` produces `descendTimestamps tw = some tw'` while
+    `descendMacdFiltered MacdAgreesLowOnly tw = none` — the filter
+    actually **discards** a window, so it is not trivially `True`.
 
   ## Honest scope
 
   These are STRUCTURAL formalizations: they pin the carriers, the
-  termination measures, and the strict-subset / monotonicity laws. They
-  do not attempt to formalize the runtime float-EMA computation of a
-  MACD signal — that is a data-interface concern outside the kernel.
-  The kernel-limit objection of PR #17 is over-conservative: the
-  master text's claims at §Y.2–§Y.5 are STRUCTURAL (termination +
-  monotonicity + filtration), not about the specific numerical value of
-  any MACD reading.
+  termination measures, and the strict-subset / monotonicity laws under
+  ABSTRACT energy/agreement inputs. They do not attempt to formalize the
+  runtime float-EMA computation of a MACD signal — that is a data-
+  interface concern outside the kernel. The kernel-limit objection of
+  PR #17 is over-conservative: the master text's claims at §Y.2–§Y.5
+  are STRUCTURAL (termination + monotonicity + filtration), not about
+  the specific numerical value of any MACD reading.
 -/
 
 import Mathlib.Tactic
@@ -52,6 +73,13 @@ namespace Chanlun.OpenQuestionsAdvanceR2
     The earlier "lesson 65 vs 67 disagreement" reading is itself a
     DIFFERENT spec; once you fix ONE spec, oracle-uniqueness is
     provable.
+
+    **Master-text ambiguity preserved:** this proves *oracle uniqueness
+    RELATIVE TO a chosen `P`*. The master text's lesson 65 vs lesson 67
+    readings instantiate two distinct `P`s, and Lean declines to pick a
+    side — picking is a per-instantiation choice the kernel API exposes.
+    Status: PROVEN_DIRECT (P-relative); the absolute version remains
+    paper-ambiguity.
 -/
 
 open Chanlun.Segment
@@ -126,11 +154,15 @@ theorem segments_oracle_unique
 /-! ## §Y.2 / X.7.9 — MACD measure constructor.
 
     Extends `Chanlun.Beichi.Measure` with a third `.macd` constructor.
-    The `lhsRhs` analogue is delivered via a parameterised
-    `macdEnergy : Move → ℝ` field — this captures the structural
+    The `lhsRhs` analogue is delivered via an **abstract section
+    variable** `macdEnergy : Move → ℝ` — this captures the structural
     contract (a `Real`-valued energy reading) without committing the
-    Lean library to a specific EMA implementation, which is the data-
-    interface concern. -/
+    Lean library to a specific EMA implementation, AND without admitting
+    a closed-form `:= 0` definition (which would make the load-bearing
+    theorem vacuously true via an unsatisfiable premise — the §40 trap
+    flagged by the audit of PR #18). The section quantifies over ALL
+    instantiations of `macdEnergy`; the §15 mutant `macdEnergyDemo`
+    below witnesses that the premise is genuinely satisfiable. -/
 
 open Chanlun.Beichi
 
@@ -162,13 +194,23 @@ theorem MeasureExt.toBase_slope :
 theorem MeasureExt.toBase_macd :
     MeasureExt.toBase MeasureExt.macd = none := rfl
 
-/-- Abstract MACD-energy of a move — a `Real`-valued reading the
-    runtime data interface supplies. -/
-def macdEnergy (_m : Move) : ℝ := 0
+/-! ### Abstract `macdEnergy` section — §40-trap fix.
+
+    `macdEnergy` is introduced as a **section variable** rather than a
+    closed-form definition. Every statement in this section is
+    universally quantified over the choice of `macdEnergy`, so the
+    load-bearing theorem cannot be vacuously true: it must hold for
+    EVERY instantiation, including ones (such as `macdEnergyDemo`
+    below) for which the premise is genuinely satisfiable. -/
+
+section MACDAbstract
+
+variable (macdEnergy : Move → ℝ)
 
 /-- The `lhsRhs` analogue extended to all three measures. The
     `disp` / `slope` cases agree with `Chanlun.Beichi.lhsRhs` on the
-    integer carrier; the `macd` case lives in `Real × Real`. -/
+    integer carrier; the `macd` case lives in `Real × Real` and is
+    parameterised over the abstract `macdEnergy` reading. -/
 def lhsRhsExt (a c : Move) : MeasureExt → (ℝ × ℝ)
   | .disp  => ((disp c : ℝ), (disp a : ℝ))
   | .slope => ((disp c * (a.dur : Int) : ℝ), (disp a * (c.dur : Int) : ℝ))
@@ -176,61 +218,71 @@ def lhsRhsExt (a c : Move) : MeasureExt → (ℝ × ℝ)
 
 /-- **THEOREM (lhsRhsExt EXTENDS lhsRhs, disp first component)**: on the
     `disp` case the extended `lhsRhsExt` first component is the `Real`
-    coercion of `disp c`. -/
+    coercion of `disp c`. The disp case is independent of the abstract
+    `macdEnergy`. -/
 theorem lhsRhsExt_disp_fst (a c : Move) :
-    (lhsRhsExt a c MeasureExt.disp).1 = (disp c : ℝ) := rfl
+    (lhsRhsExt macdEnergy a c MeasureExt.disp).1 = (disp c : ℝ) := rfl
 
 /-- **THEOREM (lhsRhsExt EXTENDS lhsRhs, disp second component)**. -/
 theorem lhsRhsExt_disp_snd (a c : Move) :
-    (lhsRhsExt a c MeasureExt.disp).2 = (disp a : ℝ) := rfl
+    (lhsRhsExt macdEnergy a c MeasureExt.disp).2 = (disp a : ℝ) := rfl
 
 /-- **THEOREM (lhsRhsExt EXTENDS lhsRhs, slope first component)**. -/
 theorem lhsRhsExt_slope_fst (a c : Move) :
-    (lhsRhsExt a c MeasureExt.slope).1 = ((disp c * (a.dur : Int) : ℝ)) := rfl
+    (lhsRhsExt macdEnergy a c MeasureExt.slope).1 = ((disp c * (a.dur : Int) : ℝ)) := rfl
 
 /-- **THEOREM (lhsRhsExt EXTENDS lhsRhs, slope second component)**. -/
 theorem lhsRhsExt_slope_snd (a c : Move) :
-    (lhsRhsExt a c MeasureExt.slope).2 = ((disp a * (c.dur : Int) : ℝ)) := rfl
+    (lhsRhsExt macdEnergy a c MeasureExt.slope).2 = ((disp a * (c.dur : Int) : ℝ)) := rfl
 
 /-- The 背驰 classifier on the extended measure. Same `lhs < rhs ⇒ 背驰` rule.
-    Uses classical decidability for `Real` comparison. -/
+    Uses classical decidability for `Real` comparison. Parameterised over
+    the abstract `macdEnergy` field. -/
 noncomputable def classifyBeichiExt (a c : Move) (m : MeasureExt) : BeichiVerdict :=
-  let (lhs, rhs) := lhsRhsExt a c m
+  let (lhs, rhs) := lhsRhsExt macdEnergy a c m
   if lhs < rhs then BeichiVerdict.beichi
   else if lhs > rhs then BeichiVerdict.no_beichi
   else BeichiVerdict.tie
 
 /-- **THEOREM (TOTAL on the extended measure)**. -/
 theorem classifyBeichiExt_total (a c : Move) (m : MeasureExt) :
-    classifyBeichiExt a c m = BeichiVerdict.beichi ∨
-    classifyBeichiExt a c m = BeichiVerdict.no_beichi ∨
-    classifyBeichiExt a c m = BeichiVerdict.tie := by
+    classifyBeichiExt macdEnergy a c m = BeichiVerdict.beichi ∨
+    classifyBeichiExt macdEnergy a c m = BeichiVerdict.no_beichi ∨
+    classifyBeichiExt macdEnergy a c m = BeichiVerdict.tie := by
   unfold classifyBeichiExt
-  by_cases h_lt : (lhsRhsExt a c m).1 < (lhsRhsExt a c m).2
+  by_cases h_lt : (lhsRhsExt macdEnergy a c m).1 < (lhsRhsExt macdEnergy a c m).2
   · left; simp [h_lt]
-  · by_cases h_gt : (lhsRhsExt a c m).1 > (lhsRhsExt a c m).2
+  · by_cases h_gt : (lhsRhsExt macdEnergy a c m).1 > (lhsRhsExt macdEnergy a c m).2
     · right; left; simp [h_lt, h_gt]
     · right; right; simp [h_lt, h_gt]
 
 /-- **THEOREM (IRREFL on the extended measure)**. -/
 theorem classifyBeichiExt_irrefl (a : Move) (m : MeasureExt) :
-    classifyBeichiExt a a m ≠ BeichiVerdict.beichi := by
-  have h_eq : (lhsRhsExt a a m).1 = (lhsRhsExt a a m).2 := by
+    classifyBeichiExt macdEnergy a a m ≠ BeichiVerdict.beichi := by
+  have h_eq : (lhsRhsExt macdEnergy a a m).1 = (lhsRhsExt macdEnergy a a m).2 := by
     cases m <;> rfl
   unfold classifyBeichiExt
   -- The let-binding (lhs, rhs) := ... is destructured; both projections agree.
-  have h_not_lt : ¬ ((lhsRhsExt a a m).1 < (lhsRhsExt a a m).2) := by
+  have h_not_lt : ¬ ((lhsRhsExt macdEnergy a a m).1 < (lhsRhsExt macdEnergy a a m).2) := by
     rw [h_eq]; exact lt_irrefl _
-  have h_not_gt : ¬ ((lhsRhsExt a a m).1 > (lhsRhsExt a a m).2) := by
+  have h_not_gt : ¬ ((lhsRhsExt macdEnergy a a m).1 > (lhsRhsExt macdEnergy a a m).2) := by
     rw [h_eq]; exact lt_irrefl _
   simp [h_not_lt, h_not_gt]
 
 /-- **THE MACD LOAD-BEARING THEOREM**: under the `.macd` measure, a
     `beichi` verdict means precisely `macdEnergy c < macdEnergy a`.
     This matches the slope/disp shape — the structural form is
-    invariant under the choice of measure. -/
+    invariant under the choice of measure AND under the choice of
+    `macdEnergy` instantiation.
+
+    The §40-trap audit of PR #18 flagged a closed-form `macdEnergy := 0`
+    definition as making this premise vacuously false (hence the
+    theorem trivially true). The section-variable form here forces
+    every instantiation to satisfy this implication; the §15 mutant
+    `macdEnergyDemo` below exhibits an instantiation where the
+    premise is genuinely satisfiable. -/
 theorem beichi_macd_load_bearing (a c : Move) :
-    classifyBeichiExt a c MeasureExt.macd = BeichiVerdict.beichi →
+    classifyBeichiExt macdEnergy a c MeasureExt.macd = BeichiVerdict.beichi →
       macdEnergy c < macdEnergy a := by
   intro h
   unfold classifyBeichiExt at h
@@ -240,6 +292,8 @@ theorem beichi_macd_load_bearing (a c : Move) :
     by_cases h_gt : macdEnergy c > macdEnergy a
     · simp [lhsRhsExt, h_lt, h_gt] at h
     · simp [lhsRhsExt, h_lt, h_gt] at h
+
+end MACDAbstract
 
 /-! ## §Y.3 / X.10.4 — Multi-resolution timestamp-mapped composition.
 
@@ -479,21 +533,26 @@ theorem lowest_level_witness_exists
     each step additionally check a MACD-agreement predicate. The
     structural termination is INHERITED from §Y.3's span measure;
     the MACD filter only RESTRICTS the descents (it can return
-    `none` even when the raw bisection would succeed). -/
+    `none` even when the raw bisection would succeed).
 
-/-- An abstract MACD-agreement predicate on a timestamp window. The
-    runtime data interface supplies the actual computation; the
-    kernel only needs to know it's a decidable predicate. Here we
-    realise the abstract contract with `True` — every window agrees;
-    a richer runtime instantiation lives in the data-interface layer. -/
-def MacdAgrees (_tw : TimestampWindow) : Prop := True
+    Round-3 fix: the `MacdAgrees` predicate is introduced as a
+    **section variable** with a decidability typeclass, rather than
+    a closed-form `:= True` definition (which would make the
+    refinement theorem `descendMacdFiltered = descendTimestamps`
+    trivially true — the §40 trap flagged by audit of PR #18). The
+    section quantifies over ALL decidable instantiations; the §15
+    mutant `MacdAgreesLowOnly` below witnesses that the filter
+    actually discards some descents. -/
 
-instance (tw : TimestampWindow) : Decidable (MacdAgrees tw) :=
-  Decidable.isTrue trivial
+section MacdFilter
+
+variable (MacdAgrees : TimestampWindow → Prop)
+  [∀ tw, Decidable (MacdAgrees tw)]
 
 /-- The MACD-filtered timestamp descent: descend as in §Y.3, but
     discard the descended window if the MACD-agreement predicate
-    fails on it. -/
+    fails on it. Parameterised over the abstract decidable
+    `MacdAgrees`. -/
 def descendMacdFiltered (tw : TimestampWindow) : Option TimestampWindow :=
   match descendTimestamps tw with
   | none      => none
@@ -504,7 +563,7 @@ def descendMacdFiltered (tw : TimestampWindow) : Option TimestampWindow :=
     preserves the level law of the underlying descent). -/
 theorem descendMacdFiltered_level_drops
     (tw tw' : TimestampWindow)
-    (h : descendMacdFiltered tw = some tw') :
+    (h : descendMacdFiltered MacdAgrees tw = some tw') :
     tw'.level + 1 = tw.level := by
   unfold descendMacdFiltered at h
   cases h_d : descendTimestamps tw with
@@ -525,7 +584,7 @@ theorem descendMacdFiltered_level_drops
     descent inherits the span strict-drop from §Y.3. -/
 theorem descendMacdFiltered_span_strict_drop
     (tw tw' : TimestampWindow)
-    (h : descendMacdFiltered tw = some tw') :
+    (h : descendMacdFiltered MacdAgrees tw = some tw') :
     tw'.span < tw.span := by
   unfold descendMacdFiltered at h
   cases h_d : descendTimestamps tw with
@@ -548,30 +607,36 @@ theorem descendMacdFiltered_span_strict_drop
 theorem macd_filtered_walk_terminates
     (tw : TimestampWindow) :
     ∃ (tw_low : TimestampWindow),
-      descendMacdFiltered tw_low = none := by
+      descendMacdFiltered MacdAgrees tw_low = none := by
   -- Strong induction on the span.
   suffices h : ∀ k, ∀ tw : TimestampWindow, tw.span = k →
-      ∃ tw_low, descendMacdFiltered tw_low = none by
+      ∃ tw_low, descendMacdFiltered MacdAgrees tw_low = none by
     exact h tw.span tw rfl
   intro k
   induction k using Nat.strong_induction_on with
   | _ k ih =>
     intro tw h_meas
-    cases h_d : descendMacdFiltered tw with
+    cases h_d : descendMacdFiltered MacdAgrees tw with
     | none =>
         exact ⟨tw, h_d⟩
     | some tw' =>
-        have h_drop := descendMacdFiltered_span_strict_drop tw tw' h_d
+        have h_drop := descendMacdFiltered_span_strict_drop MacdAgrees tw tw' h_d
         rw [h_meas] at h_drop
         exact ih tw'.span h_drop tw' rfl
 
 /-- **THEOREM (MACD-FILTERED ⊆ TIMESTAMP)**: the MACD-filtered
     descent is a SUB-FUNCTION of the unfiltered timestamp descent —
     every success of the filtered descent is a success of the raw
-    descent. The composition is structurally a refinement. -/
+    descent. The composition is structurally a refinement.
+
+    NOTE: with `MacdAgrees` abstract, this is genuinely a refinement
+    (not an equality). The §15 mutant `MacdAgreesLowOnly` below
+    exhibits a `tw` for which `descendTimestamps tw = some tw'`
+    while `descendMacdFiltered MacdAgreesLowOnly tw = none` —
+    witnessing that the filter is genuinely a proper sub-function. -/
 theorem descendMacdFiltered_refines_descendTimestamps
     (tw tw' : TimestampWindow)
-    (h : descendMacdFiltered tw = some tw') :
+    (h : descendMacdFiltered MacdAgrees tw = some tw') :
     descendTimestamps tw = some tw' := by
   unfold descendMacdFiltered at h
   cases h_d : descendTimestamps tw with
@@ -588,6 +653,8 @@ theorem descendMacdFiltered_refines_descendTimestamps
         rfl
       · rw [if_neg h_macd] at h
         simp at h
+
+end MacdFilter
 
 /-! ## §Y.6 — Bridge back to `IntervalNesting.DescendValid`. -/
 
@@ -622,5 +689,151 @@ theorem descendTimestampsAsLevel_descend_valid :
     have h_lvl_eq : w'.level = w.level - 1 := by rw [← h_eq]
     have h_pos : w.level ≥ 1 := Nat.one_le_iff_ne_zero.mpr h_lvl
     omega
+
+/-! ## §15 MUTANT WITNESSES — non-vacuity certification.
+
+    Architectural audit of PR #18 flagged §Y.2 / §Y.5 as §40 traps:
+    the load-bearing implication `beichi → macdEnergy c < macdEnergy a`
+    was vacuously true because `macdEnergy := 0` made the premise
+    unsatisfiable, and the refinement `descendMacdFiltered =
+    descendTimestamps` was trivially true because `MacdAgrees := True`
+    filtered nothing.
+
+    The round-3 fix abstracts both into section variables so the
+    theorems quantify over ALL instantiations. This section provides
+    concrete instantiations witnessing the abstractions are NOT
+    vacuous — both mutants genuinely **fire**: the §Y.2 mutant
+    exhibits a satisfiable premise, the §Y.5 mutant exhibits a
+    discarded descent. -/
+
+section MutantWitnesses
+
+/-- §Y.2 mutant: a concrete `macdEnergy` reading the move's duration
+    as its energy. Any pair `(a, c)` with `c.dur < a.dur` produces a
+    `beichi` verdict under this instantiation — so the load-bearing
+    theorem's premise is genuinely satisfiable. -/
+def macdEnergyDemo : Move → ℝ := fun m => (m.dur : ℝ)
+
+/-- §Y.2 mutant witness — a concrete `a`. -/
+def demoA : Move := { lo := 0, hi := 0, dur := 2 }
+
+/-- §Y.2 mutant witness — a concrete `c`. -/
+def demoC : Move := { lo := 0, hi := 0, dur := 1 }
+
+/-- §Y.2 mutant fires: `macdEnergyDemo c < macdEnergyDemo a` holds
+    on `(demoA, demoC)`. -/
+theorem macdEnergyDemo_strict :
+    macdEnergyDemo demoC < macdEnergyDemo demoA := by
+  unfold macdEnergyDemo demoA demoC
+  norm_num
+
+/-- §Y.2 mutant fires: the `.macd` classifier returns `beichi` on
+    `(demoA, demoC)` under `macdEnergyDemo` — i.e. the premise of
+    `beichi_macd_load_bearing` is **satisfiable**. -/
+theorem macd_demo_classifies_beichi :
+    classifyBeichiExt macdEnergyDemo demoA demoC MeasureExt.macd
+      = BeichiVerdict.beichi := by
+  have h_lt : macdEnergyDemo demoC < macdEnergyDemo demoA := macdEnergyDemo_strict
+  unfold classifyBeichiExt
+  simp [lhsRhsExt, h_lt]
+
+/-- §Y.2 mutant fires: existence of a satisfying instance. -/
+theorem beichi_macd_premise_satisfiable :
+    ∃ a c : Move,
+      classifyBeichiExt macdEnergyDemo a c MeasureExt.macd
+        = BeichiVerdict.beichi :=
+  ⟨demoA, demoC, macd_demo_classifies_beichi⟩
+
+/-- §Y.2 mutant fires: the load-bearing theorem, instantiated at
+    `macdEnergyDemo` on the witness pair, produces a real strict
+    inequality — NOT a vacuous truth. -/
+theorem beichi_macd_load_bearing_fires :
+    macdEnergyDemo demoC < macdEnergyDemo demoA :=
+  beichi_macd_load_bearing macdEnergyDemo demoA demoC macd_demo_classifies_beichi
+
+/-- §Y.5 mutant: a concrete `MacdAgrees` that REJECTS windows at
+    `level ≥ 5`. This is genuinely partial — some descended windows
+    will fail the predicate and be filtered out. -/
+def MacdAgreesLowOnly (tw : TimestampWindow) : Prop := tw.level < 5
+
+instance (tw : TimestampWindow) : Decidable (MacdAgreesLowOnly tw) := by
+  unfold MacdAgreesLowOnly; infer_instance
+
+/-- §Y.5 mutant witness — a window at `level = 6` (one step above the
+    cutoff). Descending leaves a window at `level = 5`, which fails
+    `MacdAgreesLowOnly`, so the filter discards it. -/
+def demoTw : TimestampWindow :=
+  { level := 6, t_start := 0, t_end := 10, h_valid := by decide }
+
+/-- §Y.5 mutant fires (raw descent succeeds): the unfiltered
+    `descendTimestamps` produces a `some` on `demoTw`, since
+    `demoTw.level = 6 ≠ 0` and `demoTw.t_end = 10 > demoTw.t_start + 1`. -/
+theorem demoTw_descendTimestamps_isSome :
+    (descendTimestamps demoTw).isSome = true := by
+  -- demoTw has level=6 (≠0) and span 10 > 1, so both guards in
+  -- `descendTimestamps` fail; the else-branch returns `some {...}`.
+  show (descendTimestamps demoTw).isSome = true
+  unfold descendTimestamps
+  have h_lvl : ¬ (demoTw.level = 0) := by unfold demoTw; decide
+  have h_span : ¬ (demoTw.t_end ≤ demoTw.t_start + 1) := by unfold demoTw; decide
+  rw [dif_neg h_lvl, dif_neg h_span]
+  rfl
+
+/-- The descended window of `demoTw` lands at level 5 — which fails
+    `MacdAgreesLowOnly` (which requires `level < 5`). This formulates
+    the property at the level of the unfolded descent — avoiding
+    structure-equality issues with the propositional `h_valid` field. -/
+theorem demoTw_descended_level_eq_five :
+    ∀ tw', descendTimestamps demoTw = some tw' → tw'.level = 5 := by
+  intro tw' h
+  have h_eq : tw'.level + 1 = demoTw.level :=
+    descendTimestamps_level_drops demoTw tw' h
+  unfold demoTw at h_eq
+  omega
+
+/-- §Y.5 mutant fires: any window descended from `demoTw` fails the
+    `MacdAgreesLowOnly` predicate (because it lands at level 5, and
+    `MacdAgreesLowOnly` requires `level < 5`). -/
+theorem demoTw_descended_rejected :
+    ∀ tw', descendTimestamps demoTw = some tw' →
+      ¬ MacdAgreesLowOnly tw' := by
+  intro tw' h
+  have h_lvl : tw'.level = 5 := demoTw_descended_level_eq_five tw' h
+  unfold MacdAgreesLowOnly
+  omega
+
+/-- §Y.5 mutant fires: the filtered descent returns `none` on `demoTw`,
+    while the raw descent returns `some` — the filter genuinely
+    discards. Proven by case-splitting on `descendTimestamps demoTw`
+    rather than naming the descended structure (whose `h_valid` proof
+    field would otherwise complicate decidable equality). -/
+theorem demoTw_descendMacdFiltered :
+    descendMacdFiltered MacdAgreesLowOnly demoTw = none := by
+  unfold descendMacdFiltered
+  cases h_d : descendTimestamps demoTw with
+  | none =>
+      -- match returns `none` directly; goal is `none = none`.
+      rfl
+  | some tw' =>
+      have h_rej : ¬ MacdAgreesLowOnly tw' :=
+        demoTw_descended_rejected tw' h_d
+      -- match returns `if MacdAgreesLowOnly tw' then some tw' else none`;
+      -- with rejection the if-then-else collapses to `none`.
+      simp [h_rej]
+
+/-- §Y.5 mutant fires: existence of a window where the filter
+    genuinely discards — the raw descent succeeds, the filtered
+    descent does not. The filter is **not** the identity. -/
+theorem descendMacdFiltered_strictly_filters :
+    ∃ tw : TimestampWindow,
+      descendMacdFiltered MacdAgreesLowOnly tw = none ∧
+      descendTimestamps tw ≠ none := by
+  refine ⟨demoTw, demoTw_descendMacdFiltered, ?_⟩
+  intro h_eq
+  have h_some := demoTw_descendTimestamps_isSome
+  rw [h_eq] at h_some
+  simp at h_some
+
+end MutantWitnesses
 
 end Chanlun.OpenQuestionsAdvanceR2
