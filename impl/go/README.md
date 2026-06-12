@@ -1,32 +1,32 @@
 # Chanlun-v1 — Go conformance backend
 
 A faithful pure-stdlib Go port of the chanlun-v1 reference backend
-(`conformance/chanlun-v1/reference_backend/*.py`), passing every fixture in the
-FROZEN `chanlun-v1` corpus byte-for-byte under the §15 SHA-equality law.
+(`conformance/chanlun-v1/reference_backend/*.py`), passing every fixture
+in the frozen `chanlun-v1` corpus byte-for-byte under SHA-equality.
 
 ## What this is
 
-The corpus `conformance/chanlun-v1` is the FROZEN multi-language conformance
-spec for the Chanlun pipeline (48 fixtures × 6 stages, byte-locked SHA-256;
+The corpus `conformance/chanlun-v1` is the frozen multi-language
+conformance spec for the Chanlun pipeline (48 fixtures × 6 stages,
+byte-locked SHA-256;
 `corpus_sha256 = df9c4f7ef0ca42bde51ed4db9ee0e4b13c8a11776e14324cfb6b9d32af7dd5c5`).
-A Phase-3 implementation in any language is conformant iff its decomposition
-over each fixture's `input` canonicalizes to the exact bytes whose SHA-256
-equals the fixture's `expected_sha256`.
+An implementation in any language is conformant iff its decomposition
+over each fixture's `input` canonicalizes to the exact bytes whose
+SHA-256 equals the fixture's `expected_sha256`.
 
-This module is that Phase-3 implementation in Go. It is:
+This module is that implementation in Go. It is:
 
 * **A faithful port**, not a re-derivation. Each `internal/chanlun/*.go`
   file mirrors the corresponding `reference_backend/*.py` line-by-line so
   that the only place divergence can creep in is canonical-JSON byte
-  encoding (the load-bearing detail; see below).
+  encoding (see Canonical-JSON below).
 * **Pure stdlib**, zero third-party dependencies (`go.mod` lists none).
 * **Integer-core**, like the Python reference. Floats in input fixtures
-  would be a NAMED structural residue and the decoder rejects them.
+  are explicitly rejected by the decoder rather than silently coerced.
 * **Six stages, exactly the six in the corpus**: `normalize`, `fractal`,
   `stroke`, `zhongshu`, `trend_type`, `pipeline`. Out-of-corpus stages
-  (segment, level-recursion, walk-decomposition) are intentionally NOT
-  ported here — they are part of the Lean library, not the conformance
-  corpus.
+  (segment, level-recursion, walk-decomposition) are in the Lean library
+  but intentionally not ported here.
 
 ## Run
 
@@ -81,23 +81,23 @@ impl/go/
 | trend_type | `internal/chanlun/trend_type.go` | `reference_backend/trend_type.py`    |
 | pipeline   | `internal/chanlun/pipeline.go`   | `reference_backend/pipeline.py`      |
 
-## Canonical-JSON choice (the load-bearing detail)
+## Canonical-JSON (the key detail)
 
-The §15 SHA-equality law is computed over the canonical JSON bytes Python
+The SHA-equality rule is computed over the canonical JSON bytes Python
 produces with:
 
 ```python
 json.dumps(obj, sort_keys=True, separators=(",", ":"), ensure_ascii=True)
 ```
 
-Go's stdlib `encoding/json` does NOT reproduce these bytes by default:
+Go's stdlib `encoding/json` does not reproduce these bytes by default:
 keys are emitted in map-insertion (or unspecified) order, and there is no
 `ensure_ascii=True` equivalent. So we ship a small canonical emitter
-(`internal/chanlun/canon.go`) over a typed `Value` tree, with these
+(`internal/chanlun/canon.go`) over a typed `Value` tree with these
 behaviours:
 
-1. **Sorted keys** — object keys are sorted by Unicode code-point order on
-   the raw string key. All keys in the chanlun-v1 corpus are ASCII, so
+1. **Sorted keys** — object keys are sorted by Unicode code-point order
+   on the raw string key. All keys in the chanlun-v1 corpus are ASCII, so
    this coincides with lexicographic byte order, which is what Python's
    `sort_keys=True` does for `str` keys.
 2. **No whitespace** — `,` and `:` are emitted with no space on either
@@ -121,19 +121,18 @@ recomputation of `corpus_sha256` reproduces the manifest value
 
 If a future fixture introduces values outside this ASCII-keyed
 integer-core domain (e.g. UTF-8 keys with multi-byte code points, or
-non-integer numbers), the canonical encoder will still emit Python-faithful
-bytes for strings (via the explicit `\uXXXX` path with surrogate handling),
-but a NAMED residue would have to be opened for non-integer numbers since
-the corpus contract forbids them today.
+non-integer numbers), the canonical encoder will still emit
+Python-faithful bytes for strings (via the explicit `\uXXXX` path with
+surrogate handling); non-integer numbers would require an explicit
+extension to the corpus contract, which today forbids them.
 
-## Lineage
+## Provenance
 
-The §15 SHA-equality law and the FROZEN-corpus discipline come from the
-proof-program upstream (`minustwo/codex-proof-workbench`). The reference
-Python backend at `conformance/chanlun-v1/reference_backend/` is the
-single source of truth for stage semantics; this Go port reproduces those
-semantics exactly. No backend logic is invented here — every divergence
-from the Python is restricted to the canonical-JSON emit layer, and the
+The Python reference backend at
+`conformance/chanlun-v1/reference_backend/` is the single source of
+truth for stage semantics; this Go port reproduces those semantics
+exactly. No backend logic is invented here — every divergence from the
+Python is restricted to the canonical-JSON emit layer, and the
 SHA-equality gate is the regression test that catches any drift.
 
 ## CI
@@ -148,5 +147,5 @@ go build ./...
 go run ./cmd/check
 ```
 
-Non-zero exit fails the gate. SHA-equality is the law: a byte off is FAIL,
-never silently skipped.
+Non-zero exit fails the gate. A byte off is FAIL, never silently
+skipped.

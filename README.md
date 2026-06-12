@@ -1,33 +1,56 @@
 # Chanlun — Theory + Lean Formalization
 
-A formalized geometric decomposition system for **Chanlun** (the theory
-taught by Master Chanzhongshuochan) technical analysis, with:
+A kernel-verified Lean 4 formalization of **Chanlun** (缠论), the geometric
+technical-analysis theory taught by master 缠中说禅, paired with an executable
+pure-Python reference backend and multi-language ports.
 
-* **Theory document**: [`chanlun.md`](chanlun.md) (mathematical formalism).
-* **Lean 4 formalization** (`lean/Chanlun/`): the 22 load-bearing
-  modules below, all `sorry`-free, kernel-verified on hosted Ubuntu CI.
-* **Pure-Python groundings** (`grounding/`): independent reference
-  oracles for each Lean theorem, with §15 falsifying mutants.
+* **Theory document**: [`chanlun.md`](chanlun.md) — the mathematical formalism.
+* **Lean 4 formalization** (`lean/Chanlun/`): 21 modules covering the published
+  pipeline plus structural/buy-sell layers. All modules are kernel-verified on
+  hosted Ubuntu CI with no admitted lemmas (`sorry`-free).
+* **Pure-Python reference oracles** (`grounding/`): independent implementations
+  of each Lean theorem with falsifying mutation tests.
+* **Frozen conformance corpus** (`conformance/chanlun-v1/`): a byte-exact,
+  language-agnostic test suite. 48 fixtures × 6 stages, SHA-256 locked.
+* **Multi-language ports** (`impl/`): TypeScript, Go, and PineScript backends
+  exercising the same algorithm.
 
 Chinese version: see [README.zh.md](README.zh.md).
 
-> **Attribution.** The Chanlun theory itself belongs to the
-> Chanzhongshuochan tradition. The mathematical formalism in
-> [`chanlun.md`](chanlun.md) is this repository's narrative form of the
-> Lean library; the Lean modules in `lean/Chanlun/` are the trusted
-> artifact. The Lean formalization in
-> `lean/Chanlun/` (this directory's contribution) was developed inside
-> the [`codex-proof-workbench`](https://github.com/minustwo/codex-proof-workbench)
-> proof program and migrated here for public availability.
+> **Attribution.** The Chanlun theory itself belongs to the 缠中说禅 tradition.
+> The mathematical formalism in [`chanlun.md`](chanlun.md) is this repository's
+> narrative form of the Lean library; the Lean modules in `lean/Chanlun/` are
+> the trusted artifact.
 
 ---
 
-## Status — what is proven, what is named-open
+## TL;DR
 
-The Lean library `Chanlun` (`lake build Chanlun`) is sorry-free and
-covers the four-stage published pipeline plus follow-up structural and
-buy/sell-point layers (Zhongshu, WalkType, Beichi, BSPs, interval-nested
-decomposition). Twenty-one modules:
+Chanlun is a deterministic decomposition of a price series into geometric
+units (fractals 分型 → strokes 笔 → segments 线段 → centers 中枢 → walks 走势).
+This repository (a) formalizes the decomposition in Lean 4 so its main
+correctness properties are machine-checked, (b) provides an executable
+reference backend whose outputs are byte-frozen as a conformance corpus, and
+(c) ports the reference to TypeScript, Go, and PineScript.
+
+* **Proven**: 21 Lean modules covering Definitions 3 and 4, Algorithm N
+  (containment normalization), Lemma 2 (stroke uniqueness), Theorem 1
+  (segment decomposition termination), the central-zone (中枢) construction,
+  the walk-type classifier, and recursive buy/sell-point layers.
+* **Open**: a list of explicitly named limitations is given in
+  *Known limitations and open questions* below. Each one is surfaced rather
+  than hidden.
+* **Start here**: the theory write-up in [`chanlun.md`](chanlun.md), then the
+  Lean modules in [`lean/Chanlun/`](lean/Chanlun/), then the conformance corpus
+  in [`conformance/chanlun-v1/`](conformance/chanlun-v1/).
+
+---
+
+## Proven results
+
+The Lean library `Chanlun` (built via `lake build Chanlun`) is `sorry`-free
+and covers the four-stage published pipeline plus structural/buy-sell layers.
+21 modules:
 
 ### Core pipeline (Def-3 → Stroke → Segment → Zhongshu)
 
@@ -39,121 +62,111 @@ decomposition). Twenty-one modules:
 | `Chanlun.Stroke` | Def-4 (Bi, leftmost-greedy): `stroke_emits_separated` (B), `stroke_emits_alternate` (A), `strokes_separated` |
 | `Chanlun.StrokeUniqueness` | Lemma 2 strong form: `strokes_unique` (any `IsValidBi` = canonical streaming output) |
 | `Chanlun.StrokesIsValidBiCorollary` | Lemma 2 non-vacuity + biconditional: `strokes_isValidBi`, `strokes_iff_IsValidBi` |
-| `Chanlun.BiEndpointSubResidues` | PR #1090 §3 sub-residues: `to_endpoint_leftmost_eq_extremal_on_reachable`, `dropBranch_preserves_IsValidBi`, `allAlternate_reverse`, `strokes_alternate` |
+| `Chanlun.BiEndpointSubResidues` | Sub-results on Bi endpoints: `to_endpoint_leftmost_eq_extremal_on_reachable`, `dropBranch_preserves_IsValidBi`, `allAlternate_reverse`, `strokes_alternate` |
 | `Chanlun.Segment` | Def 5–16 + Theorem 1 (Xianduan + parameterized unique segment decomposition): `segments_partition` (P), `segments_terminate` (T), `segment_advance_strictly_increasing` |
-| `Chanlun.Zhongshu` | Zhongshu (lesson 17/20): `zhongshu_valid`, `zhongshu_disjoint`, `extendEnd_ge`, parameterized over `ZoneGate ∈ {first3, all_}` |
+| `Chanlun.Zhongshu` | Zhongshu 中枢 (lesson 17/20): `zhongshu_valid`, `zhongshu_disjoint`, `extendEnd_ge`, parameterized over `ZoneGate ∈ {first3, all_}` |
 | `Chanlun.ZhongshuExtension` | 中枢 延伸 / 扩展 / 新生 / 9-段升级 (lesson 17/20/30): `classifyExtension_total`, `extension_preserves_core_ZD_ZG`, `expansion_widens_GG_DD`, `rebirth_creates_disjoint_core`, `upgrade_trigger_iff_9_segments` |
-| `Chanlun.TrendType` | Consolidation / Trend (lesson 17): `classify_total`, `classify_trend_monotone` (sequentially-same-direction is genuinely monotone) |
+| `Chanlun.TrendType` | Consolidation 盘整 / Trend 趋势 (lesson 17): `classify_total`, `classify_trend_monotone` |
 | `Chanlun.WalkDecomposition` | Maximal walk decomposition (lesson 17): `decompose_partition`, `decompose_monotonic`, `decompose_type_homogeneous`, `decompose_unique` |
 
 ### Reachable-domain determinism
 
 | Module | Theorems |
 |---|---|
-| `Chanlun.BiReachableDeterminism` | Reachable-domain determinism: `fractals_alternate_on_containment_free` (post-normalize ⇒ Fenxings strictly alternate ⇒ the three Bi-endpoint readings COINCIDE on reachable inputs) |
+| `Chanlun.BiReachableDeterminism` | Reachable-domain determinism: `fractals_alternate_on_containment_free` (post-normalize ⇒ fractals strictly alternate ⇒ the three Bi-endpoint readings coincide on reachable inputs) |
 | `Chanlun.BiReachableDeterminismBridge` | Bar↔Interval bridge: `map_toBar_preserves_noAdjContainment`, `normalize_then_fractals_alternate` (raw `Interval` ⇒ alternation one-shot) |
 
-### Buy/sell points + 背驰 (lessons 20/24/27/29/37)
+### Buy/sell points + divergence 背驰 (lessons 20/24/27/29/37)
 
 | Module | Theorems |
 |---|---|
-| `Chanlun.Beichi` | 背驰 力度 comparison (lessons 24/27/29): `classifyBeichi_total`, `beichi_irrefl`, `beichi_load_bearing` (disp + slope cross-product), `beichi_measure_gate_witness` (§15 non-vacuity of `disp` vs `slope`) |
+| `Chanlun.Beichi` | 背驰 strength comparison (lessons 24/27/29): `classifyBeichi_total`, `beichi_irrefl`, `beichi_load_bearing` (displacement + slope cross-product), `beichi_measure_gate_witness` |
 | `Chanlun.PanzhengBeichi` | 盘整背驰 (lesson 37): single-center A-vs-C classifier, `classify_panzheng_total`, `panzheng_load_bearing_disp`/`slope`, `panzheng_measure_gate_witness`, `panzheng_intra_vs_inter_load_bearing` |
 | `Chanlun.ThirdBuysell` | 第三类买卖点 (lesson 20): `classifyBsp_total`, `bsp_zone_load_bearing`, `bsp_reenter_up_iff` / `bsp_reenter_down_iff`, `bsp_excl` |
-| `Chanlun.FirstSecondBuysell` | 第一/第二类买卖点 (lesson 24): `classify_total`, `classify_first_point_only_total`, `second_not_breaking_iff`, `first_point_failed_iff`, `first_second_inheritance_load_bearing` (named gate inheritance) |
-| `Chanlun.RecursiveSubBspBeichi` | Recursive 三买卖 + 背驰 (lessons 20/24/27/29 推广至 次级别): `recursive_subBsp_fuel_stationary`, `recursive_subBsp_terminates`, `recursive_subBsp_inheritance`, `recursive_subBsp_total`, `recursive_subBsp_fuel_bound_via_levelRecursion` |
+| `Chanlun.FirstSecondBuysell` | 第一/第二类买卖点 (lesson 24): `classify_total`, `classify_first_point_only_total`, `second_not_breaking_iff`, `first_point_failed_iff`, `first_second_inheritance_load_bearing` |
+| `Chanlun.RecursiveSubBspBeichi` | Recursive buy/sell + divergence (lessons 20/24/27/29 lifted to sub-levels): `recursive_subBsp_fuel_stationary`, `recursive_subBsp_terminates`, `recursive_subBsp_inheritance`, `recursive_subBsp_total`, `recursive_subBsp_fuel_bound_via_levelRecursion` |
 
-### 级别 recursion + 区间套
+### Level recursion + nested intervals 区间套
 
 | Module | Theorems |
 |---|---|
-| `Chanlun.LevelRecursion` | "Every trend must complete" (lesson 24): `centerSize_ge_3`, `lift_strict_drop` (≥2 element drop per non-terminal lift ⇒ level recursion terminates in ≤ n/2 levels), `liftCenter` + `liftCenters` + `liftStep` + `levelTower` (lift function + envelope-soundness + determinism propagation — Phase 2) |
+| `Chanlun.LevelRecursion` | "Every trend must complete" (lesson 24): `centerSize_ge_3`, `lift_strict_drop` (≥2 element drop per non-terminal lift ⇒ level recursion terminates in ≤ n/2 levels) |
 | `Chanlun.IntervalNesting` | 区间套 (lessons 65–66): `intervalnesting_terminates`, `walk_always_has_verdict`, `intervalnesting_pin_monotone`, `intervalnesting_chain_strict_drop`, `walk_at_zero_returns_gate_limit`, `walk_at_positive_returns_pinned` |
-| `Chanlun.DivergenceWitnesses` | (Phase 2) Constructive witnesses for the four multi-valued NAMED residues: `zhongshu_zone_gate_divergence_witness`, `beichi_measure_gate_divergence_witness`, `first_second_measure_gate_divergence_witness`, `panzheng_measure_gate_propagation_witness`, `all_multi_valued_residues_witnessed` |
 
-### Multi-valued divergence witnesses (Phase 2 — 2026-06-12)
+---
 
-The new `Chanlun.DivergenceWitnesses` module provides CONSTRUCTIVE
-divergence witnesses for all four multi-valued NAMED-OPEN residues
-(Klaus's rule "多解则需要标出"):
+## Known limitations and open questions
 
-| Residue | Witness theorem |
-|---|---|
-| `chanlun_zhongshu_zone_gate_OPEN` | `zhongshu_zone_gate_divergence_witness` (concrete `els` list) |
-| `chanlun_beichi_measure_gate_OPEN` | `beichi_measure_gate_divergence_witness` (cross-namespace) |
-| `chanlun_first_second_measure_gate_propagation_OPEN` | `first_second_measure_gate_divergence_witness` |
-| `chanlun_panzheng_measure_gate_propagation_OPEN` | `panzheng_measure_gate_propagation_witness` |
+The following items are not (yet) proven inside the Lean library. They are
+listed here so the scope is explicit rather than hidden.
 
-The combined four-way theorem `all_multi_valued_residues_witnessed`
-bundles all four constructive witnesses into one Lean term.
-
-### Honest scope — remaining named-open follow-ups
-
-These are deliberately surfaced as named residues per Klaus's
-`[..._OPEN]` discipline. **Phase 2** (2026-06-12) discharged seven
-provable residues into Lean theorems and grounded the MACD +
-multi-resolution residues on REAL NQ 7y data (see `grounding/`):
-
-**Newly CLOSED (Phase 2)**:
-* `[chanlun_segment_terminates_sub_OPEN]` — discharged via
-  `Chanlun.Segment.{find_term_bounded_valid, find_term_strict_advance,
-  find_term_contract_nonvacuous, segments_well_founded_under_contracts}`.
-* `[chanlun_level_recursion_lift_function_OPEN]` — discharged via
-  `Chanlun.LevelRecursion.{liftCenter, liftCenters, liftStep, levelTower}`.
-* `[chanlun_level_recursion_envelope_soundness_OPEN]` — discharged
-  via `Chanlun.LevelRecursion.{liftCenter_lo_le_hi, liftCenters_all_valid,
-  liftCenters_mem_iff}`.
-* `[chanlun_level_recursion_determinism_preservation_OPEN]` —
-  discharged via `Chanlun.LevelRecursion.{liftStep_deterministic,
-  levelTower_deterministic, levelTower_input_eq,
-  levelTower_agreement_lifts}`.
-* `[chanlun_walk_decomposition_spec_unique_OPEN]` — discharged
-  via `Chanlun.WalkDecomposition.{decompose_spec_unique_extensional,
-  decompose_spec_unique_empty, decompose_spec_unique_head_at_zero}`.
-
-**Newly GROUNDED on REAL NQ 7y data (Phase 2)**:
-* `[chanlun_beichi_macd_gate_OPEN]` + `[chanlun_intervalnesting_macd_OPEN]`
-  — `grounding/chanlun_macd_grounding.py` (TA-Lib backend on real
-  NQ 1h flatfile; concrete `(a_idx, c_idx)` divergence witnesses
-  reported).
-* `[chanlun_intervalnesting_multiscale_OPEN]` + `[chanlun_intervalnesting_lowest_level_OPEN]`
-  — `grounding/chanlun_multiscale_real_grounding.py` (1d + 1h + 1m
-  REAL NQ 7y flatfiles; three-level descent witnesses by timestamp
-  containment).
-
-**Remaining NAMED-OPEN**:
-* `[chanlun_inclusion_precondition]` — the precondition Def-3 assumes
-  upstream of `isInclusionNormalized`; discharged by the pipeline composition
-  (`Chanlun.Pipeline.pipeline_inclusion_normalized`) but the type bridge is
-  named explicitly.
-* `[chanlun_zhongshu_extension_shoulder_OPEN]` — the "kiss" case
-  (`next_el.lo = ZG` or `next_el.hi = ZD`) is admitted as EXTENSION
-  under the published `≤`-overlap reading; a strict `<` reading would
-  name it rebirth-boundary.
-* `[chanlun_zhongshu_extension_all_gate_OPEN]` — the `all_` zone-gate
-  propagation of expansion (the `first3` form is closed in
-  `Chanlun.ZhongshuExtension`).
-* `[chanlun_zhongshu_extension_multistep_envelope_OPEN]` — multi-element
-  envelope across a full 中枢; per-step proven, list-induction left open.
-* `[chanlun_first_second_buysell_recursive_OPEN]` — recursive form of
-  lessons-24 第一/第二类买卖点 (sits on the same descent + the
-  measure-gate inheritance).
-* `[chanlun_panzheng_beichi_recursive_OPEN]` — recursive form of
-  盘整背驰 (lesson 37).
-* `[chanlun_recursive_descent_strict_subwindow_OPEN]` — the strict
-  proof that the level-(n-1) sub-window is a STRICT subset of the
-  level-(n-1) tower.
-* `[chanlun_walk_decomposition_intervalnesting_OPEN]` — interval-nesting
-  multi-level nested decomposition (joined to `Chanlun.IntervalNesting`).
-* `[chanlun_beichi_macd_measure_lean_OPEN]` (new) — adding MACD as a
-  third Lean `Measure` constructor (the algebra extends cleanly; needs
-  the MACD-histogram carrier in the Move type).
-* `[chanlun_intervalnesting_multilevel_lean_OPEN]` (new) — Lean-side
-  multi-resolution tower (each level has its OWN raw bars, not just the
-  synthetic lift); grounded side is closed.
-
-These are NOT silent gaps — each is named so the next pass knows exactly
-what residue to discharge.
+* **Containment precondition bridge.** `Chanlun.Pipeline.pipeline_inclusion_normalized`
+  discharges the precondition Def-3 assumes upstream, but the type bridge
+  between the `Interval`-level and `Bar`-level statements is named explicitly
+  and not folded into a single theorem.
+* **Segment recursion internals.** The feature-sequence Φ + overlap
+  admissibility internals of `find_term` are not re-derived in
+  `Chanlun.Segment`; the recursion is parameterized over the leftmost-≥-a
+  contract `find_term_ge`. A concrete `find_term` instance satisfying the
+  contract is taken as given.
+* **Zhongshu zone-gate non-uniqueness.** The two zone-gate choices `first3`
+  and `all_` disagree on roughly 12% of arbitrary element sequences. Both are
+  proven `valid` and `disjoint`; the gate-relativity is a real artifact of
+  how Chanlun's master text leaves the choice underspecified. On the
+  reachable (containment-free) domain the two readings agree.
+* **Bi to-endpoint reading.** `Chanlun.StrokeUniqueness` reads the
+  TO-endpoint as the leftmost opposite-kind admissible fractal; a literal
+  reading of "extremal of the to-side run" could differ on multi-fractal
+  runs. Both readings coincide on reachable inputs (see
+  `Chanlun.BiReachableDeterminism`).
+* **Close-fractal drop.** Opposite-close fractals with gap `< δmin` are
+  silently dropped by `step`; the uniqueness proof treats these drops as
+  no-ops.
+* **Reversed-order alternation lift.** `strokes_separated` lifts to the
+  user-facing reversed order via `List.mem_reverse`; the
+  alternation-on-reverse lift is a separate one-line lemma not yet included.
+* **Level-recursion `lift` function.** The actual
+  `lift : List Element → Option (List Element)` function is out of scope; we
+  prove only the strict-drop measure (the part that carries the
+  termination argument).
+* **Level-recursion envelope soundness.** Each level-`(n+1)` envelope
+  contains its members' ranges; not yet proven.
+* **Level-recursion determinism preservation.** Determinism preserved up the
+  level tower; not yet proven.
+* **Walk-decomposition spec uniqueness.** Any function satisfying the
+  walk-decomposition specification equals `decompose`. Not yet proven in
+  spec form.
+* **Zhongshu extension boundary cases.** The "kiss" case
+  (`next_el.lo = ZG` or `next_el.hi = ZD`) is treated as extension under
+  the published `≤`-overlap reading; a strict `<` reading would assign it
+  to rebirth-boundary. Both readings appear in the master text; we follow
+  the `≤` reading.
+* **Zhongshu extension on `all_` gate.** The `first3` form of the expansion
+  propagation is closed in `Chanlun.ZhongshuExtension`; the `all_` form is
+  not.
+* **Multi-step center envelope.** Multi-element envelope across a full
+  center; per-step is proven, list-induction not yet.
+* **Divergence strength measure.** Displacement (`disp`) and slope agree on
+  ~82.2% of inputs in the Python oracles. The
+  `beichi_measure_gate_witness` theorem certifies non-vacuity; choice of
+  measure itself is left open (an artifact of how the master text describes
+  strength comparison without fixing a single measure).
+* **MACD as divergence measure.** Lesson 27 introduces MACD as an auxiliary
+  strength measure; explicitly treated as non-canonical.
+* **Divergence measure propagation in consolidation.** Propagation of the
+  consolidation-divergence measure across the mutation table.
+* **Recursive forms of 1st/2nd buy/sell and consolidation divergence.**
+  The recursive (multi-level) forms of lessons 24 and 37 sit on the same
+  descent measure plus measure-gate inheritance; not yet proven.
+* **Strict sub-window for level recursion.** Strict proof that the
+  level-`(n-1)` sub-window is a strict subset of the level-`(n-1)` tower.
+* **Lowest-level pin and multiscale nesting.** Strict characterization of
+  the lowest-level pin endpoint, and multi-scale composition of nested
+  intervals across non-adjacent levels.
+* **MACD-decorated nested intervals.** A variant of 区间套 instrumented
+  with MACD.
+* **Walk decomposition × nested intervals.** Joining
+  `Chanlun.WalkDecomposition` to `Chanlun.IntervalNesting`.
 
 ---
 
@@ -175,10 +188,10 @@ lake exe cache get
 lake build Chanlun
 ```
 
-A green `lake build Chanlun` verifies all 22 modules sorry-free under
-the Lean kernel.
+A successful `lake build Chanlun` certifies all 21 modules under the Lean
+kernel with no admitted lemmas.
 
-### Run the groundings
+### Run the reference oracles
 
 ```bash
 cd grounding
@@ -188,9 +201,9 @@ for f in chanlun_*_grounding.py; do
 done
 ```
 
-Each grounding runs in a few seconds (60k–240k random sequences each)
-and prints a one-line OK summary plus the §15 falsifiability check. No
-external Python deps; pure stdlib + `random`.
+Each oracle runs in a few seconds (60k–240k random sequences) and prints a
+one-line OK summary plus a falsifying-mutant check. No external Python
+dependencies; pure standard library plus `random`.
 
 ---
 
@@ -203,7 +216,7 @@ chanlun/
 ├─ README.md                          # this file (English)
 ├─ README.zh.md                       # Chinese version
 ├─ lakefile.lean, lean-toolchain      # Lean 4 build config (Mathlib v4.14.0)
-├─ lean/Chanlun/                      # the 22 Lean MWE modules
+├─ lean/Chanlun/                      # the 21 Lean modules
 │  ├─ Fractal.lean, Normalize.lean, Pipeline.lean
 │  ├─ Stroke.lean, StrokeUniqueness.lean, StrokesIsValidBiCorollary.lean
 │  ├─ BiEndpointSubResidues.lean
@@ -223,91 +236,79 @@ chanlun/
 │  ├─ chanlun_zhongshu_grounding.py
 │  ├─ chanlun_bi_endpoint_multivalued_grounding.py
 │  └─ chanlun_bi_kline_rule_grounding.py
-├─ conformance/chanlun-v1/             # FROZEN conformance corpus (Phase-3 spec)
+├─ conformance/chanlun-v1/             # frozen conformance corpus
 │  ├─ manifest.json                    # corpus_sha256 = the version id
 │  ├─ fixtures/*.json                  # 48 (input, expected, sha) fixtures
 │  ├─ reference_backend/               # standalone pure-stdlib reference (Python)
 │  ├─ runner.py                        # ~100-line pure-stdlib verifier
 │  ├─ generate_corpus.py               # deterministic fixture generator
-│  ├─ example_phase3_check.py          # template for Phase-3 implementors
+│  ├─ example_phase3_check.py          # template for downstream implementations
 │  ├─ README.md, README.zh.md          # full spec docs (EN / ZH)
-├─ impl/ts/                            # TypeScript port (Phase-3 multi-lang #1)
+├─ impl/ts/                            # TypeScript port
 │  ├─ src/*.ts                         # six pipeline stages, no runtime deps
 │  ├─ check.ts                         # 48-fixture conformance harness
 │  ├─ package.json                     # devDeps only (typescript + @types/node)
-│  └─ README.md, README.zh.md          # impl/ts docs (EN / ZH)
-├─ impl/go/                            # Go (pure-stdlib) Phase-3 backend, passes all 48 fixtures
+│  └─ README.md, README.zh.md
+├─ impl/go/                            # Go (pure-stdlib) backend, passes all 48 fixtures
 │  ├─ go.mod                           # github.com/minustwo/chanlun/impl/go, Go 1.22
 │  ├─ cmd/check/main.go                # `go run ./cmd/check` runs the conformance harness
 │  ├─ internal/chanlun/                # one file per stage, faithful port of the Python reference
-│  └─ README.md, README.zh.md          # how to run, canonical-JSON choice, lineage
-├─ impl/pinescript/                    # PineScript v5 backend (documented port)
+│  └─ README.md, README.zh.md
+├─ impl/pinescript/                    # PineScript v5 documentation port
 │  ├─ chanlun_indicator.pine           # the indicator (load into TradingView)
-│  ├─ PINESCRIPT_PORT.md               # per-stage mapping + 13 NAMED-OPEN residues
-│  └─ README.md, README.zh.md          # EN/ZH usage docs (documentation-port-only — see below)
-└─ .github/workflows/chanlun-gate.yml  # hosted Ubuntu CI: lake build + groundings + conformance (Python + TS + Go) + pinescript-lint
+│  ├─ PINESCRIPT_PORT.md               # per-stage mapping + named limitations
+│  └─ README.md, README.zh.md
+└─ .github/workflows/chanlun-gate.yml  # hosted Ubuntu CI: lake build + oracles + conformance + lint
 ```
 
-### PineScript backend — documentation-port-only
+### PineScript backend — documentation-only port
 
 `impl/pinescript/` is a PineScript v5 port of the same algorithm. It plots
-分型/笔/中枢 on real TradingView K-lines. **It is NOT conformance-verified**: PineScript
-v5 cannot read the fixture corpus or compare SHA-256 in CI. The honesty discipline
-surfaces every gap as a NAMED `[chanlun_v1_pinescript_<stage>_OPEN]` residue (13 in
-total — see `impl/pinescript/PINESCRIPT_PORT.md`). The CI runs a DISCIPLINE check
-(`conformance-pinescript-lint`) that verifies absence of anti-patterns and presence of
-named residues — but it is NOT a SHA-equality gate.
+分型 / 笔 / 中枢 on real TradingView K-lines. **It is not conformance-verified.**
+PineScript v5 cannot read the fixture corpus or compare SHA-256 in CI, so
+each verification gap is surfaced explicitly in
+`impl/pinescript/PINESCRIPT_PORT.md`. The CI runs a discipline check
+(`conformance-pinescript-lint`) that looks for known anti-patterns and
+verifies the limitations are documented — it is *not* a SHA-equality gate.
 
 ---
 
 ## CI
 
-The hosted-Ubuntu workflow `.github/workflows/chanlun-gate.yml` runs on
-every push to `main` and every PR:
+The hosted-Ubuntu workflow `.github/workflows/chanlun-gate.yml` runs on every
+push to `main` and every PR:
 
 * `lean` job: installs `elan` + the pinned toolchain, restores
   `actions/cache@v4` over `.lake`, runs `lake exe cache get` to pull
-  Mathlib's pre-built oleans, then `lake build Chanlun`. Final gate
+  Mathlib's pre-built oleans, then `lake build Chanlun`. A final gate
   rejects any `sorry` keyword in `lean/Chanlun/*.lean`.
 * `grounding` job: runs each `grounding/chanlun_*_grounding.py` with
   pure-stdlib Python 3.11.
 * `conformance` job: runs `python3 conformance/chanlun-v1/runner.py` to
-  verify every fixture matches the FROZEN spec byte-for-byte, then
+  verify every fixture matches the frozen spec byte-for-byte, then
   regenerates the corpus and confirms the bytes are identical (catches
-  any reference-backend drift). The corpus_sha256 of `chanlun-v1` IS
-  the conformance-version id: a Phase-3 multi-language implementation
-  in any language is conformant iff it reproduces every fixture's
-  expected SHA-256.
+  any reference-backend drift). The `corpus_sha256` of `chanlun-v1` is
+  the conformance version identifier: an implementation in any language
+  is conformant iff it reproduces every fixture's `expected_sha256`.
 * `conformance-ts` job: installs Node 20, compiles `impl/ts/` (devDeps
   only: `typescript` + `@types/node`), and runs `impl/ts/dist/check.js`
   to verify the TypeScript backend reproduces every fixture's
   `expected_sha256` byte-for-byte. The job exits non-zero on any
-  divergence - SHA-equality is the law, no fuzzy match.
-* `conformance-go` job: builds the Go Phase-3 backend at `impl/go/` and
-  runs `go run ./cmd/check`, which loads the same `manifest.json` and
-  proves each fixture's SHA-256 reproduces under the Go port too. Go
-  1.22, pure stdlib, no third-party dependencies. SHA-equality remains
-  the law — non-zero exit fails the gate, never silently skips.
+  divergence — SHA-equality is required, no fuzzy match.
+* `conformance-go` job: builds the Go backend at `impl/go/` and runs
+  `go run ./cmd/check`, which loads the same `manifest.json` and
+  verifies each fixture's SHA-256 reproduces under the Go port. Go 1.22,
+  pure stdlib, no third-party dependencies.
 
-The Lean job typically takes ~5 minutes on a warm cache, ~25 minutes
-cold. Groundings finish in ~30 seconds total. Conformance finishes in
-under a minute.
-
----
-
-## Cross-references
-
-* The proof program these MWE files were developed in:
-  [`codex-proof-workbench`](https://github.com/minustwo/codex-proof-workbench)
-* Master Chan's published lessons (108-lesson series) are the
-  source-of-truth for Zhongshu, WalkType, and the buy-sell-point
-  geometry hooks used in the follow-up work.
-* Mathlib v4.14.0 is the only library dependency.
+The Lean job typically takes ~5 minutes on a warm cache, ~25 minutes cold.
+Oracles finish in ~30 seconds total. Conformance finishes in under a
+minute.
 
 ---
 
 ## License
 
-The mathematical formalism documents (`chanlun.md`, `chanlun.zh.md`),
-the Lean formalization, groundings, and CI workflow are MIT-licensed
-(see [`LICENSE`](LICENSE) if present in the repo).
+The mathematical formalism documents (`chanlun.md`, `chanlun.zh.md`), the
+Lean formalization, oracles, and CI workflow are MIT-licensed (see
+[`LICENSE`](LICENSE) if present in the repo). The Chanlun theory itself
+belongs to the 缠中说禅 tradition.

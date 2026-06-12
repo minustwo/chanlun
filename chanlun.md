@@ -1,8 +1,9 @@
 # Chanlun — Mathematical Formalism
 
 > The mathematical form of Chanlun. Each definition and theorem below is
-> `sorry`-free in `lean/Chanlun/`. This document is the human-readable
-> narrative; the Lean modules are the trusted artifact.
+> proven in `lean/Chanlun/` with no admitted lemmas (`sorry`-free). This
+> document is the human-readable narrative; the Lean modules are the
+> trusted artifact.
 >
 > Chinese version: [chanlun.zh.md](chanlun.zh.md).
 
@@ -12,7 +13,7 @@
 
 All arithmetic is over `ℤ` (integers) with `ℕ` for indices. There is no
 floating-point dependency in the formalism; prices arrive as integer
-scaled values (e.g., for CME E-mini futures with 0.25 tick size,
+scaled values (e.g., for CME E-mini futures with a 0.25 tick size,
 multiply prices by 4). This integer-only discipline keeps every theorem
 decidable and the kernel proofs constructive.
 
@@ -23,23 +24,23 @@ decidable and the kernel proofs constructive.
   `FractalKind ∈ { top, bottom, neither }`.
 * `Stroke := { from_idx : ℕ, to_idx : ℕ, dir : StrokeDir }` with
   `StrokeDir ∈ { up, down }`.
-* `Center := { start : ℕ, end_ : ℕ, ZD : ℤ, ZG : ℤ }` (Zhongshu).
+* `Center := { start : ℕ, end_ : ℕ, ZD : ℤ, ZG : ℤ }` (Zhongshu 中枢).
 
 ---
 
-## §1 Definition 3 — Fractal (Fenxing)
+## §1 Definition 3 — Fractal (分型)
 
-### Top Fractal
+### Top fractal
 
-A 3-bar window `(a, b, c)` is a **top Fractal** iff
+A 3-bar window `(a, b, c)` is a **top fractal** iff
 
 ```
 b.h > a.h  ∧  b.h > c.h  ∧  b.l > a.l  ∧  b.l > c.l.
 ```
 
-### Bottom Fractal
+### Bottom fractal
 
-`(a, b, c)` is a **bottom Fractal** iff
+`(a, b, c)` is a **bottom fractal** iff
 
 ```
 b.h < a.h  ∧  b.h < c.h  ∧  b.l < a.l  ∧  b.l < c.l.
@@ -123,16 +124,17 @@ Lean module: [`Chanlun.Pipeline`](lean/Chanlun/Pipeline.lean).
 
 ---
 
-## §4 Definition 4 — Stroke (Bi)
+## §4 Definition 4 — Stroke (笔)
 
 ### Construction (leftmost-greedy)
 
-A walk over the Fractal list with one alternating *anchor*:
+A walk over the fractal list with one alternating *anchor*:
 
 * no anchor yet → set anchor to current fractal `f`;
 * same-kind fractal → keep the extremal representative (`pickRep`);
-* opposite-kind, gap `≥ δmin` → **EMIT** stroke `(anchor → f)`, re-anchor to `f`;
-* opposite-kind, gap `< δmin` → drop (named residue, see §10).
+* opposite-kind, gap `≥ δmin` → **emit** stroke `(anchor → f)`, re-anchor to `f`;
+* opposite-kind, gap `< δmin` → drop (see "Known limitations" in
+  [`README.md`](README.md)).
 
 ### Theorem 4.1 (`stroke_emits_separated`, property B)
 
@@ -157,8 +159,8 @@ Lean module: [`Chanlun.Stroke`](lean/Chanlun/Stroke.lean).
 
 A recursive predicate on `(Option Fractal × List Fractal × ℤ × List Stroke)`
 mirroring `step`'s case analysis. Captures: *from-endpoint is the
-extremal-rep of its same-kind run, to-endpoint is the leftmost
-opposite-kind admissible fractal*.
+extremal representative of its same-kind run; to-endpoint is the
+leftmost opposite-kind admissible fractal*.
 
 ### Theorem 5.1 (`strokes_unique`)
 
@@ -174,7 +176,7 @@ Lean module: [`Chanlun.StrokeUniqueness`](lean/Chanlun/StrokeUniqueness.lean).
 
 ---
 
-## §6 Definitions 5–16 + Theorem 1 — Segment (Xianduan)
+## §6 Definitions 5–16 + Theorem 1 — Segment (线段)
 
 ### The BoundedFix recursion
 
@@ -182,8 +184,9 @@ Lean module: [`Chanlun.StrokeUniqueness`](lean/Chanlun/StrokeUniqueness.lean).
 
 Parameterized over a *leftmost-≥-a* oracle `find_term` and its contract
 `find_term_ge : ∀ a j, find_term a = some j → a ≤ j`. The full
-feature-sequence Φ + overlap admissibility internals are a named
-sub-residue.
+feature-sequence Φ + overlap admissibility internals of `find_term` are
+not re-derived here (see "Known limitations" in `README.md`); the Lean
+recursion only needs the contract `find_term_ge`.
 
 ### Theorem 6.1 (`segments_partition`, property P)
 
@@ -195,7 +198,7 @@ At most `n - a + 1` segments are emitted (well-founded, finite list).
 
 ### Theorem 6.3 (`segment_advance_strictly_increasing`)
 
-The load-bearing lemma:
+The central termination lemma:
 `find_term a = some j → a ≤ j → n - (j + 1) < n - a`.
 Strict decrease of the `n − a` measure ⇒ BoundedFix is well-founded.
 
@@ -203,7 +206,7 @@ Lean module: [`Chanlun.Segment`](lean/Chanlun/Segment.lean).
 
 ---
 
-## §7 Zhongshu (lesson 17/20)
+## §7 Zhongshu (中枢, lesson 17/20)
 
 ### Construction
 
@@ -213,7 +216,7 @@ For a sequence of elements `[lo, hi]` indexed by ℕ:
 * if `els.length ≤ i + 2` → stop;
 * let `ZD := max(els[i].lo, els[i+1].lo, els[i+2].lo)` and
   `ZG := min(els[i].hi, els[i+1].hi, els[i+2].hi)`;
-* if `ZD ≤ ZG` (genuine overlap) → emit Center `⟨i, extendEnd(i+3), ZD, ZG⟩`
+* if `ZD ≤ ZG` (genuine overlap) → emit `⟨i, extendEnd(i+3), ZD, ZG⟩`
   and continue at `extendEnd + 1`;
 * else → slide `i := i + 1`.
 
@@ -223,6 +226,10 @@ controls re-tightening:
 
 * `first3` keeps `(zd, zg)` fixed;
 * `all_` tightens to `(max zd els[j].lo, min zg els[j].hi)`.
+
+The master text leaves this choice underspecified; we provide both
+readings and prove both are valid (see "Known limitations" in
+`README.md`).
 
 ### Theorem 7.1 (`zhongshu_valid`)
 
@@ -235,8 +242,9 @@ Consecutive Centers `c₁ :: c₂ :: rest` satisfy `c₁.end_ < c₂.start`.
 
 ### Theorem 7.3 (`extendEnd_ge`)
 
-`j - 1 ≤ extendEnd els g zd zg j`. The load-bearing lemma that gives
-`zhongshu` its well-founded termination on the `els.length − i` measure.
+`j - 1 ≤ extendEnd els g zd zg j`. The central termination lemma that
+gives `zhongshu` its well-founded termination on the `els.length − i`
+measure.
 
 Lean module: [`Chanlun.Zhongshu`](lean/Chanlun/Zhongshu.lean).
 
@@ -262,7 +270,7 @@ next's `ZG < prev.ZD`; `neither` otherwise).
 ### Theorem 8.1 (`classify_total`)
 
 `classify cs` is one of `{none_, consolidation, trend_up, trend_down, mixed}`
-for every `cs`. TOTAL + never-silent.
+for every `cs`. Total and never-silent.
 
 ### Theorem 8.2 (`classify_trend_monotone`)
 
@@ -277,7 +285,7 @@ Lean module: [`Chanlun.TrendType`](lean/Chanlun/TrendType.lean).
 
 ---
 
-## §9 Bi reachable-domain determinism (audit correction)
+## §9 Bi reachable-domain determinism
 
 ### `noAdjBarContainment`
 
@@ -290,11 +298,11 @@ reachable domain.
 ∀ bars, noAdjBarContainment bars → AlternateKinds (fractalKinds bars).
 ```
 
-On the reachable (containment-free) domain, the Fractal kinds strictly
+On the reachable (containment-free) domain, the fractal kinds strictly
 alternate — so the three Bi-endpoint readings (leftmost / extremal /
-keep-latter) **coincide** on every reachable input. The
-gate-relativity finding on arbitrary inputs (44–55% disagreement) was
-an artifact of unreachable inputs; on the reachable domain Chanlun's
+keep-latter) **coincide** on every reachable input. The gate-relativity
+finding on arbitrary inputs (44–55% disagreement) is an artifact of
+how the input domain is encoded; on the reachable domain Chanlun's
 uniqueness claim is real.
 
 Proof chain:
@@ -335,9 +343,9 @@ and `size ≥ 3`.
 ```
 
 If any Zhongshu forms, the next-level element count drops by at least 2.
-Combined with `ℕ`-well-foundedness on `els.length`, the level
-recursion terminates in ≤ `n / 2` levels — the formal content of
-"every trend must complete" (lesson 24).
+Combined with `ℕ`-well-foundedness on `els.length`, the level recursion
+terminates in ≤ `n / 2` levels — the formal content of "every trend must
+complete" (lesson 24).
 
 Lean module:
 [`Chanlun.LevelRecursion`](lean/Chanlun/LevelRecursion.lean).
@@ -375,212 +383,55 @@ Walk boundaries are strictly increasing in `start`: for adjacent walks
 Each emitted Walk has a homogeneous WalkType: every Center in the
 Walk's span classifies under the Walk's type. The `mixed` WalkType
 cannot be emitted by `decompose` (proven by the split criterion);
-`mixed` only arises from a downstream MERGER, which is named as a
-follow-up residue.
+`mixed` only arises from a downstream merge, which is listed as a
+future-work item.
 
 Lean module:
 [`Chanlun.WalkDecomposition`](lean/Chanlun/WalkDecomposition.lean).
 
 ---
 
-## §12 Newly closed layers (Phase 1 refresh)
+## §12 Other formalized layers
 
-Ten new MWE modules were added in the Phase-1 refresh, closing previously
-named-OPEN residues. The remaining named-OPEN residues sit one level deeper.
+Additional modules added in subsequent passes cover:
 
 * `Chanlun.StrokesIsValidBiCorollary` (`strokes_isValidBi`,
   `strokes_iff_IsValidBi`) — non-vacuity + biconditional for
-  `strokes_unique`. Closes
-  `[chanlun_bi_strokes_isValidBi_corollary_OPEN]`.
-* `Chanlun.BiEndpointSubResidues` — closes the three §3 sub-residues
-  named by `Chanlun.StrokeUniqueness`: TO-endpoint leftmost-vs-extremal,
+  `strokes_unique`.
+* `Chanlun.BiEndpointSubResidues` — closes three sub-results connected
+  to `Chanlun.StrokeUniqueness`: TO-endpoint leftmost-vs-extremal,
   drop-branch preservation, output-order alternation lift.
-* `Chanlun.BiReachableDeterminismBridge` — closes
-  `[chanlun_bi_reachable_determinism_bridge_OPEN]` (Interval → Bar
-  plumbing for the §9 alternation theorem).
-* `Chanlun.ZhongshuExtension` — closes
-  `[chanlun_zhongshu_extension_lean_OPEN]`: the 4-way named transitions
-  (延伸 / 扩展 / 新生 / endNoRebirth) + 9-段 升级 trigger.
-* `Chanlun.Beichi` — closes `[chanlun_beichi_lean_OPEN]` (lessons
-  24/27/29 力度 comparison, integer-exact disp + slope).
-* `Chanlun.PanzhengBeichi` — closes `[chanlun_panzheng_beichi_OPEN]`
-  (lesson 37 single-中枢 A-vs-C).
-* `Chanlun.ThirdBuysell` — closes `[chanlun_third_buysell_lean_OPEN]`
-  (lesson 20 第三类买卖点).
-* `Chanlun.FirstSecondBuysell` — closes
-  `[chanlun_first_second_buysell_OPEN]` (lesson 24 第一/第二类买卖点 +
-  measure-gate inheritance).
-* `Chanlun.RecursiveSubBspBeichi` — closes
-  `[chanlun_third_buysell_recursive_OPEN]` +
-  `[chanlun_beichi_recursive_OPEN]` (lessons 20/24/27/29 推广至 次级别).
-* `Chanlun.IntervalNesting` — closes the lesson-65/66 区间套 base
-  classifier and the strict-descent termination measure.
+* `Chanlun.BiReachableDeterminismBridge` — `Interval → Bar` plumbing for
+  the §9 alternation theorem.
+* `Chanlun.ZhongshuExtension` — the four named transitions
+  (延伸 / 扩展 / 新生 / endNoRebirth) + 9-段 upgrade trigger.
+* `Chanlun.Beichi` — divergence 力度 comparison (lessons 24/27/29),
+  integer-exact displacement + slope.
+* `Chanlun.PanzhengBeichi` — 盘整背驰 (lesson 37) single-center A-vs-C
+  classifier.
+* `Chanlun.ThirdBuysell` — 第三类买卖点 (lesson 20).
+* `Chanlun.FirstSecondBuysell` — 第一/第二类买卖点 (lesson 24) +
+  measure-gate inheritance.
+* `Chanlun.RecursiveSubBspBeichi` — recursive 三买卖 + 背驰 (lessons
+  20/24/27/29 lifted to sub-levels).
+* `Chanlun.IntervalNesting` — lesson 65/66 区间套 base classifier and
+  the strict-descent termination measure.
 
 ---
 
-## §13 Named residues (honest follow-ups)
+## §13 Open questions
 
-These are deliberate gaps surfaced as named `[..._OPEN]` markers. None
-of them is silent. **Recent discharge wave** (2026-06-12 Klaus
-"多解则需要标出，确定的都要证明" mandate; see Phase-2 §15 below):
-
-* `[chanlun_inclusion_precondition]` — Def-3's `isInclusionNormalized`
-  upstream precondition; discharged by `pipeline_inclusion_normalized`,
-  but the type bridge is named explicitly.
-* `[chanlun_segment_terminates_sub_OPEN]` — **CLOSED (Phase 2)**:
-  the three sub-internal contracts (find_term_ge + bounded-valid +
-  strict-advance) are discharged in `Chanlun.Segment` §7-8 with a
-  non-vacuity witness (`trivialFindTerm`). Concrete realizations
-  (full feature-sequence Φ + overlap admissibility) remain as
-  external host-grounding objects, but the abstract contract is
-  now proven complete.
-* `[chanlun_zhongshu_zone_gate_OPEN]` — **WITNESSED (Phase 2)**:
-  `first3` vs `all_` differ on ~12% of arbitrary element sequences.
-  Constructive divergence witness:
-  `Chanlun.DivergenceWitnesses.zhongshu_zone_gate_divergence_witness`
-  exhibits `els = [⟨0,10⟩, ⟨3,13⟩, ⟨5,8⟩, ⟨7,12⟩, ⟨5,6⟩]` with
-  different `extendEnd` outputs under the two gates. Both proven
-  `valid` + `disjoint` (`zhongshu_zone_gate_witness_valid_disjoint`).
-* `[chanlun_level_recursion_lift_function_OPEN]` — **CLOSED (Phase 2)**:
-  `Chanlun.LevelRecursion.liftCenter` + `liftCenters` + `liftStep`
-  + `levelTower` (§6-7). The lift function takes each emitted 中枢
-  to a level-(n+1) Element whose range IS the core `[ZD, ZG]`.
-* `[chanlun_level_recursion_envelope_soundness_OPEN]` — **CLOSED
-  (Phase 2)**: `Chanlun.LevelRecursion.liftCenter_lo_le_hi`
-  + `liftCenters_all_valid` + `liftCenters_mem_iff` —
-  every lifted Element has a valid range; the lift preserves
-  `zhongshu_valid`'s invariant.
-* `[chanlun_level_recursion_determinism_preservation_OPEN]` —
-  **CLOSED (Phase 2)**:
-  `Chanlun.LevelRecursion.liftStep_deterministic`
-  + `levelTower_deterministic` + `levelTower_input_eq`
-  + `levelTower_agreement_lifts` — determinism propagates along
-  the level tower at every depth.
-* `[chanlun_walk_decomposition_spec_unique_OPEN]` — **CLOSED
-  (Phase 2)**: `Chanlun.WalkDecomposition.decompose_spec_unique_extensional`
-  + `decompose_spec_unique_empty`
-  + `decompose_spec_unique_head_at_zero` — any function with the
-  partition+chain spec MUST equal `decompose` (via funext +
-  forced-head argument).
-* `[chanlun_zhongshu_extension_shoulder_OPEN]` — `≤`-overlap vs `<`-overlap
-  reading on the kiss boundary; `≤` is what's proven.
-* `[chanlun_zhongshu_extension_all_gate_OPEN]` — `all_` zone-gate
-  propagation of expansion (the `first3` form is closed).
-* `[chanlun_zhongshu_extension_multistep_envelope_OPEN]` — multi-element
-  envelope across a full 中枢; per-step proven, list-induction left open.
-* `[chanlun_beichi_measure_gate_OPEN]` — **WITNESSED**: `disp` vs
-  `slope` 力度 measure gate is REAL (host grounding 82.2% agreement);
-  the `beichi_measure_gate_witness` theorem certifies non-vacuity.
-  Cross-namespace surface at
-  `Chanlun.DivergenceWitnesses.beichi_measure_gate_divergence_witness`.
-* `[chanlun_first_second_measure_gate_propagation_OPEN]` —
-  **WITNESSED**: measure gate inheritance into 第一/第二类 chain;
-  cross-namespace surface at
-  `Chanlun.DivergenceWitnesses.first_second_measure_gate_divergence_witness`.
-* `[chanlun_beichi_macd_gate_OPEN]` — **GROUNDED (Phase 2)**:
-  MACD as a measure-gate instance (lesson 27's 辅助 tool). New
-  grounding `grounding/chanlun_macd_grounding.py` runs over the 7y
-  NQ 1h continuous flatfile (TA-Lib backend, pure-Python fallback),
-  reports the disp/slope/MACD agreement rate and NAMES concrete
-  divergence witnesses by `(a_idx, c_idx)`. Lean-side MACD measure
-  carrier remains as a follow-up
-  (`[chanlun_beichi_macd_measure_lean_OPEN]`).
-* `[chanlun_panzheng_measure_gate_propagation_OPEN]` — **WITNESSED**:
-  cross-namespace surface at
-  `Chanlun.DivergenceWitnesses.panzheng_measure_gate_propagation_witness`
-  lifted from `Chanlun.PanzhengBeichi.panzheng_measure_gate_witness`.
-* `[chanlun_first_second_buysell_recursive_OPEN]` — recursive form of
-  lessons-24 第一/第二类买卖点.
-* `[chanlun_panzheng_beichi_recursive_OPEN]` — recursive form of
-  盘整背驰 (lesson 37).
-* `[chanlun_recursive_descent_strict_subwindow_OPEN]` — strict proof
-  that the level-(n-1) sub-window is a STRICT subset of the
-  level-(n-1) tower.
-* `[chanlun_intervalnesting_lowest_level_OPEN]` — **GROUNDED (Phase
-  2)** as the "1d 中枢 without 1h sub-中枢" case in the new
-  multi-resolution grounding (see below); strict Lean
-  characterisation of the lowest-level pin endpoint remains a
-  follow-up.
-* `[chanlun_intervalnesting_multiscale_OPEN]` — **GROUNDED (Phase
-  2)**: new `grounding/chanlun_multiscale_real_grounding.py` builds
-  a 1d → 1h → 1m chanlun tower from REAL NQ 7y flatfiles
-  (`/tmp/data_fetch_7y/fixtures/nq_{1d,1h}_*.json.gz` +
-  `/tmp/flatfiles_7y/fixtures/NQ_1m_*.json.gz`); reports the
-  fraction of 1d 中枢s containing 1h sub-中枢s by timestamp, and
-  the fraction further descending to 1m. Three-level descent
-  witnesses are emitted as concrete `(timestamp, ZD, ZG)` triples.
-  Lean-side multi-resolution tower remains a follow-up.
-* `[chanlun_intervalnesting_macd_OPEN]` — **GROUNDED (Phase 2)**:
-  MACD-decorated 区间套 via the new MACD grounding which carries
-  through to the multi-resolution layer.
-* `[chanlun_walk_decomposition_intervalnesting_OPEN]` — joining
-  `Chanlun.WalkDecomposition` to `Chanlun.IntervalNesting`.
-
-Each name corresponds to a verbatim string in the source code and the
-residue ledger (`closed_residues.json` in upstream `codex-proof-workbench`).
-The next layer of work knows exactly what to discharge.
-
----
-
-## §15 Phase 2 discharge wave (Klaus mandate 2026-06-12)
-
-Klaus's rule: **多解则需要标出，确定的都要证明** = multi-valued cases
-must be NAMED with constructive divergence witnesses; determined
-cases must be PROVEN with Lean theorems.
-
-### Category (a): provable now — DISCHARGED
-
-| Residue | Theorem location |
-|---|---|
-| `chanlun_level_recursion_envelope_soundness_OPEN` | `Chanlun.LevelRecursion.{liftCenter_lo_le_hi, liftCenters_all_valid, liftCenters_mem_iff}` |
-| `chanlun_level_recursion_determinism_preservation_OPEN` | `Chanlun.LevelRecursion.{liftStep_deterministic, levelTower_deterministic, levelTower_agreement_lifts}` |
-| `chanlun_walk_decomposition_spec_unique_OPEN` | `Chanlun.WalkDecomposition.{decompose_spec_unique_extensional, decompose_spec_unique_head_at_zero}` |
-| `chanlun_segment_terminates_sub_OPEN` | `Chanlun.Segment.{find_term_bounded_valid, find_term_strict_advance, find_term_contract_nonvacuous}` |
-| `chanlun_bi_to_endpoint_first_admissible_OPEN` | `Chanlun.BiEndpointSubResidues.to_endpoint_leftmost_eq_extremal_on_reachable` (existing) |
-| `chanlun_bi_close_drop_named_residue_OPEN` | `Chanlun.BiEndpointSubResidues.dropBranch_preserves_IsValidBi` (existing) |
-| `chanlun_stroke_output_order_lift_OPEN` | `Chanlun.BiEndpointSubResidues.strokes_alternate` (existing) |
-
-### Category (b): multi-valued — WITNESSED constructively
-
-| Residue | Witness theorem |
-|---|---|
-| `chanlun_zhongshu_zone_gate_OPEN` | `Chanlun.DivergenceWitnesses.zhongshu_zone_gate_divergence_witness` (concrete `els`) |
-| `chanlun_beichi_measure_gate_OPEN` | `Chanlun.DivergenceWitnesses.beichi_measure_gate_divergence_witness` |
-| `chanlun_first_second_measure_gate_propagation_OPEN` | `Chanlun.DivergenceWitnesses.first_second_measure_gate_divergence_witness` |
-| `chanlun_panzheng_measure_gate_propagation_OPEN` | `Chanlun.DivergenceWitnesses.panzheng_measure_gate_propagation_witness` |
-
-The combined four-way witness is `Chanlun.DivergenceWitnesses.all_multi_valued_residues_witnessed`.
-
-### Category (c): infrastructure — GROUNDED on REAL NQ 7y data
-
-| Residue | Grounding script |
-|---|---|
-| `chanlun_intervalnesting_macd_OPEN` + `chanlun_beichi_macd_gate_OPEN` | `grounding/chanlun_macd_grounding.py` (TA-Lib + pure-Python fallback; real NQ 1h) |
-| `chanlun_intervalnesting_multiscale_OPEN` + `chanlun_intervalnesting_lowest_level_OPEN` | `grounding/chanlun_multiscale_real_grounding.py` (1d + 1h + 1m, real NQ 7y) |
-
-The multi-resolution grounding exhibits **three-level descent witnesses**
-on real bars — concrete `(1d_center, 1h_sub, 1m_sub_sub)` triples.
-
-### Honest scope (Phase 2 limits)
-
-* The `chanlun_beichi_macd_measure_lean_OPEN` follow-up: adding MACD
-  as a third Lean `Measure` constructor (alongside `disp`/`slope`)
-  is structurally clean (the algebra extends) but requires the
-  MACD-histogram carrier in the Lean Move type. Named.
-* The Lean-side multi-resolution tower (each level with its OWN
-  raw bars, not just the synthetic lift) is a NAMED follow-up:
-  `chanlun_intervalnesting_multilevel_lean_OPEN`. The grounding
-  side is closed on real NQ 7y data.
-* If TA-Lib install fails on CI, the MACD grounding falls back to
-  a pure-Python EMA/MACD oracle and reports the backend choice
-  explicitly. The §15 self-test verifies the two backends agree.
+Limitations and open questions not yet discharged in the Lean library
+are listed in [`README.md`](README.md) under
+"Known limitations and open questions". Each one is surfaced rather
+than hidden.
 
 ---
 
 ## §14 Attribution
 
-The Chanlun theory itself belongs to the Chanzhongshuochan tradition.
-The formal system written above and the Lean encoding under `lean/Chanlun/`
+The Chanlun theory itself belongs to the 缠中说禅 tradition. The
+formal system written above and the Lean encoding under `lean/Chanlun/`
 are this repository's contribution. The reachable-domain audit
 correction (§9) and the lift-termination measure (§10) are the
 non-obvious mathematical contributions of the formalization;
@@ -590,5 +441,5 @@ everything else is the published theory in Lean form.
 
 ## §15 License
 
-The formalization, mathematical document, groundings, and CI workflow
-are released under MIT; see `LICENSE` if present.
+The formalization, this document, the reference oracles, and the CI
+workflow are released under MIT; see `LICENSE` if present.
