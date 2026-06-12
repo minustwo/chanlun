@@ -1285,11 +1285,6 @@ partial-result theorem reference.
     decomposition × interval nesting. Integration of
     `Chanlun.WalkDecomposition` with `Chanlun.IntervalNesting`.
 
-22. **`[chanlun_walk_mixed_merge_OPEN]`** — Downstream merge of adjacent
-    walks into a `mixed` super-walk. **Open as a separate component**;
-    `decompose` does not emit `mixed` by construction (Theorem 6.7), so
-    the merge is not a property of `decompose` itself.
-
 ---
 
 ## §A Attribution

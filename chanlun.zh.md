@@ -1169,11 +1169,6 @@ grounding 解决两个经验性主张：
     分解 × 区间套。`Chanlun.WalkDecomposition` 接入
     `Chanlun.IntervalNesting`。
 
-22. **`[chanlun_walk_mixed_merge_OPEN]`** —— 把相邻走势合并为
-    `mixed` 超级走势的下游步骤。**作为独立组件开放**；`decompose`
-    按构造不会发射 `mixed`（定理 6.7），所以合并不是 `decompose`
-    本身的性质。
-
 ---
 
 ## §A 致谢
