@@ -273,6 +273,39 @@ extremal / keep-latter）在每个可达输入上**完全重合**。在任意输
 将 §1 的归一化与此交替定理串接的用户面推论是
 `Chanlun.BiReachableDeterminismBridge.normalize_then_fractals_alternate`。
 
+### 定理 3.7 —— `bi_to_endpoint_first_admissible` —— 多解，**类 A**
+
+**叙述。** 在任意输入上，原文真正支持两种 TO 端点读法：取最左可接纳
+（满足 gap ≥ δmin）的反向分型（`StrokeUniqueness` 采用的读法）；
+或取整个 to 侧同向 run 的极值（字面更强的读法）。两种读法是同一条
+原文定义的实现细节兄弟，不是两种语义理论。
+
+**形式化（歧义见证）。** 在非可达输入上，若某个同向 run 长度 > 1，
+两种读法挑出不同端点 —— 最左可接纳 vs 极值字面。可达情形是构造性
+坍塌（见下）。
+
+**Lean 见证。** 构造性歧义隐含在
+[`Chanlun.BiEndpointSubResidues`](lean/Chanlun/BiEndpointSubResidues.lean)
+中 `toEndpoint_extremal_literal` 与基于 `step` 的最左读法之间。
+
+**类。** **A**（可坍塌）—— gap 是纯输入域伪影。算法 N 把输入归一化
+到无相邻包含 K 线列表（定理 1.3），其上分型序列严格交替（定理 3.6），
+其上每个同向 run 的长度都是 1，故最左 = 极值平凡成立。
+
+**坍塌条件。** 分型列表严格交替：
+
+    ∀ f g，列表中相邻 (f, g) ⇒ f.kind ≠ g.kind.
+
+等价地：输入 K 线满足 `noAdjBarContainment`，即来自 `normalize` 的
+输出。
+
+**坍塌定理（Lean）。**
+[`Chanlun.BiEndpointSubResidues.to_endpoint_leftmost_eq_extremal_on_reachable`](lean/Chanlun/BiEndpointSubResidues.lean) ——
+在任意严格交替的分型序列上，字面极值 TO 端点 = 最左可接纳端点。
+与
+[`Chanlun.BiReachableDeterminism.fractals_alternate_on_containment_free`](lean/Chanlun/BiReachableDeterminism.lean)
+组合，坍塌在所有可达（post-`normalize`）输入上成立。
+
 ---
 
 ## §4 线段 —— 定义 5–16 + 定理 1
@@ -481,15 +514,15 @@ extendEnd 之后续；否则滑动 i := i + 1。
 **Lean 证明。** `upgrade_trigger_iff_9_segments` 与
 `upgrade_trigger_element_independent`。
 
-### 定理 5.10 —— `zhongshu_zone_gate_divergence_witness`（构造性歧义见证）
+### 定理 5.10 —— `zhongshu_zone_gate_divergence_witness`（构造性歧义见证）—— 多解，**类 A**
 
 **叙述。** first3 与 all_ 门（定义 5.2）真正是多值的，并非记号上的
-小别。存在一个具体的五元素序列，其 first3 与 all_ 输出在 `end_` 上
-不同。两个输出都合法（ZD ≤ ZG）且不相交 —— 歧义是两种合法读法之间
-的差异，不是一对一错。这把经验观察到的约 12% 不一致率提升为 Lean 级的
-构造性见证。
+小别。原文按"前 3 段"刻画中枢的 ZD/ZG，但对 ZD/ZG 是否随后续重叠
+元素 RE-收紧没有给死：`first3` 把 zone 固定，`all_` 让 zone 随每个
+被接纳的元素继续收紧。两种读法都产生合法（ZD ≤ ZG）且不相交的中枢
+列表，只是对那些"严格收紧 zone 的元素"作出了不同的接纳判定。
 
-**形式。** 取
+**形式化（歧义见证）。** 取
 
     els := [⟨0, 10⟩, ⟨3, 13⟩, ⟨5, 8⟩, ⟨7, 12⟩, ⟨5, 6⟩]
 
@@ -497,11 +530,64 @@ extendEnd 之后续；否则滑动 i := i + 1。
 
     ∃ zd zg zd' zg' e, overlapsZone zd zg e ∧ ¬ overlapsZone zd' zg' e.
 
-**Lean 证明。**
+见证 (5, 8)（first3 zone）vs (7, 8)（all_ 收紧后的 zone），元素 ⟨5, 6⟩：
+6 ≥ 5 成立但 6 ≥ 7 失败。两个门的合法性由配套定理
+`zhongshu_zone_gate_witness_valid_disjoint` 给出。这把经验观察到的
+约 12% 不一致率提升为 Lean 级的构造性见证。
+
+**Lean 见证。**
 [`Chanlun.DivergenceWitnesses.zhongshu_zone_gate_divergence_witness`](lean/Chanlun/DivergenceWitnesses.lean)。
-见证 (5, 8)（first3 zone） vs (7, 8)（all_ 收紧后的 zone），元素
-⟨5, 6⟩：6 ≥ 5 成立但 6 ≥ 7 失败。两个门的合法性由配套定理
-`zhongshu_zone_gate_witness_valid_disjoint` 给出。
+
+**类。** **A**（可坍塌）—— 两个门只在"某个被接纳的后续元素严格收紧
+zone"时才不一致。如果每个被接纳的元素都把 first3 的 zone 完全包住，
+两条递归在每一步都保持同步。
+
+**坍塌条件。** 每个后续元素都 CONTAIN 住 first3 的 zone —— 对于固定
+的 `(zd, zg)` 与每个被检视的索引 k ≥ j，
+
+    (els.get k).lo ≤ zd  ∧  (els.get k).hi ≥ zg.
+
+等价地：`all_` 那一步的收紧 `max zd e.lo, min zg e.hi` 对每个被接纳
+的元素都是 NO-OP。
+
+**坍塌定理（Lean）。**
+[`Chanlun.CollapseTheorems.zhongshu_zone_gate_collapses_when_no_tightening`](lean/Chanlun/CollapseTheorems.lean) ——
+对任意满足 `ContainsZoneFrom els zd zg j` 的元素列表，`first3` 与
+`all_` 两条 `extendEnd` 递归返回相同的 end 索引。强归纳证明在每个递归
+层都维持「收紧参数始终相等」的不变量。
+
+### 定理 5.11 —— 贴边情形（`≤` vs 严格 `<`）—— 多解，**类 A**
+
+**叙述。** 17 课第 3 行原文说下一个元素「重叠」zone，而 17 课例题
+计算用了严格边界检查。重叠谓词的两种读法是
+
+    overlapsLE zd zg e : e.lo ≤ zg ∧ e.hi ≥ zd     （规范，≤）
+    overlapsLT zd zg e : e.lo < zg ∧ e.hi > zd     （兄弟，严格 <）
+
+本仓库取 ≤ 为规范（匹配 `Chanlun.Zhongshu.extendEnd` 的实现）；严格
+< 版本是一个兄弟 oracle，其行为在「贴边」元素上分歧。
+
+**形式化（歧义见证）。** 任何 `e.lo = zg` 的元素满足 `overlapsLE`
+但不满足 `overlapsLT` —— 具体地 `e = ⟨zg, h⟩`（任意 `h ≥ zd`）。
+两种读法在该元素上分歧。
+
+**Lean 见证。** 构造性 —— 贴边元素就是分歧见证；显式 `decide`-可
+检查的例子是直接的。
+
+**类。** **A**（可坍塌）—— 分歧只发生在「正好坐在 `e.lo = zg` 或
+`e.hi = zd` 边界上」的元素。所有元素都不贴边时两种读法坍塌为一种。
+
+**坍塌条件。** 每个后续元素都不贴边：
+
+    ∀ k ≥ j，k < els.length ⇒
+      (els.get k).lo ≠ zg  ∧  (els.get k).hi ≠ zd.
+
+**坍塌定理（Lean）。**
+[`Chanlun.CollapseTheorems.zhongshu_shoulder_collapses_off_boundary`](lean/Chanlun/CollapseTheorems.lean) ——
+在 `OffShoulder zd zg e` 下，`overlapsLE zd zg e ↔ overlapsLT zd zg e`。
+列表层的提升
+[`zhongshu_shoulder_collapses_off_boundary_list`](lean/Chanlun/CollapseTheorems.lean)
+把等价性传播到输入序列上每个不贴边元素。
 
 ---
 
@@ -688,20 +774,36 @@ A —— `no_beichi`。
 `no_beichi_disp_strict`、`no_beichi_slope_strict`、`tie_disp_iff`、
 `tie_slope_iff`。
 
-### 定理 7.5 —— `beichi_measure_gate_witness`（构造性歧义见证）
+### 定理 7.5 —— `beichi_measure_gate_witness`（构造性歧义见证）—— 多解，**类 B**
 
-**叙述。** disp 与 slope 的选择真正是多值的。存在移动 a, c 使得 disp
-说背驰而 slope 说 no_beichi —— 原文对 measure 选择的沉默是真实的歧义，
-而非记号上的。
+**叙述。** disp 与 slope 的选择真正是多值的。原文在不同课节调用两个
+measure（24 课用 disp，27 课用 slope），从未指定哪个是规范的 —— 这
+对 measure 选择的沉默是真实的语义歧义，不是记号上的。存在移动 a, c
+使得 disp 说背驰而 slope 说 no_beichi。
 
-**形式。**
+**形式化（歧义见证）。**
 
     ∃ a c, classifyBeichi a c disp = beichi
          ∧ classifyBeichi a c slope = no_beichi.
 
-**Lean 证明。** `Chanlun.Beichi.beichi_measure_gate_witness`，
+来自 `Chanlun.Beichi` 的手工见证：A 在 5 个元素上走 10（slope 2）；
+C 在 1 个元素上走 6（slope 6）。disp：`6 < 10` ⇒ 背驰；slope：
+`6·5 = 30 > 10·1 = 10` ⇒ no_beichi（C 段更短但更快）。
+
+**Lean 见证。** `Chanlun.Beichi.beichi_measure_gate_witness`，
 跨命名空间重新导出为
 `Chanlun.DivergenceWitnesses.beichi_measure_gate_divergence_witness`。
+
+**类。** **B**（永远多解 —— 原文的语义 measure 选择）。
+
+**为何不坍塌。** `disp` 与 `slope` 之间的选择是原文留给从业者的
+ORACLE 选择。新数据无法决定，因为两个 measure 在回答不同的问题：
+disp 问「价格走了多远」，slope 问「单位时间走得多快」。一段"较短
+但更快"的走势在一个 measure 下背驰、在另一个 measure 下不背驰，这
+是两个事实，不是同一个事实的两种估计 —— 多塞 K 线进来不能宣告哪个
+问题才是交易员真正在问的。经验一致率（7 年 NQ 参考上约 82.2%）只能
+量化分歧区域的大小，不能裁定胜者。这个门相对于 measure，而不是相对于
+数据。
 
 ### 定义 7.6（盘整背驰，37 课）
 
@@ -729,22 +831,35 @@ panzheng_beichi，否则 no_panzheng_beichi；平衡情形为 incomplete。
 **Lean 证明。** `classify_panzheng_total`、`panzheng_load_bearing_disp`、
 `panzheng_load_bearing_slope`、`panzheng_incomplete_iff`。
 
-### 定理 7.8 —— `panzheng_measure_gate_witness` 与 intra-vs-inter
+### 定理 7.8 —— `panzheng_measure_gate_witness` 与 intra-vs-inter —— 多解，**类 B**
 
 **叙述。** 关于盘整背驰的两个进一步构造性见证：(a) disp-vs-slope 门
 即使在盘整层次也真实 —— 存在三元组使 disp 说 panzheng_beichi 而 slope
 说 no_panzheng_beichi；(b) 在单中枢三元组上使用 inter-中枢 measure 是
 一个真正不同的分类器 —— 存在三元组，intra-中枢分类器说
-panzheng_beichi 而 inter-中枢变种说 no_panzheng_beichi。
+panzheng_beichi 而 inter-中枢变种说 no_panzheng_beichi。两个轴都是
+原文留下的语义选择 —— measure 家族 AND 比较所在的 zone。
 
-**形式。**
+**形式化（歧义见证）。**
 
     panzheng_measure_gate_witness : ∃ t, intra-disp = panzheng_beichi ∧ intra-slope = no_panzheng_beichi。
     panzheng_intra_vs_inter_load_bearing : ∃ t, intra ≠ inter-变种.
 
-**Lean 证明。** `panzheng_measure_gate_witness`、
+**Lean 见证。** `panzheng_measure_gate_witness`、
 `panzheng_intra_vs_inter_load_bearing`，提升为歧义见证面
 `panzheng_measure_gate_propagation_witness`。
+
+**类。** **B**（永远多解）—— 继承定理 7.5 的 measure 选择自由度，
+再叠加第二个 oracle 自由度：哪个中枢（SAME 单中枢 vs PREVIOUS
+inter-中枢段）提供比较的参考。
+
+**为何不坍塌。** 继承自定理 7.5：disp 与 slope 回答的是不同问题，
+新数据不会选择其中一个。intra-vs-inter 这个轴同样是不可化归的语义
+选择 —— 37 课对盘整背驰的定义就 RELATIVE 于同一个单中枢（A 进入 C
+离开 SAME zone），而 inter-中枢变种把 C 与 PRIOR inter-中枢的 A 段
+作比较。这是两个不同的物理主张，不是同一主张的两种近似。选择哪个
+就是选择"强度衰减相对于什么"，是一个建模承诺，不是被更多 K 线收敛
+的估计。
 
 ### MACD 作为辅助 measure（27 课，经验性 grounding）
 
@@ -795,18 +910,31 @@ first_point_failed, incomplete}`。
 `second_buy_non_breaking`、`second_sell_non_breaking`、
 `second_not_breaking_iff`、`first_point_failed_iff`。
 
-### 定理 8.3 —— `first_second_inheritance_load_bearing`
+### 定理 8.3 —— `first_second_inheritance_load_bearing` —— 多解，**类 B**
 
 **叙述。** measure-门的传递抵达买卖点层。存在 `TerminalWindow` 使
 disp-measure 分类器返回 `second_buy` 而 slope-measure 分类器返回
 `incomplete` —— 力度 measure 的选择沿管道传递到面向交易者的判定。
+这里的多解性是从定理 7.5 继承的：买卖点分类器在所选 measure 下调用
+`classifyBeichi`，所以 measure-门的歧义自然透传。
 
-**形式。**
+**形式化（歧义见证）。**
 
     ∃ w, classifyBsp w disp = second_buy ∧ classifyBsp w slope = incomplete.
 
-**Lean 证明。** `first_second_inheritance_load_bearing`，提升到
+**Lean 见证。** `first_second_inheritance_load_bearing`，提升到
 `Chanlun.DivergenceWitnesses.first_second_measure_gate_divergence_witness`。
+
+**类。** **B**（永远多解，继承）—— §7 的 disp-vs-slope 语义选择的
+下游传递。
+
+**为何不坍塌。** 买卖点判定结构上是「`classifyBeichi w.A w.C m`
+再加回拉测试」。因为内层 `classifyBeichi` 是类 B（定理 7.5），外层
+分类器继承同样不可化归的 measure 选择。新数据 CAN 缩小 disp-vs-slope
+在下游的一致率（当前在 conformance 参考上传播分歧约 5.8%，比上游的
+约 17.8% 小），但 CANNOT 消除：只要存在一个窗口 disp 与 slope 在
+背景背驰判定上分歧，买卖点分类器就在该窗口分歧。「哪个 measure 定义
+一个可交易的买点」是原文不交给数据决定的策略选择。
 
 ### 定理 8.4 —— `classify_implies_beichi_and_pull`
 
@@ -1065,6 +1193,34 @@ grounding 解决两个经验性主张：
 
 ### §X.0 状态图例与总数
 
+#### 多解的两类
+
+关于 MULTI_VALUED_NAMED 项目，一个自然的疑问是：「多解属于 open-world
+问题是么？那是不是在输入新数据后，达到某个条件就坍塌为单解？」诚实
+的回答是：本文档中的多解性其实**分为两类**，只有第一类承认坍塌。
+
+- **类 A —— 可坍塌。** 多解性来自原文 UNDER-SPECIFY 的 IMPLEMENTATION
+  DETAIL（严格还是弱不等号、zone 固定还是 re-tightening、从一个同向
+  run 里挑哪个分型）。当输入满足一个具体的形式条件时，两种读法在
+  每一步都重合。类 A 项目因此附带**坍塌定理**：一个 if-then 命题
+  说「在性质 P 的输入上，读法 X = 读法 Y」。**满足 P 的新数据**会
+  把歧义坍塌为单解；**违反 P 的新数据**让两种读法继续都合法。
+
+- **类 B —— 永远多解（语义自由度）。** 多解性是原文真正留下的 OPEN
+  CHOICE —— 一个 measure（disp vs slope vs MACD）、一个 oracle（哪个
+  中枢提供参考）、一个理论刻意留给从业者的建模承诺。类 B 项目在新
+  数据上**不**坍塌：这扇门问的是「该回答哪个问题」，K 线再多也不能
+  裁定交易员问的是哪个问题。类 B 项目附带一个构造性歧义见证作为
+  「不会坍塌」的证据（在合成数据 AND 经验数据上分歧都持续存在），
+  再加一段**「为何不坍塌」**说明结构性原因。
+
+六条 MULTI_VALUED_NAMED 项目分为 **3 条类 A**（X.3.7、X.5.10、X.5.11
+—— 实现细节兄弟，都附带坍塌定理）与 **3 条类 B**（X.7.5、X.7.8、
+X.8.3 —— disp-vs-slope measure 选择及其下游传递，都附带「为何不
+坍塌」说明）。类标记是每条四段式条目承重内容。
+
+#### 四类相互排斥的状态
+
 四类相互排斥：
 
 - **PROVEN_DIRECT.** `lean/Chanlun/` 下存在一条 sorry-free Lean 定理
@@ -1110,6 +1266,19 @@ X.8.8、X.8.9、X.9.7、X.10.4、X.10.5、X.10.6、X.10.7。
   `liftOption_eq_some_iff` + `liftOption_strict_drop`。`liftStep` 的
   Option 包装，在终态时返回 `none`。
 
+**本 PR 新增的类 A 坍塌定理**（放在 `Chanlun.CollapseTheorems`）：
+
+* X.5.10 坍塌：`zhongshu_zone_gate_collapses_when_no_tightening` ——
+  当每个被接纳的元素都 CONTAIN first3 zone 时，`first3` 与 `all_`
+  返回相同的 `extendEnd` 索引。
+* X.5.11 坍塌：`zhongshu_shoulder_collapses_off_boundary`（及列表
+  层提升 `_list`）—— 没有元素贴在 `e.lo = zg` 或 `e.hi = zd` 边界上
+  时，≤ 与严格 < 两种重叠谓词读法一致。
+
+X.3.7 坍塌定理
+`Chanlun.BiEndpointSubResidues.to_endpoint_leftmost_eq_extremal_on_reachable`
+原本就存在；本 PR 只补上分类标注。
+
 ### §X.1  算法 N（§1）
 
 | # | 条目 | 状态 | 引用 / 阻塞 |
@@ -1140,7 +1309,7 @@ X.8.8、X.8.9、X.9.7、X.10.4、X.10.5、X.10.6、X.10.7。
 | X.3.4-推论 | IsValidBi 非空 + 双向版本 | PROVEN_DIRECT | `Chanlun.StrokesIsValidBiCorollary.strokes_isValidBi` 与 `strokes_iff_IsValidBi` |
 | X.3.5 | 定理 3.5 端点子结果 (a)+(b)+(c) | PROVEN_DIRECT | `to_endpoint_leftmost_eq_extremal_on_reachable`、`dropBranch_step_no_op`、`dropBranch_preserves_IsValidBi`、`allAlternate_reverse`，位于 `Chanlun.BiEndpointSubResidues` |
 | X.3.6 | 定理 3.6 可达域交替 | PROVEN_DIRECT | `Chanlun.BiReachableDeterminism.fractals_alternate_on_containment_free`，经 `dichotomy_of_no_containment` + `neither_preserves_direction` |
-| X.3.7 | 任意输入上的 TO 端点读法（最左 admissible vs 极值字面） | MULTI_VALUED_NAMED → 可达域上 PROVEN_DIRECT | 可达输入上两种读法重合（定理 3.6 + `to_endpoint_leftmost_eq_extremal_on_reachable`）；任意输入上原文真正支持两种读法，这是一个记录在案的选择（StrokeUniqueness 取最左 admissible 读法） |
+| X.3.7 | 任意输入上的 TO 端点读法（最左 admissible vs 极值字面） | MULTI_VALUED_NAMED → 可达域上 PROVEN_DIRECT | **类 A**（可坍塌）。见四段式定理 3.7。坍塌条件：严格交替的分型序列（`normalize` 的输出）。坍塌定理：`to_endpoint_leftmost_eq_extremal_on_reachable`（`Chanlun.BiEndpointSubResidues`），与可达域交替（定理 3.6）组合。任意输入上两种读法都合法；`StrokeUniqueness` 取最左 admissible 读法 |
 | X.3.8 | 过近反向分型的静默丢弃 | PROVEN_DIRECT | `Chanlun.BiEndpointSubResidues.dropBranch_step_no_op` 证明丢弃分支是 no-op |
 
 ### §X.4  线段（§4）
@@ -1167,8 +1336,8 @@ X.8.8、X.8.9、X.9.7、X.10.4、X.10.5、X.10.6、X.10.7。
 | X.5.7 | 定理 5.7 classifyExtension_total | PROVEN_DIRECT | `Chanlun.ZhongshuExtension.classifyExtension_total` |
 | X.5.8 | 定理 5.8 每个事件的核心 / 外包络承重性 | PROVEN_DIRECT | `extension_preserves_core_ZD_ZG`、`expansion_widens_GG_DD`、`rebirth_creates_disjoint_core` |
 | X.5.9 | 定理 5.9 9 段升级触发 | PROVEN_DIRECT | `upgrade_trigger_iff_9_segments` + `upgrade_trigger_element_independent` |
-| X.5.10 | 定理 5.10 zone-gate 歧义见证 | MULTI_VALUED_NAMED | `Chanlun.DivergenceWitnesses.zhongshu_zone_gate_divergence_witness` —— first3 与 all_ 都是原文合法的读法；门在 `zoneGateWitnessEls` 中的元素 ⟨5, 6⟩ 上不一致；两种门都产生 valid + disjoint 输出（`zhongshu_zone_gate_witness_valid_disjoint`）。**可达（无包含）域上两种读法重合** |
-| X.5.11 | 贴边情形（`next_el.lo = ZG` 或 `next_el.hi = ZD`）—— ≤ vs 严格 < | MULTI_VALUED_NAMED | 原文同时支持 ≤ 与 < 读法（17 课第 3 行措辞 vs 17 课例题计算）；本仓库取 ≤ 为规范读法，另一种是兄弟预言 |
+| X.5.10 | 定理 5.10 zone-gate 歧义见证 | MULTI_VALUED_NAMED | **类 A**（可坍塌）。见四段式定理 5.10。歧义见证 `Chanlun.DivergenceWitnesses.zhongshu_zone_gate_divergence_witness`；两种门都产生 valid + disjoint 输出（`zhongshu_zone_gate_witness_valid_disjoint`）。坍塌条件：每个后续元素都 CONTAIN first3 zone（`(els.get k).lo ≤ zd ∧ (els.get k).hi ≥ zg`）。坍塌定理：`Chanlun.CollapseTheorems.zhongshu_zone_gate_collapses_when_no_tightening` |
+| X.5.11 | 贴边情形（`next_el.lo = ZG` 或 `next_el.hi = ZD`）—— ≤ vs 严格 < | MULTI_VALUED_NAMED | **类 A**（可坍塌）。见四段式定理 5.11。原文同时支持 ≤ 与 < 读法（17 课第 3 行措辞 vs 17 课例题计算）；本仓库取 ≤ 为规范。坍塌条件：每个后续元素都不贴边（`(els.get k).lo ≠ zg ∧ (els.get k).hi ≠ zd`）。坍塌定理：`Chanlun.CollapseTheorems.zhongshu_shoulder_collapses_off_boundary`（及列表层提升 `_list`） |
 | X.5.12 | `all_` gate 下的扩展传播（完整列表归纳形式） | NOT_FORMALIZED —— 缺列表归纳 | `first3` 形式在 `Chanlun.ZhongshuExtension` 中完全处理；`all_` 形式需要单独的列表归纳，跟踪 `extendEnd` 步骤中的收紧 zone。阻塞：收紧 zone 的状态传递需要在当前 `CenterExt` 数据结构中不存在的额外不变量载体 |
 | X.5.13 | 跨完整中枢的多元素外包络（列表归纳形式） | PROVEN_DIRECT（本 PR 新形式化） | `Chanlun.LevelRecursion.listEnvelope_widens` + `listEnvelope_DD_drops` + `listEnvelope_GG_grows` 把单步 `expansion_widens_GG_DD` 提升为完整列表归纳形式：在任意后续元素列表上，累计 `DD` 弱下降，累计 `GG` 弱上升。证明技术：对后续元素列表归纳，每步使用 mathlib 的 `min_le_left` 与 `le_max_left` |
 
@@ -1194,10 +1363,10 @@ X.8.8、X.8.9、X.9.7、X.10.4、X.10.5、X.10.6、X.10.7。
 | X.7.2 | 定义 7.2 classifyBeichi | PROVEN_DIRECT | `Chanlun.Beichi.classifyBeichi` |
 | X.7.3 | 定理 7.3 total + 反身性 | PROVEN_DIRECT | `classifyBeichi_total`、`beichi_irrefl`（经 `lhsRhs_self_eq`） |
 | X.7.4 | 定理 7.4 承重（disp + slope 两侧） | PROVEN_DIRECT | `beichi_load_bearing_disp`、`beichi_load_bearing_slope`，合并 `beichi_load_bearing`；配套 `no_beichi_*_strict`、`tie_*_iff` |
-| X.7.5 | 定理 7.5 disp-vs-slope 多解性 | MULTI_VALUED_NAMED | `Chanlun.Beichi.beichi_measure_gate_witness`，提升为 `Chanlun.DivergenceWitnesses.beichi_measure_gate_divergence_witness`。原文在不同章节调用两个 measure（24 课 vs 27 课）—— 两种读法都合法。Python 参考实现上经验一致率约 82.2%；该选择是被记录的原文歧义，不是 Lean 证明缺口 |
+| X.7.5 | 定理 7.5 disp-vs-slope 多解性 | MULTI_VALUED_NAMED | **类 B**（永远多解 —— 语义 measure 选择）。见四段式定理 7.5。歧义见证 `Chanlun.Beichi.beichi_measure_gate_witness`，提升为 `Chanlun.DivergenceWitnesses.beichi_measure_gate_divergence_witness`。原文在不同章节调用两个 measure（24 课 vs 27 课）。为何不坍塌：disp 与 slope 回答不同问题（距离 vs 速度），新数据不能裁定交易员问的是哪个。Python 参考上经验一致率约 82.2% 只量化分歧区域大小，不裁定胜者 |
 | X.7.6 | 定义 7.6 盘整背驰分类器 | PROVEN_DIRECT | `Chanlun.PanzhengBeichi.classifyPanzheng` |
 | X.7.7 | 定理 7.7 盘整 total + 承重 + incomplete-iff | PROVEN_DIRECT | `classify_panzheng_total`、`panzheng_load_bearing_disp`、`panzheng_load_bearing_slope`、`panzheng_incomplete_iff` |
-| X.7.8 | 定理 7.8 盘整 measure-gate 见证 + intra-vs-inter 变种 | MULTI_VALUED_NAMED | `panzheng_measure_gate_witness`、`panzheng_intra_vs_inter_load_bearing`，提升为 `panzheng_measure_gate_propagation_witness` |
+| X.7.8 | 定理 7.8 盘整 measure-gate 见证 + intra-vs-inter 变种 | MULTI_VALUED_NAMED | **类 B**（永远多解 —— 继承 §7.5 measure 选择，再叠加第二个不可化归的「哪个中枢提供参考」oracle）。见四段式定理 7.8。歧义见证 `panzheng_measure_gate_witness`、`panzheng_intra_vs_inter_load_bearing`，提升为 `panzheng_measure_gate_propagation_witness`。为何不坍塌：intra-vs-inter 是「强度衰减相对于什么」的建模承诺，不是被更多数据收敛的估计 |
 | X.7.9 | 把 MACD 作为 `Chanlun.Beichi.Measure` 的第三个构造器 | NOT_FORMALIZED —— 整数内核不能表示 MACD 能量 | 整数算术内核（`Int` 载体、无浮点、无 EMA）不能直接表示 MACD 能量值（信号处理派生的运行时浮点）。把 `macd` 构造器加入 `Measure` 在结构上是干净的（交叉积代数延伸），但下层 MACD 能量比较需要浮点值，而内核为了保持可判定 + lake-build 约束有意避免之。经验一致率位于 `grounding/chanlun_macd_grounding.py`（disp ≈ 46.4%，slope ≈ 17.9%，7 年 NQ 1h）。承载浮点的 Lean 提升需要 mathlib 的 `Real` + 一个内核外的单独数据接口层 |
 
 ### §X.8  三类买卖点（§8）
@@ -1206,7 +1375,7 @@ X.8.8、X.8.9、X.9.7、X.10.4、X.10.5、X.10.6、X.10.7。
 |---|---|---|---|
 | X.8.1 | 定义 8.1 第一/第二类分类器 | PROVEN_DIRECT | `Chanlun.FirstSecondBuysell.classifyBsp` |
 | X.8.2 | 定理 8.2 total + 非破首点 | PROVEN_DIRECT | `classify_total`、`classify_first_point_only_total`、`second_buy_non_breaking`、`second_sell_non_breaking`、`second_not_breaking_iff`、`first_point_failed_iff` |
-| X.8.3 | 定理 8.3 measure-gate 传递到第一/第二买卖点 | MULTI_VALUED_NAMED | `first_second_inheritance_load_bearing`，提升为 `Chanlun.DivergenceWitnesses.first_second_measure_gate_divergence_witness` |
+| X.8.3 | 定理 8.3 measure-gate 传递到第一/第二买卖点 | MULTI_VALUED_NAMED | **类 B**（永远多解，继承 §7.5 measure 选择的下游传递）。见四段式定理 8.3。歧义见证 `first_second_inheritance_load_bearing`，提升为 `Chanlun.DivergenceWitnesses.first_second_measure_gate_divergence_witness`。为何不坍塌：分类器结构上调用 `classifyBeichi`，内层是类 B，外层就继承同一个不可化归的 measure 选择 |
 | X.8.4 | 定理 8.4 分类蕴含背景背驰 + pull 有定义 | PROVEN_DIRECT | `classify_implies_beichi_and_pull` |
 | X.8.5 | 定义 8.5 第三类分类器 | PROVEN_DIRECT | `Chanlun.ThirdBuysell.classifyBsp` |
 | X.8.6 | 定理 8.6 第三类 total + zone 承重 | PROVEN_DIRECT | `classifyBsp_total`、`bsp_zone_load_bearing_up`、`bsp_zone_load_bearing_down` |

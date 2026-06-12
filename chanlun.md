@@ -300,6 +300,45 @@ The user-facing corollary that chains §1's normalization with this
 alternation theorem is
 `Chanlun.BiReachableDeterminismBridge.normalize_then_fractals_alternate`.
 
+### Theorem 3.7 — `bi_to_endpoint_first_admissible` — multi-valued, **Class A**
+
+**Prose.** On arbitrary inputs the master text legitimately supports
+two readings of the stroke TO-endpoint: the LEFTMOST opposite-kind
+fractal after the from-anchor satisfying gap ≥ δmin (the
+`StrokeUniqueness` reading), or the EXTREMAL of the FULL to-side
+same-kind run (a literal-strong reading). The two readings are
+implementation-detail siblings of one prose definition, not two
+semantic theories.
+
+**Formalization (divergence witness).** On a non-reachable input where
+a same-kind run has length > 1, the two readings pick different
+endpoints — the leftmost-admissible vs the extremal. The reachable
+case below is the constructive collapse.
+
+**Lean witness.** Constructive divergence is implicit in the
+`toEndpoint_extremal_literal` vs the `step`-based leftmost reading in
+[`Chanlun.BiEndpointSubResidues`](lean/Chanlun/BiEndpointSubResidues.lean).
+
+**Class.** **A** (collapsible) — the gap is purely an
+input-domain artifact. Algorithm N normalizes the input to a
+containment-free bar list (Thm 1.3), under which the fractal sequence
+is strictly alternating (Thm 3.6), under which every same-kind run has
+length 1, under which leftmost = extremal trivially.
+
+**Collapse condition.** The fractal list is strictly alternating:
+
+    ∀ f g, consecutive (f, g) in the list → f.kind ≠ g.kind.
+
+Equivalently: the input bars satisfy `noAdjBarContainment`, i.e. they
+are post-`normalize`.
+
+**Collapse theorem (Lean).**
+[`Chanlun.BiEndpointSubResidues.to_endpoint_leftmost_eq_extremal_on_reachable`](lean/Chanlun/BiEndpointSubResidues.lean) —
+on any strictly alternating fractal sequence, the literal-extremal
+TO-endpoint equals the leftmost-admissible one. Combined with
+[`Chanlun.BiReachableDeterminism.fractals_alternate_on_containment_free`](lean/Chanlun/BiReachableDeterminism.lean),
+the collapse holds on every reachable (post-normalize) input.
+
 ---
 
 ## §4 线段 — Segment (Definitions 5–16 + Theorem 1)
@@ -525,16 +564,17 @@ incoming element.
 **Lean proofs.** `upgrade_trigger_iff_9_segments` and
 `upgrade_trigger_element_independent`.
 
-### Theorem 5.10 — `zhongshu_zone_gate_divergence_witness` (constructive divergence)
+### Theorem 5.10 — `zhongshu_zone_gate_divergence_witness` (constructive divergence) — multi-valued, **Class A**
 
 **Prose.** The first3 vs all_ gate (Definition 5.2) is genuinely
-multi-valued, not a notational quibble. There exists a concrete
-five-element sequence whose first3 and all_ outputs differ in `end_`.
-Both outputs are valid (ZD ≤ ZG) and disjoint — the disagreement is
-between two legitimate readings, not one broken one. This certifies the
-≈ 12% disagreement rate observed empirically.
+multi-valued at the implementation-detail level: the master text
+defines the 中枢 zone by the first 3 sub-elements but is silent on
+whether the zone is held FIXED by those 3 (`first3`) or RE-tightened
+as later overlapping members join (`all_`). Both readings produce
+valid, disjoint center lists; they merely make different admission
+decisions on elements that strictly tighten the zone.
 
-**Formal.** With
+**Formalization (divergence witness).** With
 
     els := [⟨0, 10⟩, ⟨3, 13⟩, ⟨5, 8⟩, ⟨7, 12⟩, ⟨5, 6⟩]
 
@@ -542,11 +582,72 @@ between two legitimate readings, not one broken one. This certifies the
 
     ∃ zd zg zd' zg' e, overlapsZone zd zg e ∧ ¬ overlapsZone zd' zg' e.
 
-**Lean proof.**
+The witness is (5, 8) (first3 zone) vs (7, 8) (all_-tightened zone) and
+the element ⟨5, 6⟩: 6 ≥ 5 holds but 6 ≥ 7 fails. Both gates produce
+valid + disjoint outputs (companion
+`zhongshu_zone_gate_witness_valid_disjoint`). This certifies the ≈ 12%
+disagreement rate observed empirically.
+
+**Lean witness.**
 [`Chanlun.DivergenceWitnesses.zhongshu_zone_gate_divergence_witness`](lean/Chanlun/DivergenceWitnesses.lean).
-Witness (5, 8) (first3 zone) vs (7, 8) (all_-tightened zone) and the
-element ⟨5, 6⟩: 6 ≥ 5 holds but 6 ≥ 7 fails. Validity of both gates is
-the companion theorem `zhongshu_zone_gate_witness_valid_disjoint`.
+
+**Class.** **A** (collapsible) — the gate disagrees only when an
+admitted post-first-3 element strictly tightens the zone. On inputs
+where every admitted element CONTAINS the first3 zone, the two
+recursions stay in lockstep.
+
+**Collapse condition.** Every post-first-3 element CONTAINS the first3
+zone — i.e. for the zone `(zd, zg)` and every admitted index k ≥ j,
+
+    (els.get k).lo ≤ zd  ∧  (els.get k).hi ≥ zg.
+
+Equivalently, the `all_` tightening step `max zd e.lo, min zg e.hi` is
+a NO-OP at every admitted element.
+
+**Collapse theorem (Lean).**
+[`Chanlun.CollapseTheorems.zhongshu_zone_gate_collapses_when_no_tightening`](lean/Chanlun/CollapseTheorems.lean) —
+on any element list satisfying `ContainsZoneFrom els zd zg j`, the
+`first3` and `all_` runs of `extendEnd` return the SAME end index. The
+strong-induction proof tracks the invariant that the tightening
+arguments stay equal at every recursion step.
+
+### Theorem 5.11 — shoulder cases (`≤` vs strict `<`) — multi-valued, **Class A**
+
+**Prose.** Lesson 17 line 3 of the master text says the next element
+"overlaps" the zone, and lesson 17's worked example uses a strict
+boundary check. The two readings of the overlap predicate are
+
+    overlapsLE zd zg e : e.lo ≤ zg ∧ e.hi ≥ zd     (canonical, ≤)
+    overlapsLT zd zg e : e.lo < zg ∧ e.hi > zd     (sibling, strict <)
+
+This repository takes ≤ as canonical (matching `Chanlun.Zhongshu.extendEnd`);
+the strict < version is a sibling oracle whose behaviour diverges on
+boundary-touching elements.
+
+**Formalization (divergence witness).** Any element with `e.lo = zg`
+satisfies `overlapsLE` but not `overlapsLT` — concretely `e = ⟨zg, h⟩`
+for any `h ≥ zd`. The two readings disagree on that element.
+
+**Lean witness.** Constructive — the boundary element is the
+divergence witness; an explicit `decide`-checkable example is direct.
+
+**Class.** **A** (collapsible) — disagreement only arises on elements
+sitting EXACTLY on `e.lo = zg` or `e.hi = zd`. Off-boundary inputs
+collapse the two readings to one.
+
+**Collapse condition.** Every post-first-3 element is off the
+shoulder boundary:
+
+    ∀ k ≥ j, k < els.length →
+      (els.get k).lo ≠ zg  ∧  (els.get k).hi ≠ zd.
+
+**Collapse theorem (Lean).**
+[`Chanlun.CollapseTheorems.zhongshu_shoulder_collapses_off_boundary`](lean/Chanlun/CollapseTheorems.lean) —
+under `OffShoulder zd zg e`, `overlapsLE zd zg e ↔ overlapsLT zd zg e`.
+The list-level lift
+[`zhongshu_shoulder_collapses_off_boundary_list`](lean/Chanlun/CollapseTheorems.lean)
+propagates the equivalence to every element of the input sequence
+once it is off-boundary.
 
 ---
 
@@ -742,21 +843,41 @@ combined into `beichi_load_bearing`. Companion no-beichi/tie forms:
 `no_beichi_disp_strict`, `no_beichi_slope_strict`, `tie_disp_iff`,
 `tie_slope_iff`.
 
-### Theorem 7.5 — `beichi_measure_gate_witness` (constructive divergence)
+### Theorem 7.5 — `beichi_measure_gate_witness` (constructive divergence) — multi-valued, **Class B**
 
-**Prose.** The disp vs slope choice is genuinely multi-valued. There
-exist moves a, c such that disp says 背驰 while slope says no_beichi —
-the master text's silence on which measure to use is a real ambiguity,
-not a notational one.
+**Prose.** The disp vs slope choice is genuinely multi-valued. The
+master text invokes BOTH measures at different points (lesson 24 vs
+lesson 27) and does not designate one as canonical — the silence on
+which 力度 measure to use is a real semantic ambiguity, not a
+notational one. There exist moves a, c such that disp says 背驰 while
+slope says no_beichi.
 
-**Formal.**
+**Formalization (divergence witness).**
 
     ∃ a c, classifyBeichi a c disp = beichi
          ∧ classifyBeichi a c slope = no_beichi.
 
-**Lean proof.** `Chanlun.Beichi.beichi_measure_gate_witness`, re-exported
-to the consolidated divergence-witness surface as
+Hand-witness from `Chanlun.Beichi`: A travels 10 over 5 elements
+(slope 2); C travels 6 over 1 element (slope 6). disp: `6 < 10` ⇒ 背驰;
+slope: `6·5 = 30 > 10·1 = 10` ⇒ no_beichi (C shorter but faster).
+
+**Lean witness.** `Chanlun.Beichi.beichi_measure_gate_witness`,
+re-exported to the consolidated divergence-witness surface as
 `Chanlun.DivergenceWitnesses.beichi_measure_gate_divergence_witness`.
+
+**Class.** **B** (permanently multi-valued) — semantic measure choice
+in the master text.
+
+**Why no collapse.** The choice between `disp` and `slope` is an
+ORACLE choice the master text leaves OPEN. New empirical data cannot
+decide it because the two measures answer DIFFERENT questions: disp
+asks "how far did price travel", slope asks "how fast per unit time".
+A move that is shorter-but-faster is genuinely beichi under one and
+not under the other; no amount of additional bars can resolve which
+question the trader is asking. Empirical agreement (≈ 82.2% on a
+7-year NQ reference) only sharpens the size of the disagreement region;
+it does not nominate a winner. The gate is structurally relative to
+the measure, not to the data.
 
 ### Definition 7.6 (盘整背驰, lesson 37)
 
@@ -785,7 +906,7 @@ compare strengths; the incomplete verdict is exactly the balanced case.
 **Lean proofs.** `classify_panzheng_total`, `panzheng_load_bearing_disp`,
 `panzheng_load_bearing_slope`, `panzheng_incomplete_iff`.
 
-### Theorem 7.8 — `panzheng_measure_gate_witness` and intra-vs-inter
+### Theorem 7.8 — `panzheng_measure_gate_witness` and intra-vs-inter — multi-valued, **Class B**
 
 **Prose.** Two further constructive witnesses pin down 盘整背驰:
 (a) the disp-vs-slope gate is real even at the panzheng level — there
@@ -793,16 +914,32 @@ exist triples where disp says panzheng_beichi while slope says
 no_panzheng_beichi; (b) using the inter-中枢 measure on a single-center
 triple is genuinely a different classifier — there exists a triple where
 the intra-中枢 classifier says panzheng_beichi while the inter-中枢
-mutant says no_panzheng_beichi.
+mutant says no_panzheng_beichi. Both axes are semantic choices left
+open by the master text — measure family AND zone of comparison.
 
-**Formal.**
+**Formalization (divergence witnesses).**
 
     panzheng_measure_gate_witness : ∃ t, intra-disp = panzheng_beichi ∧ intra-slope = no_panzheng_beichi.
     panzheng_intra_vs_inter_load_bearing : ∃ t, intra ≠ inter-mutant.
 
-**Lean proofs.** `panzheng_measure_gate_witness`,
+**Lean witnesses.** `panzheng_measure_gate_witness`,
 `panzheng_intra_vs_inter_load_bearing`, lifted to the divergence-witness
 surface as `panzheng_measure_gate_propagation_witness`.
+
+**Class.** **B** (permanently multi-valued) — the same semantic
+measure-choice freedom as Theorem 7.5, layered with a second oracle
+freedom: which 中枢 (the SAME single center vs the PREVIOUS inter-中枢
+travel) supplies the reference strength.
+
+**Why no collapse.** Inherited from Theorem 7.5: disp and slope answer
+different questions, and new data does not nominate one. The intra-
+vs-inter axis is also irreducibly semantic — lesson 37 defines
+盘整背驰 RELATIVE to the same single 中枢 (A enters, C leaves the SAME
+zone), whereas the inter-中枢 mutant compares C against the PRIOR
+inter-中枢 A. These are two different physical claims, not two
+approximations of one. Choosing between them is choosing what
+"strength is fading relative to" means — a modelling commitment, not
+an estimate refined by more bars.
 
 ### MACD as auxiliary measure (lesson 27, empirical grounding)
 
@@ -861,20 +998,37 @@ broke through.
 `second_buy_non_breaking`, `second_sell_non_breaking`,
 `second_not_breaking_iff`, `first_point_failed_iff`.
 
-### Theorem 8.3 — `first_second_inheritance_load_bearing`
+### Theorem 8.3 — `first_second_inheritance_load_bearing` — multi-valued, **Class B**
 
 **Prose.** Measure-gate propagation reaches the buy/sell point level.
 There exists a `TerminalWindow` such that the disp-measure classifier
 returns `second_buy` while the slope-measure classifier returns
 `incomplete` — the choice of 力度 measure propagates downstream into the
-trader-facing verdicts.
+trader-facing verdicts. The multi-valuedness here is INHERITED from
+Theorem 7.5: the buy/sell classifier asks `classifyBeichi` under the
+chosen measure, so the measure-gate divergence carries through.
 
-**Formal.**
+**Formalization (divergence witness).**
 
     ∃ w, classifyBsp w disp = second_buy ∧ classifyBsp w slope = incomplete.
 
-**Lean proof.** `first_second_inheritance_load_bearing`, surfaced as
+**Lean witness.** `first_second_inheritance_load_bearing`, surfaced as
 `Chanlun.DivergenceWitnesses.first_second_measure_gate_divergence_witness`.
+
+**Class.** **B** (permanently multi-valued, inherited) — propagation
+of the disp-vs-slope semantic choice from §7.
+
+**Why no collapse.** The buy/sell verdict is structurally
+`classifyBeichi w.A w.C m`-then-`pullback-test`. Since the inner
+`classifyBeichi` is class B (Theorem 7.5), the outer classification
+inherits the same irreducible measure choice. New data CAN narrow the
+disp-vs-slope agreement rate downstream (currently ≈ 5.8% propagated
+divergence on the conformance reference, smaller than the upstream
+~17.8%), but cannot eliminate it: as long as a single window exists
+where disp and slope disagree on background 背驰, the buy/sell
+classifier disagrees on that window. The choice "which measure
+defines a tradeable buy point" is a strategy decision the master text
+does not delegate to data.
 
 ### Theorem 8.4 — `classify_implies_beichi_and_pull`
 
@@ -1155,6 +1309,46 @@ four categorical statuses with an explicit, auditable justification.
 
 ### §X.0 Status legend and totals
 
+#### The two classes of multi-valuedness
+
+A natural question on the MULTI_VALUED_NAMED items: "isn't this an
+open-world problem — once we feed new data satisfying some condition,
+doesn't the ambiguity collapse to a single answer?" The honest answer
+is that there are **two distinct kinds** of multi-valuedness here, and
+only the first kind admits collapse:
+
+- **Class A — collapsible.** The multi-valuedness lives in an
+  IMPLEMENTATION DETAIL the master text under-specifies (where to
+  put the strict-vs-weak boundary; whether to keep a zone fixed or
+  re-tighten it; which fractal to pick out of a same-kind run). When
+  the input satisfies a specific formal condition, the two readings
+  COINCIDE on every step. Class A items therefore ship a **collapse
+  theorem**: an if-then statement saying "on inputs with property P,
+  reading X = reading Y". New data SATISFYING P does collapse the
+  ambiguity to a single answer; new data VIOLATING P keeps both
+  readings legitimate.
+
+- **Class B — semantically multi-valued.** The multi-valuedness is a
+  GENUINE OPEN CHOICE in the master text — a measure (disp vs slope
+  vs MACD), an oracle (which 中枢 supplies the reference), a
+  modelling commitment that the theory deliberately leaves to the
+  practitioner. Class B items DO NOT collapse on new data: the gate
+  asks which question to answer, and more bars cannot decide which
+  question the trader meant. The 12-class-B-style items ship a
+  constructive divergence witness as evidence that no collapse is
+  possible (the disagreement persists on synthetic AND empirical
+  data), plus a **why-no-collapse** paragraph naming the structural
+  reason.
+
+The six MULTI_VALUED_NAMED items split as **3 Class A** (X.3.7,
+X.5.10, X.5.11 — implementation-detail siblings, all carry collapse
+theorems) and **3 Class B** (X.7.5, X.7.8, X.8.3 — disp-vs-slope
+measure choice and its downstream propagations, all carry
+why-no-collapse paragraphs). The class marker is the load-bearing
+content of each four-segment entry.
+
+#### The four mutually-exclusive statuses
+
 The four categories are mutually exclusive:
 
 - **PROVEN_DIRECT.** A sorry-free Lean theorem under `lean/Chanlun/` is
@@ -1210,6 +1404,21 @@ downstream-component design choice; master-text ambiguity on Φ).
   `liftOption_eq_some_iff` + `liftOption_strict_drop`. The packaging
   of `liftStep` that returns `none` on terminal input.
 
+**New Class-A collapse theorems in this PR** (added under
+`Chanlun.CollapseTheorems`):
+
+* X.5.10 collapse: `zhongshu_zone_gate_collapses_when_no_tightening` —
+  `first3` and `all_` zone gates return the same `extendEnd` index on
+  inputs where every admitted element CONTAINS the first3 zone.
+* X.5.11 collapse: `zhongshu_shoulder_collapses_off_boundary` (and the
+  list lift `_list`) — the ≤ and strict-< readings of the overlap
+  predicate agree on inputs where no element sits on the shoulder
+  boundary (`e.lo = zg` or `e.hi = zd`).
+
+The X.3.7 collapse theorem
+`Chanlun.BiEndpointSubResidues.to_endpoint_leftmost_eq_extremal_on_reachable`
+already existed; this PR adds the classification annotation only.
+
 ### §X.1  Algorithm N (§1)
 
 | # | Item | Status | Reference / blocker |
@@ -1240,7 +1449,7 @@ downstream-component design choice; master-text ambiguity on Φ).
 | X.3.4-corollary | IsValidBi non-vacuity + biconditional | PROVEN_DIRECT | `Chanlun.StrokesIsValidBiCorollary.strokes_isValidBi` and `strokes_iff_IsValidBi` |
 | X.3.5 | Thm 3.5 endpoint sub-results (a)+(b)+(c) | PROVEN_DIRECT | `to_endpoint_leftmost_eq_extremal_on_reachable`, `dropBranch_step_no_op`, `dropBranch_preserves_IsValidBi`, `allAlternate_reverse` in `Chanlun.BiEndpointSubResidues` |
 | X.3.6 | Thm 3.6 reachable-domain alternation | PROVEN_DIRECT | `Chanlun.BiReachableDeterminism.fractals_alternate_on_containment_free`, chain via `dichotomy_of_no_containment` + `neither_preserves_direction` |
-| X.3.7 | TO-endpoint reading on arbitrary inputs (leftmost-admissible vs extremal-literal) | MULTI_VALUED_NAMED → on reachable domain PROVEN_DIRECT | On reachable input the two readings coincide (Thm 3.6 + `to_endpoint_leftmost_eq_extremal_on_reachable`); on arbitrary input the master text genuinely supports both, and this is a documented choice (StrokeUniqueness takes the leftmost-admissible reading) |
+| X.3.7 | TO-endpoint reading on arbitrary inputs (leftmost-admissible vs extremal-literal) | MULTI_VALUED_NAMED → on reachable domain PROVEN_DIRECT | **Class A** (collapsible). See four-segment Theorem 3.7. Collapse condition: strictly-alternating fractal sequence (post-`normalize` output). Collapse theorem: `to_endpoint_leftmost_eq_extremal_on_reachable` (`Chanlun.BiEndpointSubResidues`), combined with reachable-domain alternation (Thm 3.6). On arbitrary input both readings are legitimate; `StrokeUniqueness` takes the leftmost-admissible reading |
 | X.3.8 | Silent drop of over-close reverse fractals | PROVEN_DIRECT | `Chanlun.BiEndpointSubResidues.dropBranch_step_no_op` proves the drop branch is a no-op |
 
 ### §X.4  线段 / Segment (§4)
@@ -1267,8 +1476,8 @@ downstream-component design choice; master-text ambiguity on Φ).
 | X.5.7 | Thm 5.7 classifyExtension_total | PROVEN_DIRECT | `Chanlun.ZhongshuExtension.classifyExtension_total` |
 | X.5.8 | Thm 5.8 core/envelope soundness of each event | PROVEN_DIRECT | `extension_preserves_core_ZD_ZG`, `expansion_widens_GG_DD`, `rebirth_creates_disjoint_core` |
 | X.5.9 | Thm 5.9 9-segment upgrade trigger | PROVEN_DIRECT | `upgrade_trigger_iff_9_segments` + `upgrade_trigger_element_independent` |
-| X.5.10 | Thm 5.10 zone-gate divergence witness | MULTI_VALUED_NAMED | `Chanlun.DivergenceWitnesses.zhongshu_zone_gate_divergence_witness` — first3 vs all_ are both legitimate readings of the master text; the gate disagrees on element ⟨5, 6⟩ within `zoneGateWitnessEls`; both gates produce valid + disjoint outputs (`zhongshu_zone_gate_witness_valid_disjoint`). On the reachable (containment-free) domain the two readings coincide |
-| X.5.11 | Shoulder cases (`next_el.lo = ZG` or `next_el.hi = ZD`) — ≤ vs strict-< | MULTI_VALUED_NAMED | Master text supports both ≤ and < readings (lesson 17 line 3 wording vs lesson 17 example computation); this repository takes ≤ as the canonical reading; the other reading is a sibling oracle |
+| X.5.10 | Thm 5.10 zone-gate divergence witness | MULTI_VALUED_NAMED | **Class A** (collapsible). See four-segment Theorem 5.10. Divergence witness `Chanlun.DivergenceWitnesses.zhongshu_zone_gate_divergence_witness`; both gates produce valid + disjoint outputs (`zhongshu_zone_gate_witness_valid_disjoint`). Collapse condition: every post-first-3 element CONTAINS the first3 zone (`(els.get k).lo ≤ zd ∧ (els.get k).hi ≥ zg`). Collapse theorem: `Chanlun.CollapseTheorems.zhongshu_zone_gate_collapses_when_no_tightening` |
+| X.5.11 | Shoulder cases (`next_el.lo = ZG` or `next_el.hi = ZD`) — ≤ vs strict-< | MULTI_VALUED_NAMED | **Class A** (collapsible). See four-segment Theorem 5.11. Master text supports both ≤ and < readings (lesson 17 line 3 wording vs lesson 17 example computation); this repository takes ≤ as canonical. Collapse condition: every post-first-3 element is OFF the shoulder boundary (`(els.get k).lo ≠ zg ∧ (els.get k).hi ≠ zd`). Collapse theorem: `Chanlun.CollapseTheorems.zhongshu_shoulder_collapses_off_boundary` (and the list-level lift `_list`) |
 | X.5.12 | Extension propagation under the `all_` gate (full list-induction form) | NOT_FORMALIZED — list-induction missing | The `first3` form is fully discharged in `Chanlun.ZhongshuExtension`; the `all_` form requires a separate list-induction tracking the tightening zone through `extendEnd` steps. Blocker: the tightening zone state-passing requires an additional invariant carrier not present in the current `CenterExt` data structure |
 | X.5.13 | Multi-element envelope across a complete zhongshu (list-induction form) | PROVEN_DIRECT (newly formalized in this PR) | `Chanlun.LevelRecursion.listEnvelope_widens` + `listEnvelope_DD_drops` + `listEnvelope_GG_grows` lift the single-step `expansion_widens_GG_DD` to the full list-induction form: across any list of post-elements, the cumulative `DD` weakly drops and the cumulative `GG` weakly grows. Proof technique: induction on the post-element list, using `min_le_left` and `le_max_left` from mathlib at each step |
 
@@ -1294,10 +1503,10 @@ downstream-component design choice; master-text ambiguity on Φ).
 | X.7.2 | Def 7.2 classifyBeichi | PROVEN_DIRECT | `Chanlun.Beichi.classifyBeichi` |
 | X.7.3 | Thm 7.3 totality + irreflexivity | PROVEN_DIRECT | `classifyBeichi_total`, `beichi_irrefl` (via `lhsRhs_self_eq`) |
 | X.7.4 | Thm 7.4 load-bearing (disp + slope sides) | PROVEN_DIRECT | `beichi_load_bearing_disp`, `beichi_load_bearing_slope`, combined `beichi_load_bearing`; companion `no_beichi_*_strict`, `tie_*_iff` |
-| X.7.5 | Thm 7.5 disp-vs-slope multi-valuedness | MULTI_VALUED_NAMED | `Chanlun.Beichi.beichi_measure_gate_witness`, surfaced as `Chanlun.DivergenceWitnesses.beichi_measure_gate_divergence_witness`. The master text invokes both measures at different points (lesson 24 vs lesson 27) — both readings are legitimate. Empirical agreement ≈ 82.2% on the Python reference; the choice is a documented master-text ambiguity, not a Lean proof gap |
+| X.7.5 | Thm 7.5 disp-vs-slope multi-valuedness | MULTI_VALUED_NAMED | **Class B** (permanently multi-valued — semantic measure choice). See four-segment Theorem 7.5. Divergence witness `Chanlun.Beichi.beichi_measure_gate_witness`, surfaced as `Chanlun.DivergenceWitnesses.beichi_measure_gate_divergence_witness`. Master text invokes both measures at different points (lesson 24 vs lesson 27). Why no collapse: disp and slope answer different questions (distance vs speed); new data cannot decide which question the trader asked. Empirical agreement ≈ 82.2% only quantifies the disagreement region, does not nominate a winner |
 | X.7.6 | Def 7.6 panzheng (盘整背驰) classifier | PROVEN_DIRECT | `Chanlun.PanzhengBeichi.classifyPanzheng` |
 | X.7.7 | Thm 7.7 panzheng totality + load-bearing + incomplete-iff | PROVEN_DIRECT | `classify_panzheng_total`, `panzheng_load_bearing_disp`, `panzheng_load_bearing_slope`, `panzheng_incomplete_iff` |
-| X.7.8 | Thm 7.8 panzheng measure-gate witness + intra-vs-inter mutant | MULTI_VALUED_NAMED | `panzheng_measure_gate_witness`, `panzheng_intra_vs_inter_load_bearing`, surfaced as `panzheng_measure_gate_propagation_witness` |
+| X.7.8 | Thm 7.8 panzheng measure-gate witness + intra-vs-inter mutant | MULTI_VALUED_NAMED | **Class B** (permanently multi-valued — inherits §7.5 measure choice + a second irreducible oracle on which 中枢 supplies the reference). See four-segment Theorem 7.8. Divergence witnesses `panzheng_measure_gate_witness`, `panzheng_intra_vs_inter_load_bearing`, surfaced as `panzheng_measure_gate_propagation_witness`. Why no collapse: intra-vs-inter is a modelling commitment ("strength fades relative to WHAT"), not an estimate that more data refines |
 | X.7.9 | MACD as `macd` constructor of `Chanlun.Beichi.Measure` | NOT_FORMALIZED — integer kernel cannot represent MACD energy | The integer-arithmetic kernel (`Int` carrier, no floats, no EMAs) cannot directly represent MACD energy values, which are signal-processing-derived running floats. Adding a `macd` constructor to `Measure` is structurally clean (the cross-product algebra extends) but the underlying MACD-energy comparison requires float values that the kernel deliberately avoids (to keep decidability + lake-build constraints). Empirical agreement settled in `grounding/chanlun_macd_grounding.py` (disp ≈ 46.4%, slope ≈ 17.9% on 7-year NQ 1h). Float-carrying Lean lift would require mathlib's `Real` + a separate data-interface layer outside the kernel |
 
 ### §X.8  三类买卖点 / Buy-sell points (§8)
@@ -1306,7 +1515,7 @@ downstream-component design choice; master-text ambiguity on Φ).
 |---|---|---|---|
 | X.8.1 | Def 8.1 first/second classifier | PROVEN_DIRECT | `Chanlun.FirstSecondBuysell.classifyBsp` |
 | X.8.2 | Thm 8.2 totality + non-breaking | PROVEN_DIRECT | `classify_total`, `classify_first_point_only_total`, `second_buy_non_breaking`, `second_sell_non_breaking`, `second_not_breaking_iff`, `first_point_failed_iff` |
-| X.8.3 | Thm 8.3 measure-gate propagation into 第一/第二 buy/sell | MULTI_VALUED_NAMED | `first_second_inheritance_load_bearing`, surfaced as `Chanlun.DivergenceWitnesses.first_second_measure_gate_divergence_witness` |
+| X.8.3 | Thm 8.3 measure-gate propagation into 第一/第二 buy/sell | MULTI_VALUED_NAMED | **Class B** (permanently multi-valued — inherited propagation of §7.5 measure choice). See four-segment Theorem 8.3. Divergence witness `first_second_inheritance_load_bearing`, surfaced as `Chanlun.DivergenceWitnesses.first_second_measure_gate_divergence_witness`. Why no collapse: classifier sits on top of `classifyBeichi`; as long as that inner gate is Class B, the buy/sell verdict inherits the same measure choice |
 | X.8.4 | Thm 8.4 classify implies background 背驰 + pull defined | PROVEN_DIRECT | `classify_implies_beichi_and_pull` |
 | X.8.5 | Def 8.5 third-class classifier | PROVEN_DIRECT | `Chanlun.ThirdBuysell.classifyBsp` |
 | X.8.6 | Thm 8.6 third-class totality + zone load-bearing | PROVEN_DIRECT | `classifyBsp_total`, `bsp_zone_load_bearing_up`, `bsp_zone_load_bearing_down` |
