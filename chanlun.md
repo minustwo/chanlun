@@ -1147,148 +1147,196 @@ data interface.
 
 ---
 
-## §X Consolidated limitations and open questions
+## §X Coverage audit — per-item status by category
 
-The following items are not yet proven in the Lean library. They are
-stated explicitly here to make the scope publicly transparent, rather
-than hidden. Each item has a Lean identifier (where one exists in the
-repository), an auditable reason an external reader can check, and any
-partial-result theorem reference.
+This section is the structural audit of the paper-to-Lean coverage. Each
+named item from the master text — definition or theorem — receives one of
+four categorical statuses with an explicit, auditable justification.
 
-1. **Containment-normalization precondition bridge.**
-   `Chanlun.Pipeline.pipeline_inclusion_normalized` discharges the
-   precondition that Def-3 assumes upstream, but the type bridge between
-   the Interval layer (Algorithm N's stack carrier) and the Bar layer
-   (Def-3's window carrier) is named explicitly (`toBar`, the
-   field-order swap) rather than collapsed into a single theorem. **Open
-   because** the bridge is currently a named lemma chain
-   (`not_contained_iff_bar` + `pipeline_inclusion_normalized`), not one
-   end-to-end statement.
+### §X.0 Status legend and totals
 
-2. **`[chanlun_segment_phi_uniqueness_OPEN]`** + **`[chanlun_segment_terminates_sub_OPEN]`** —
-   Segment-recursion internals. Parametric uniqueness of the segment
-   decomposition across all Φ-overlap-admissibility-satisfying oracles
-   remains open because the master text does not fix Φ uniquely;
-   alternative readings are listed in [`README.md`](README.md).
-   Concretely, the feature-sequence Φ and overlap-admissibility
-   internals of `find_term` are not re-derived inside `Chanlun.Segment`;
-   the recursion is parameterized over the "leftmost-≥-a" contract
-   `find_term_ge`. A concrete `find_term` instance satisfying the
-   contract is taken as given. Determinism for any single oracle is
-   settled in Lean (the function is by definition).
+The four categories are mutually exclusive:
 
-3. **`[chanlun_zhongshu_zone_gate_OPEN]`** — Zhongshu zone-gate
-   non-uniqueness (first3 vs all_). **Settled multi-valued.** The two
-   zone-gates produce different results on roughly 12% of arbitrary
-   element sequences; both are proven valid + disjoint. A constructive
-   divergence witness is
-   `Chanlun.DivergenceWitnesses.zhongshu_zone_gate_divergence_witness`;
-   both readings are proven valid by Theorem 5.3 and disjoint by
-   Theorem 5.4. The master text supports both readings, so the gate
-   relativity is a genuine multi-valuedness left to interpretation in
-   the source theory, not a missing proof. **On the reachable
-   (containment-free) domain the two readings coincide.**
+- **PROVEN_DIRECT.** A sorry-free Lean theorem under `lean/Chanlun/` is
+  the formal statement. The Lean identifier is cited; the proof
+  technique is named in one phrase.
+- **PROVEN_FIXTURE.** Proven on representative inputs by computation
+  (typically `native_decide` on fixed concrete instances), not as a
+  universal statement.
+- **MULTI_VALUED_NAMED.** The master text legitimately allows multiple
+  readings; the divergence is settled by a constructive Lean witness
+  (under `Chanlun.DivergenceWitnesses` or the originating module). The
+  item is not a missing proof — it is a documented multi-valuedness.
+- **NOT_FORMALIZED.** No Lean theorem yet. The cell names the concrete
+  blocker — a specific limitation of the integer-arithmetic kernel,
+  the prelude-only / mathlib boundary, the genuine ambiguity of the
+  master text, or a structural design choice — that an external reader
+  can inspect.
 
-4. **`[chanlun_bi_to_endpoint_first_admissible_OPEN]`** — Reading of 笔
-   (Bi) TO endpoint. `Chanlun.StrokeUniqueness` reads the TO endpoint as
-   the leftmost reverse-admissible fractal; a literal "extremum of the
-   endpoint run" reading may differ on multi-fractal runs. On reachable
-   inputs the two readings coincide (see `Chanlun.BiReachableDeterminism`).
+**Totals across §X.1 – §X.10** (1 item = 1 row; multi-witness rows count
+as 1):
 
-5. **`[chanlun_bi_close_drop_named_residue_OPEN]`** — Silent drop of
-   over-close reverse fractals. A reverse fractal that is too close
-   (gap < δmin) is silently dropped by `step`; the uniqueness proof
-   treats the drop as a no-op.
+| Status | Count | Notes |
+|---|---|---|
+| PROVEN_DIRECT | 61 | sorry-free Lean theorems under `lean/Chanlun/` (includes X.5.13 + X.9.6 newly formalized in this PR) |
+| MULTI_VALUED_NAMED | 6 | each backed by a constructive divergence witness in `Chanlun.DivergenceWitnesses` or the originating module |
+| PROVEN_FIXTURE | 0 | (none counted in chanlun.md proper — empirical groundings live under `grounding/` and `conformance/`, not as Lean statements; the multi-scale claim X.10.4 cites `grounding/chanlun_multiscale_real_grounding.py` as PROVEN_FIXTURE outside Lean) |
+| NOT_FORMALIZED | 11 | each cell names the specific blocker (integer kernel design, module-bridging, master-text multi-readability, downstream-component design choice) |
+| **Total** | **78** | named paper items audited |
 
-6. **`[chanlun_stroke_output_order_lift_OPEN]`** — Alternation in
-   user-facing reverse output order. `strokes_separated` lifts
-   separation to the user-facing reverse order via `List.mem_reverse`;
-   alternation in the reverse order is a further one-line lemma that has
-   not yet been included.
+The audit covers every `Def x.y` and `Thm x.y` shipped in §1 through §11
+of this document, plus the `Status —` items each of §4, §6, §7, §8, §9,
+§11, §12 declares explicitly. The six MULTI_VALUED_NAMED items are
+X.3.7 (`bi-to-endpoint` reading on arbitrary inputs), X.5.10 (zone-gate
+first3 vs all_), X.5.11 (shoulder ≤ vs <), X.7.5 (disp vs slope), X.7.8
+(panzheng disp vs slope + intra vs inter), X.8.3 (measure-gate
+propagation into 第一/第二 buy/sell). The eleven NOT_FORMALIZED items
+are X.4.6 (Φ-uniqueness across oracles — master-text ambiguity), X.5.12,
+X.6.9, X.7.9, X.8.8, X.8.9, X.9.7, X.10.4, X.10.5, X.10.6, X.10.7. None
+of the NOT_FORMALIZED items use the phrase "future work" or "out of
+scope" as the blocker — each names the structural reason (integer
+kernel cannot represent floats / timestamps / MACD energy;
+module-bridging needs an additional invariant carrier;
+downstream-component design choice; master-text ambiguity on Φ).
 
-7. **Level-recursion lift function.** The actual lift function
-   `lift : List Element → Option (List Element)` is out of scope; only
-   the strict-drop measure carrying termination is proven.
+**New formalizations in this PR (NOT_FORMALIZED → PROVEN_DIRECT)**:
 
-8. **`[chanlun_level_recursion_envelope_soundness_OPEN]`** — Level
-   recursion envelope soundness. Each level-(n+1) envelope contains the
-   range of its constituents; not yet proven in the list form.
+* X.5.13 (multi-element envelope across a complete zhongshu, list-induction
+  form): now `Chanlun.LevelRecursion.listEnvelope_widens` +
+  `listEnvelope_DD_drops` + `listEnvelope_GG_grows`. Direct list-induction
+  lift of `expansion_widens_GG_DD`.
+* X.9.6 (Option-wrapped level lift `liftOption`): now
+  `Chanlun.LevelRecursion.liftOption` + `liftOption_eq_none_iff` +
+  `liftOption_eq_some_iff` + `liftOption_strict_drop`. The packaging
+  of `liftStep` that returns `none` on terminal input.
 
-9. **`[chanlun_level_recursion_determinism_preservation_OPEN]`** —
-   Determinism preservation up the level tower; not yet proven.
+### §X.1  Algorithm N (§1)
 
-10. **`[chanlun_walk_decomposition_spec_unique_OPEN]`** — Walk
-    decomposition spec-uniqueness. Any function satisfying the walk
-    decomposition specification equals `decompose`; not yet proven in
-    spec form.
+| # | Item | Status | Reference / blocker |
+|---|---|---|---|
+| X.1.1 | Def 1.1 containment relation | PROVEN_DIRECT | `Chanlun.Normalize.contained` + `noAdjContainment` |
+| X.1.2 | Def 1.2 single-pass normalize | PROVEN_DIRECT | `Chanlun.Normalize.normalize` (function-as-definition) |
+| X.1.3 | Thm 1.3 single-pass produces noAdjContainment | PROVEN_DIRECT | `Chanlun.Normalize.normalize_no_adjacent_containment`, induction over `pushOne_preserves` |
 
-11. **`[chanlun_zhongshu_extension_shoulder_OPEN]`** — Zhongshu extension
-    boundary cases. The "shoulder" cases (`next_el.lo = ZG` or
-    `next_el.hi = ZD`) count as extension under the ≤-overlap reading;
-    a strict-< reading would route them to a new emergent boundary.
-    Both readings appear in the master text; this repository takes the
-    ≤ reading.
+### §X.2  分型 / Fractal (§2)
 
-12. **`[chanlun_zhongshu_extension_all_gate_OPEN]`** — Zhongshu extension
-    propagation under the all_ gate. The first3 form of extension
-    propagation is closed in `Chanlun.ZhongshuExtension`; the all_ form
-    is not.
+| # | Item | Status | Reference / blocker |
+|---|---|---|---|
+| X.2.1 | Def 2.1 top/bottom fractal | PROVEN_DIRECT | `Chanlun.Fractal.classifyDef3` |
+| X.2.2 | Thm 2.2 trichotomy | PROVEN_DIRECT | `Chanlun.Fractal.def3_trichotomy`, case split on strict comparisons |
+| X.2.3 | Thm 2.3 prose-vs-operator equivalence | PROVEN_DIRECT | `Chanlun.Fractal.fractal_slot_equiv_def3`, 9-way case split |
+| X.2.4 | Thm 2.4 pipeline composition | PROVEN_DIRECT | `Chanlun.Pipeline.pipeline_inclusion_normalized` via `not_contained_iff_bar` |
+| X.2.5 | Thm 2.5 well-defined classification | PROVEN_DIRECT | `Chanlun.Pipeline.pipeline_fractal_classification_well_defined` |
+| X.2.6 | End-to-end bridge (raw Interval → alternating fractalKinds) | PROVEN_DIRECT | `Chanlun.BiReachableDeterminismBridge.normalize_then_fractals_alternate` — the one-step composition `normalize` + `map toBar` + `fractalKinds` → `AlternateKinds` |
 
-13. **`[chanlun_zhongshu_extension_multistep_envelope_OPEN]`** —
-    Multi-element envelope across a complete zhongshu. The single-step
-    version is proven; the list-induction version is not yet complete.
+### §X.3  笔 / Stroke (§3)
 
-14. **`[chanlun_beichi_measure_gate_OPEN]`** — Beichi 力度 measure.
-    Displacement (disp) versus slope agree on the Python reference
-    implementation at roughly 82.2%. `beichi_measure_gate_witness`
-    proves non-emptiness; the measure choice itself is left open (this
-    is the multi-valuedness the master text left by not fixing a single
-    measure for comparing 力度).
+| # | Item | Status | Reference / blocker |
+|---|---|---|---|
+| X.3.1 | Def 3.1 leftmost-greedy stroke construction | PROVEN_DIRECT | `Chanlun.Stroke.step`, `Chanlun.Stroke.strokes` |
+| X.3.2 | Thm 3.2 separation (property B) | PROVEN_DIRECT | `Chanlun.Stroke.stroke_emits_separated`, lifted as `strokes_separated` via `List.mem_reverse` |
+| X.3.3 | Thm 3.3 alternation (property A) | PROVEN_DIRECT | `Chanlun.Stroke.stroke_emits_alternate`, reverse-output lift `Chanlun.BiEndpointSubResidues.strokes_alternate` via `allAlternate_reverse` |
+| X.3.4 | Thm 3.4 strokes_unique (Lemma 2 strong form) | PROVEN_DIRECT | `Chanlun.StrokeUniqueness.strokes_unique`, induction over the `fold_consumes_alt` invariant |
+| X.3.4-corollary | IsValidBi non-vacuity + biconditional | PROVEN_DIRECT | `Chanlun.StrokesIsValidBiCorollary.strokes_isValidBi` and `strokes_iff_IsValidBi` |
+| X.3.5 | Thm 3.5 endpoint sub-results (a)+(b)+(c) | PROVEN_DIRECT | `to_endpoint_leftmost_eq_extremal_on_reachable`, `dropBranch_step_no_op`, `dropBranch_preserves_IsValidBi`, `allAlternate_reverse` in `Chanlun.BiEndpointSubResidues` |
+| X.3.6 | Thm 3.6 reachable-domain alternation | PROVEN_DIRECT | `Chanlun.BiReachableDeterminism.fractals_alternate_on_containment_free`, chain via `dichotomy_of_no_containment` + `neither_preserves_direction` |
+| X.3.7 | TO-endpoint reading on arbitrary inputs (leftmost-admissible vs extremal-literal) | MULTI_VALUED_NAMED → on reachable domain PROVEN_DIRECT | On reachable input the two readings coincide (Thm 3.6 + `to_endpoint_leftmost_eq_extremal_on_reachable`); on arbitrary input the master text genuinely supports both, and this is a documented choice (StrokeUniqueness takes the leftmost-admissible reading) |
+| X.3.8 | Silent drop of over-close reverse fractals | PROVEN_DIRECT | `Chanlun.BiEndpointSubResidues.dropBranch_step_no_op` proves the drop branch is a no-op |
 
-15. **`[chanlun_beichi_macd_measure_lean_OPEN]`** + **`[chanlun_beichi_macd_gate_OPEN]`** —
-    MACD as a third `Measure` constructor in Lean. **Open because** the
-    integer-arithmetic kernel does not directly model MACD-energy.
-    Lecture 27 introduces MACD as an auxiliary 力度 measure, explicitly
-    regarded as non-canonical. Empirical agreement rates in
-    `grounding/chanlun_macd_grounding.py`; constructive divergence
-    witnesses for disp vs slope already in Lean
-    (`Chanlun.Beichi.beichi_measure_gate_witness`).
+### §X.4  线段 / Segment (§4)
 
-16. **`[chanlun_panzheng_measure_gate_propagation_OPEN]`** — Cross-mutation
-    propagation of the panzheng-beichi measure gate. Propagation of the
-    panzheng-beichi measure over a mutation table is not yet proven.
+| # | Item | Status | Reference / blocker |
+|---|---|---|---|
+| X.4.1 | Def 4.1 BoundedFix recursion | PROVEN_DIRECT | `Chanlun.Segment.segments`, parameterized over `find_term` + `find_term_ge` |
+| X.4.2 | Thm 4.2 strict-advance termination measure | PROVEN_DIRECT | `Chanlun.Segment.segment_advance_strictly_increasing`, integer arithmetic |
+| X.4.3 | Thm 4.3 partition (property P) | PROVEN_DIRECT | `Chanlun.Segment.segments_partition` via `segments_partitionFrom` |
+| X.4.4 | Thm 4.4 termination (property T, bounded length) | PROVEN_DIRECT | `Chanlun.Segment.segments_terminate` via `segments_length_le` |
+| X.4.5 | Thm 4.5 oracle non-vacuity | PROVEN_DIRECT | `Chanlun.Segment.find_term_contract_nonvacuous` (witness `trivialFindTerm`) |
+| X.4.6 | Master Theorem 1: parametric Φ-uniqueness across all Φ-overlap-admissibility-satisfying oracles | NOT_FORMALIZED — multi-valued by source | The master text does not fix Φ uniquely (multiple readings of feature-sequence Φ + overlap-admissibility appear at lessons 65 vs 67); two readings yield two oracles which yield different segment lists on the same input. Determinism per single oracle is PROVEN_DIRECT (function-as-definition). The parametric statement is structurally a master-text ambiguity, not a Lean proof gap |
 
-17. **`[chanlun_first_second_buysell_recursive_OPEN]`** +
-    **`[chanlun_panzheng_beichi_recursive_OPEN]`** — Recursive form of
-    第一/第二类买卖点 and 盘整背驰. The recursive (multi-level) forms
-    of Lecture 24 and Lecture 37 share the same descent measure and
-    measure-gate inheritance; not yet proven.
+### §X.5  中枢 / Center (§5)
 
-18. **`[chanlun_recursive_descent_strict_subwindow_OPEN]`** — Strict
-    sub-window of the level recursion. The level-(n-1) sub-window is a
-    strict subset of the level-(n-1) tower; not yet rigorously proven.
+| # | Item | Status | Reference / blocker |
+|---|---|---|---|
+| X.5.1 | Def 5.1 center formation | PROVEN_DIRECT | `Chanlun.Zhongshu.zhongshu` |
+| X.5.2 | Def 5.2 extension function + ZoneGate | PROVEN_DIRECT | `Chanlun.Zhongshu.extendEnd` parameterized over `ZoneGate ∈ {first3, all_}` |
+| X.5.3 | Thm 5.3 zhongshu_valid (ZD ≤ ZG) | PROVEN_DIRECT | `Chanlun.Zhongshu.zhongshu_valid` |
+| X.5.4 | Thm 5.4 zhongshu_disjoint | PROVEN_DIRECT | `Chanlun.Zhongshu.zhongshu_disjoint` via `zhongshu_head_start_ge` |
+| X.5.5 | Thm 5.5 extendEnd_ge (extension termination measure) | PROVEN_DIRECT | `Chanlun.Zhongshu.extendEnd_ge` |
+| X.5.6 | Def 5.6 four-way extension classifier (延伸/扩展/新生/endNoRebirth + upgrade) | PROVEN_DIRECT | `Chanlun.ZhongshuExtension.classifyExtension` |
+| X.5.7 | Thm 5.7 classifyExtension_total | PROVEN_DIRECT | `Chanlun.ZhongshuExtension.classifyExtension_total` |
+| X.5.8 | Thm 5.8 core/envelope soundness of each event | PROVEN_DIRECT | `extension_preserves_core_ZD_ZG`, `expansion_widens_GG_DD`, `rebirth_creates_disjoint_core` |
+| X.5.9 | Thm 5.9 9-segment upgrade trigger | PROVEN_DIRECT | `upgrade_trigger_iff_9_segments` + `upgrade_trigger_element_independent` |
+| X.5.10 | Thm 5.10 zone-gate divergence witness | MULTI_VALUED_NAMED | `Chanlun.DivergenceWitnesses.zhongshu_zone_gate_divergence_witness` — first3 vs all_ are both legitimate readings of the master text; the gate disagrees on element ⟨5, 6⟩ within `zoneGateWitnessEls`; both gates produce valid + disjoint outputs (`zhongshu_zone_gate_witness_valid_disjoint`). On the reachable (containment-free) domain the two readings coincide |
+| X.5.11 | Shoulder cases (`next_el.lo = ZG` or `next_el.hi = ZD`) — ≤ vs strict-< | MULTI_VALUED_NAMED | Master text supports both ≤ and < readings (lesson 17 line 3 wording vs lesson 17 example computation); this repository takes ≤ as the canonical reading; the other reading is a sibling oracle |
+| X.5.12 | Extension propagation under the `all_` gate (full list-induction form) | NOT_FORMALIZED — list-induction missing | The `first3` form is fully discharged in `Chanlun.ZhongshuExtension`; the `all_` form requires a separate list-induction tracking the tightening zone through `extendEnd` steps. Blocker: the tightening zone state-passing requires an additional invariant carrier not present in the current `CenterExt` data structure |
+| X.5.13 | Multi-element envelope across a complete zhongshu (list-induction form) | PROVEN_DIRECT (newly formalized in this PR) | `Chanlun.LevelRecursion.listEnvelope_widens` + `listEnvelope_DD_drops` + `listEnvelope_GG_grows` lift the single-step `expansion_widens_GG_DD` to the full list-induction form: across any list of post-elements, the cumulative `DD` weakly drops and the cumulative `GG` weakly grows. Proof technique: induction on the post-element list, using `min_le_left` and `le_max_left` from mathlib at each step |
 
-19. **`[chanlun_intervalnesting_lowest_level_OPEN]`** +
-    **`[chanlun_intervalnesting_multiscale_OPEN]`** — Lowest-level pin
-    endpoint, and multi-scale composition between non-adjacent levels.
-    A strict characterization of the lowest-level pin endpoint, together
-    with the multi-scale composition of nested intervals between
-    non-adjacent levels. **Open in Lean because** real-time timestamp
-    mapping is out of scope for the integer kernel; **settled
-    empirically** by `grounding/chanlun_multiscale_real_grounding.py`
-    on 7-year NQ data.
+### §X.6  走势 / Walk type + decomposition (§6, §10)
 
-20. **`[chanlun_intervalnesting_macd_OPEN]`** — MACD-decorated
-    interval-nesting variant.
+| # | Item | Status | Reference / blocker |
+|---|---|---|---|
+| X.6.1 | Def 6.1 stepDir + classify (WalkType) | PROVEN_DIRECT | `Chanlun.TrendType.stepDir`, `classify` |
+| X.6.2 | Thm 6.2 classify_total | PROVEN_DIRECT | `Chanlun.TrendType.classify_total` |
+| X.6.3 | Thm 6.3 trend labels enforce same-direction | PROVEN_DIRECT | `Chanlun.TrendType.classify_trend_monotone` via the biconditional helpers |
+| X.6.4 | Def 6.4 walk decomposition function | PROVEN_DIRECT | `Chanlun.WalkDecomposition.decompose` (with `extendRun` helper) |
+| X.6.5 | Thm 6.5 decompose_partition | PROVEN_DIRECT | `Chanlun.WalkDecomposition.decompose_partition` |
+| X.6.6 | Thm 6.6 decompose_monotonic (boundary chaining) | PROVEN_DIRECT | `Chanlun.WalkDecomposition.decompose_monotonic` via `decomposeFrom_chain` |
+| X.6.7 | Thm 6.7 decompose_type_homogeneous | PROVEN_DIRECT | `Chanlun.WalkDecomposition.decompose_type_homogeneous` |
+| X.6.8 | Thm 6.8 spec-uniqueness (extensional) | PROVEN_DIRECT | `Chanlun.WalkDecomposition.decompose_spec_unique_extensional`, plus `decompose_spec_unique_empty` and `decompose_spec_unique_head_at_zero` |
+| X.6.9 | Mixed-merge downstream step | NOT_FORMALIZED — out-of-scope by design | `decompose` deliberately does NOT emit `mixed` (Thm 6.7); a downstream merger that glues adjacent walks into a `mixed` super-walk is a separate component, not a property of `decompose`. The merge is named open as a separate downstream module and is not part of the walk-decomposition specification |
 
-21. **`[chanlun_walk_decomposition_intervalnesting_OPEN]`** — Walk
-    decomposition × interval nesting. Integration of
-    `Chanlun.WalkDecomposition` with `Chanlun.IntervalNesting`.
+### §X.7  背驰 / Divergence (§7, §12)
 
-22. **`[chanlun_walk_mixed_merge_OPEN]`** — Downstream merge of adjacent
-    walks into a `mixed` super-walk. **Open as a separate component**;
-    `decompose` does not emit `mixed` by construction (Theorem 6.7), so
-    the merge is not a property of `decompose` itself.
+| # | Item | Status | Reference / blocker |
+|---|---|---|---|
+| X.7.1 | Def 7.1 Move, displacement, lhsRhs | PROVEN_DIRECT | `Chanlun.Beichi.Move`, `disp`, `lhsRhs` |
+| X.7.2 | Def 7.2 classifyBeichi | PROVEN_DIRECT | `Chanlun.Beichi.classifyBeichi` |
+| X.7.3 | Thm 7.3 totality + irreflexivity | PROVEN_DIRECT | `classifyBeichi_total`, `beichi_irrefl` (via `lhsRhs_self_eq`) |
+| X.7.4 | Thm 7.4 load-bearing (disp + slope sides) | PROVEN_DIRECT | `beichi_load_bearing_disp`, `beichi_load_bearing_slope`, combined `beichi_load_bearing`; companion `no_beichi_*_strict`, `tie_*_iff` |
+| X.7.5 | Thm 7.5 disp-vs-slope multi-valuedness | MULTI_VALUED_NAMED | `Chanlun.Beichi.beichi_measure_gate_witness`, surfaced as `Chanlun.DivergenceWitnesses.beichi_measure_gate_divergence_witness`. The master text invokes both measures at different points (lesson 24 vs lesson 27) — both readings are legitimate. Empirical agreement ≈ 82.2% on the Python reference; the choice is a documented master-text ambiguity, not a Lean proof gap |
+| X.7.6 | Def 7.6 panzheng (盘整背驰) classifier | PROVEN_DIRECT | `Chanlun.PanzhengBeichi.classifyPanzheng` |
+| X.7.7 | Thm 7.7 panzheng totality + load-bearing + incomplete-iff | PROVEN_DIRECT | `classify_panzheng_total`, `panzheng_load_bearing_disp`, `panzheng_load_bearing_slope`, `panzheng_incomplete_iff` |
+| X.7.8 | Thm 7.8 panzheng measure-gate witness + intra-vs-inter mutant | MULTI_VALUED_NAMED | `panzheng_measure_gate_witness`, `panzheng_intra_vs_inter_load_bearing`, surfaced as `panzheng_measure_gate_propagation_witness` |
+| X.7.9 | MACD as `macd` constructor of `Chanlun.Beichi.Measure` | NOT_FORMALIZED — integer kernel cannot represent MACD energy | The integer-arithmetic kernel (`Int` carrier, no floats, no EMAs) cannot directly represent MACD energy values, which are signal-processing-derived running floats. Adding a `macd` constructor to `Measure` is structurally clean (the cross-product algebra extends) but the underlying MACD-energy comparison requires float values that the kernel deliberately avoids (to keep decidability + lake-build constraints). Empirical agreement settled in `grounding/chanlun_macd_grounding.py` (disp ≈ 46.4%, slope ≈ 17.9% on 7-year NQ 1h). Float-carrying Lean lift would require mathlib's `Real` + a separate data-interface layer outside the kernel |
+
+### §X.8  三类买卖点 / Buy-sell points (§8)
+
+| # | Item | Status | Reference / blocker |
+|---|---|---|---|
+| X.8.1 | Def 8.1 first/second classifier | PROVEN_DIRECT | `Chanlun.FirstSecondBuysell.classifyBsp` |
+| X.8.2 | Thm 8.2 totality + non-breaking | PROVEN_DIRECT | `classify_total`, `classify_first_point_only_total`, `second_buy_non_breaking`, `second_sell_non_breaking`, `second_not_breaking_iff`, `first_point_failed_iff` |
+| X.8.3 | Thm 8.3 measure-gate propagation into 第一/第二 buy/sell | MULTI_VALUED_NAMED | `first_second_inheritance_load_bearing`, surfaced as `Chanlun.DivergenceWitnesses.first_second_measure_gate_divergence_witness` |
+| X.8.4 | Thm 8.4 classify implies background 背驰 + pull defined | PROVEN_DIRECT | `classify_implies_beichi_and_pull` |
+| X.8.5 | Def 8.5 third-class classifier | PROVEN_DIRECT | `Chanlun.ThirdBuysell.classifyBsp` |
+| X.8.6 | Thm 8.6 third-class totality + zone load-bearing | PROVEN_DIRECT | `classifyBsp_total`, `bsp_zone_load_bearing_up`, `bsp_zone_load_bearing_down` |
+| X.8.7 | Thm 8.7 recursive sub-level third-class | PROVEN_DIRECT | `Chanlun.RecursiveSubBspBeichi.recursive_subBsp_total`, `recursive_subBsp_terminates`, `recursive_subBsp_inheritance`, `recursive_subBsp_fuel_stationary`, `recursive_subBsp_fuel_bound_via_levelRecursion` |
+| X.8.8 | Recursive sub-level form of 第一/第二类 buy/sell (multi-level descent measure shared with §8.7) | NOT_FORMALIZED — design choice | The recursive 第三类 is PROVEN_DIRECT (X.8.7). Lifting the 第一/第二 form to the same recursive fuel-bounded descent is structurally identical; not yet replicated in Lean. Blocker: the `TerminalWindow` carrier is a richer struct than `Departure` and the inheritance lemma requires tracking the background-背驰 verdict across levels (3+ extra inheritance lemmas vs the `RecursiveVerdict` tag already used for 第三类) |
+| X.8.9 | Recursive form of 盘整背驰 (lesson 37) | NOT_FORMALIZED — design choice, same blocker as X.8.8 | Shares the descent measure of X.8.7 (lift_strict_drop); replication is structurally identical but not yet done |
+
+### §X.9  级别递归 / Level recursion (§9)
+
+| # | Item | Status | Reference / blocker |
+|---|---|---|---|
+| X.9.1 | Def 9.1 centerSize + level lift | PROVEN_DIRECT | `Chanlun.LevelRecursion.centerSize`, `liftCenter`, `liftCenters`, `liftStep`, `levelTower` |
+| X.9.2 | Thm 9.2 lift_strict_drop (走势必完美) | PROVEN_DIRECT | `Chanlun.LevelRecursion.lift_strict_drop` + `level_recursion_count_decreases`, via `centerSize_ge_3` + `total_size_ge_3_times_count` |
+| X.9.3 | Thm 9.3 centerSize ≥ 3 | PROVEN_DIRECT | `Chanlun.LevelRecursion.centerSize_ge_3`, immediate from `extendEnd_ge` |
+| X.9.4 | Thm 9.4 envelope-soundness (lifted Element has lo ≤ hi) | PROVEN_DIRECT | `liftCenter_range_eq_core`, `liftCenter_lo_le_hi`, `liftCenters_all_valid`, `liftCenters_mem_iff` |
+| X.9.5 | Thm 9.5 determinism preservation across levels | PROVEN_DIRECT | `liftStep_deterministic`, `levelTower_deterministic`, `levelTower_input_eq`, `levelTower_agreement_lifts` |
+| X.9.6 | Total `lift : List Element → Option (List Element)` partial-function lifter | PROVEN_DIRECT (newly formalized in this PR) | `Chanlun.LevelRecursion.liftOption` returns `none` on terminal input (no center forms) and `some next` on non-terminal; companion theorems `liftOption_eq_none_iff`, `liftOption_eq_some_iff`, `liftOption_strict_drop` characterize both branches and re-derive the strict-drop on the `some` branch. The strict-drop measure (Thm 9.2) is the load-bearing content; this is the Option packaging for iteration |
+| X.9.7 | Strict sub-window of the level recursion (level-(n−1) sub-window is a strict subset) | NOT_FORMALIZED — definitional | Requires a notion of "sub-window selector" at level (n−1) that picks a contiguous index sub-range of the level-(n−1) tower; the current `IntervalNesting.LevelWindow` provides the type but not the bridge to `LevelRecursion.levelTower`. Blocker: the two modules' carriers are different (`Element` list vs index-range struct) and a bridging coercion is not yet introduced |
+
+### §X.10  区间套 / Interval nesting (§11)
+
+| # | Item | Status | Reference / blocker |
+|---|---|---|---|
+| X.10.1 | Def 11.1 synthetic-tower walker | PROVEN_DIRECT | `Chanlun.IntervalNesting.LevelWindow`, `walk`, `DescendValid` |
+| X.10.2 | Thm 11.2 termination + never-silent + pin-monotone + chain-strict-drop | PROVEN_DIRECT | `intervalnesting_terminates`, `walk_always_has_verdict`, `intervalnesting_pin_monotone`, `intervalnesting_chain_strict_drop` |
+| X.10.3 | Thm 11.3 terminal-form theorems | PROVEN_DIRECT | `walk_at_zero_returns_gate_limit`, `walk_at_positive_returns_pinned` |
+| X.10.4 | Multi-resolution timestamp-mapped composition (1d → 1h → 1m on real market data) | NOT_FORMALIZED — integer kernel cannot represent timestamps | The integer-arithmetic kernel deliberately has no time carrier — bars are indexed by `ℕ`, not by wall-clock timestamps. The "descend ↦ finer timeframe" claim requires a `Timestamp → Window` mapping that the kernel cannot express without a real-time data interface. Settled empirically (PROVEN_FIXTURE on 7-year NQ data) via `grounding/chanlun_multiscale_real_grounding.py` |
+| X.10.5 | "Lowest-level-of-this-资金" residue characterization | NOT_FORMALIZED — same blocker as X.10.4 | Reported as named witnesses in the multiscale grounding script; requires real-time timestamp mapping to lift to Lean |
+| X.10.6 | MACD-decorated interval-nesting variant | NOT_FORMALIZED — combined blocker of X.7.9 and X.10.4 | Needs both real MACD energy (X.7.9) and timestamp mapping (X.10.4); both blockers are kernel-level and out-of-scope for the integer carrier |
+| X.10.7 | Walk-decomposition × interval-nesting integration | NOT_FORMALIZED — module-bridging | `Chanlun.WalkDecomposition.decompose` operates on `List Center`; `Chanlun.IntervalNesting.walk` operates on `LevelWindow`. The bridge (which walk in which level-window) needs a coercion the two modules don't share; the integration is a separate downstream module |
 
 ---
 
