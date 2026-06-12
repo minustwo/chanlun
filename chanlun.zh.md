@@ -1059,37 +1059,120 @@ grounding 解决两个经验性主张：
 
 ## §X 已合并的限制与开放问题
 
-五条作为可外部审计的开放保留。每条都有外部读者可核对的具体理由。
+以下条目尚未在 Lean 库中证明。这里全部明示，使范围公开透明，而不是将其
+隐藏。每条都给出 Lean 标识符（在仓库中存在的情况下）、外部读者可核对的
+具体理由，以及任何已经存在的部分结果定理引用。
 
-1. **`[chanlun_segment_phi_uniqueness_OPEN]`** —— 线段分解在所有
-   满足 Φ-重叠-admissibility 的预言上的参数化唯一性。**开放原因：**
-   原文未唯一固定 Φ；备选读法列于 [`README.md`](README.md)。对任何
-   单一预言的确定性在 Lean 中已解决（函数即定义）。
+1. **包含归一前置桥接。**
+   `Chanlun.Pipeline.pipeline_inclusion_normalized` 卸载了 Def-3 上游
+   假定的前置条件，但 Interval 层与 Bar 层之间的类型桥接显式命名，
+   未折叠为一条定理。
 
-2. **`[chanlun_zhongshu_zone_gate_OPEN]`** —— first3 vs all_ 扩展
-   规则。**已解决为多值**：构造性歧义见证为
+2. **`[chanlun_segment_phi_uniqueness_OPEN]`** +
+   **`[chanlun_segment_terminates_sub_OPEN]`** —— 线段递归内部细节。
+   线段分解在所有满足 Φ-重叠-admissibility 的预言上的参数化唯一性
+   保持开放，因为原文未唯一固定 Φ；备选读法列于
+   [`README.md`](README.md)。具体而言，`find_term` 的特征序列 Φ
+   与重叠 admissibility 内部细节在 `Chanlun.Segment` 中没有重新推导；
+   递归被参数化在「最左 ≥ a」的契约 `find_term_ge` 上。满足契约的
+   `find_term` 具体实例作为给定。对任何单一预言的确定性在 Lean 中
+   已解决（函数即定义）。
+
+3. **`[chanlun_zhongshu_zone_gate_OPEN]`** —— 中枢 zone-gate 的
+   非唯一性。两种 zone-gate（first3 与 all_）在大约 12% 的任意元素
+   序列上结果不同。两者都被证 valid + disjoint；这里 gate 相对性是
+   缠论原文留待解释的真实多解性。构造性歧义见证为
    `Chanlun.DivergenceWitnesses.zhongshu_zone_gate_divergence_witness`；
    两种读法的合法性由定理 5.3 给出，不相交性由定理 5.4 给出。原文
-   同时支持两种读法，所以这是真正的分叉，不是缺失证明。
+   同时支持两种读法，所以这是真正的分叉，不是缺失证明。**在可达
+   （无包含）域上，两种读法重合。**
 
-3. **`[chanlun_beichi_macd_measure_lean_OPEN]`** —— 在 Lean 中把
-   MACD 作为第三个 `Measure` 构造器。**开放原因：** 整数算术内核不
-   直接建模 MACD 能量。经验一致率位于
-   `grounding/chanlun_macd_grounding.py`；disp vs slope 的构造性
-   歧义见证已经在 Lean 中
-   （`Chanlun.Beichi.beichi_measure_gate_witness`）。
+4. **`[chanlun_bi_to_endpoint_first_admissible_OPEN]`** —— 笔 to
+   端点的读法。`Chanlun.StrokeUniqueness` 把 TO 端点读作最左的反向
+   admissible 分型；按「到端 run 的极值」字面强读可能在多分型 run 上
+   不同。在可达输入上两种读法重合（见
+   `Chanlun.BiReachableDeterminism`）。
 
-4. **`[chanlun_intervalnesting_multiscale_OPEN]`** 与
-   **`[chanlun_intervalnesting_lowest_level_OPEN]`** —— 跨真实时间
-   周期的真正多分辨率下沉。**Lean 中开放原因：** 真实时间戳映射超出
-   整数内核范围；**经验性已解决：**
-   `grounding/chanlun_multiscale_real_grounding.py` 在 7 年 NQ 数据
-   上。
+5. **`[chanlun_bi_close_drop_named_residue_OPEN]`** —— 过近反向分型
+   的丢弃。反向且过近（gap < δmin）的分型被 `step` 静默丢弃；唯一性
+   证明将丢弃视为 no-op。
 
-5. **`[chanlun_walk_mixed_merge_OPEN]`** —— 把相邻走势合并为
-   `mixed` 超级走势的下游步骤。**作为独立组件开放**；`decompose`
-   按构造不会发射 `mixed`（定理 6.7），所以合并不是 `decompose`
-   本身的性质。
+6. **`[chanlun_stroke_output_order_lift_OPEN]`** —— 反向输出顺序上的
+   交替性。`strokes_separated` 通过 `List.mem_reverse` 提升到用户面向
+   的反向顺序；反向顺序上的交替性是另一个一行 lemma，尚未包含。
+
+7. **级别递归的 lift 函数。** 实际的
+   `lift : List Element → Option (List Element)` 函数不在范围内；
+   只证明了承载终止性的严格下降测度。
+
+8. **`[chanlun_level_recursion_envelope_soundness_OPEN]`** —— 级别
+   递归的 envelope 健全性。每个第 (n+1) 层 envelope 包含其成员的范围；
+   尚未证明。
+
+9. **`[chanlun_level_recursion_determinism_preservation_OPEN]`** ——
+   级别递归的确定性传递。确定性沿塔上提保持；尚未证明。
+
+10. **`[chanlun_walk_decomposition_spec_unique_OPEN]`** —— 走势分解的
+    spec 唯一性。任何满足走势分解规范的函数等于 `decompose`；尚未以
+    spec 形式证明。
+
+11. **`[chanlun_zhongshu_extension_shoulder_OPEN]`** —— 中枢延伸的
+    边界情形。「贴边」（`next_el.lo = ZG` 或 `next_el.hi = ZD`）按
+    ≤-overlap 读法归入延伸；严格 < 读法会归到新生边界。两种读法都在
+    缠论原文中出现，本仓库取 ≤ 读法。
+
+12. **`[chanlun_zhongshu_extension_all_gate_OPEN]`** —— all_ gate 上
+    的中枢扩展。first3 形式的扩展传播已在 `Chanlun.ZhongshuExtension`
+    中关闭；all_ 形式尚未。
+
+13. **`[chanlun_zhongshu_extension_multistep_envelope_OPEN]`** —— 跨
+    完整中枢的多元素 envelope。单步已证，列表归纳尚未完成。
+
+14. **`[chanlun_beichi_measure_gate_OPEN]`** —— 背驰力度 measure。
+    位移（disp）与斜率在 Python 参考实现上一致率约 82.2%。
+    `beichi_measure_gate_witness` 证明非空；measure 选择本身留作开放
+    （这是缠论原文对力度比较未固定单一 measure 而留下的多解性）。
+
+15. **`[chanlun_beichi_macd_measure_lean_OPEN]`** +
+    **`[chanlun_beichi_macd_gate_OPEN]`** —— MACD 作为背驰 measure。
+    在 Lean 中把 MACD 作为第三个 `Measure` 构造器。**开放原因：**
+    整数算术内核不直接建模 MACD 能量。27 课引入 MACD 作为辅助力度
+    measure；明确视为非规范。经验一致率位于
+    `grounding/chanlun_macd_grounding.py`；disp vs slope 的构造性
+    歧义见证已经在 Lean 中
+    （`Chanlun.Beichi.beichi_measure_gate_witness`）。
+
+16. **`[chanlun_panzheng_measure_gate_propagation_OPEN]`** —— 盘整背驰
+    measure 的跨突变传递。盘整背驰 measure 在突变表上的传递性尚未证明。
+
+17. **`[chanlun_first_second_buysell_recursive_OPEN]`** +
+    **`[chanlun_panzheng_beichi_recursive_OPEN]`** —— 第一/第二类
+    买卖点与盘整背驰的递归形式。24 课与 37 课的递归（多级别）形式
+    共享同一 descent 测度 + measure-gate 继承；尚未证明。
+
+18. **`[chanlun_recursive_descent_strict_subwindow_OPEN]`** —— 级别
+    递归的严格子窗口。层-(n-1) 子窗口是层-(n-1) 塔的严格子集，尚未
+    严格证明。
+
+19. **`[chanlun_intervalnesting_lowest_level_OPEN]`** +
+    **`[chanlun_intervalnesting_multiscale_OPEN]`** —— 最低层 pin
+    端点与多尺度组合。最低层 pin 端点的严格刻画，以及非相邻层之间
+    嵌套区间的多尺度组合。**Lean 中开放原因：** 真实时间戳映射超出
+    整数内核范围；**经验性已解决：**
+    `grounding/chanlun_multiscale_real_grounding.py` 在 7 年 NQ 数据
+    上。
+
+20. **`[chanlun_intervalnesting_macd_OPEN]`** —— MACD 装饰的区间套
+    变体。
+
+21. **`[chanlun_walk_decomposition_intervalnesting_OPEN]`** —— 走势
+    分解 × 区间套。`Chanlun.WalkDecomposition` 接入
+    `Chanlun.IntervalNesting`。
+
+22. **`[chanlun_walk_mixed_merge_OPEN]`** —— 把相邻走势合并为
+    `mixed` 超级走势的下游步骤。**作为独立组件开放**；`decompose`
+    按构造不会发射 `mixed`（定理 6.7），所以合并不是 `decompose`
+    本身的性质。
 
 ---
 
