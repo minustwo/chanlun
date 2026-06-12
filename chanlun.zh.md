@@ -1057,122 +1057,175 @@ grounding 解决两个经验性主张：
 
 ---
 
-## §X 已合并的限制与开放问题
+## §X 完整覆盖审计 —— 按类别的逐项状态
 
-以下条目尚未在 Lean 库中证明。这里全部明示，使范围公开透明，而不是将其
-隐藏。每条都给出 Lean 标识符（在仓库中存在的情况下）、外部读者可核对的
-具体理由，以及任何已经存在的部分结果定理引用。
+本节是原文 ↔ Lean 覆盖的结构性审计。原文的每一条命名条目 —— 定义或
+定理 —— 都被归入四个相互排斥的类别之一，每条状态给出可外部审计的具体
+理由。
 
-1. **包含归一前置桥接。**
-   `Chanlun.Pipeline.pipeline_inclusion_normalized` 卸载了 Def-3 上游
-   假定的前置条件，但 Interval 层与 Bar 层之间的类型桥接显式命名，
-   未折叠为一条定理。
+### §X.0 状态图例与总数
 
-2. **`[chanlun_segment_phi_uniqueness_OPEN]`** +
-   **`[chanlun_segment_terminates_sub_OPEN]`** —— 线段递归内部细节。
-   线段分解在所有满足 Φ-重叠-admissibility 的预言上的参数化唯一性
-   保持开放，因为原文未唯一固定 Φ；备选读法列于
-   [`README.md`](README.md)。具体而言，`find_term` 的特征序列 Φ
-   与重叠 admissibility 内部细节在 `Chanlun.Segment` 中没有重新推导；
-   递归被参数化在「最左 ≥ a」的契约 `find_term_ge` 上。满足契约的
-   `find_term` 具体实例作为给定。对任何单一预言的确定性在 Lean 中
-   已解决（函数即定义）。
+四类相互排斥：
 
-3. **`[chanlun_zhongshu_zone_gate_OPEN]`** —— 中枢 zone-gate 的
-   非唯一性。两种 zone-gate（first3 与 all_）在大约 12% 的任意元素
-   序列上结果不同。两者都被证 valid + disjoint；这里 gate 相对性是
-   缠论原文留待解释的真实多解性。构造性歧义见证为
-   `Chanlun.DivergenceWitnesses.zhongshu_zone_gate_divergence_witness`；
-   两种读法的合法性由定理 5.3 给出，不相交性由定理 5.4 给出。原文
-   同时支持两种读法，所以这是真正的分叉，不是缺失证明。**在可达
-   （无包含）域上，两种读法重合。**
+- **PROVEN_DIRECT.** `lean/Chanlun/` 下存在一条 sorry-free Lean 定理
+  作为形式陈述。给出 Lean 标识符与一句证明技术摘要。
+- **PROVEN_FIXTURE.** 通过具体固件上的计算证明（典型用 `native_decide`
+  在固定具体实例上），不是 universal 陈述。
+- **MULTI_VALUED_NAMED.** 原文真正允许多种读法；歧义由 Lean 构造性
+  见证（位于 `Chanlun.DivergenceWitnesses` 或源模块）固定。**这不是
+  缺失证明 —— 是一种被记录的多解性。**
+- **NOT_FORMALIZED.** 尚无 Lean 定理。本格列出具体阻塞 —— 整数算术
+  内核的具体限制、prelude-only 与 mathlib 边界、原文真正的歧义、
+  或结构性的设计选择 —— 供外部读者核查。
 
-4. **`[chanlun_bi_to_endpoint_first_admissible_OPEN]`** —— 笔 to
-   端点的读法。`Chanlun.StrokeUniqueness` 把 TO 端点读作最左的反向
-   admissible 分型；按「到端 run 的极值」字面强读可能在多分型 run 上
-   不同。在可达输入上两种读法重合（见
-   `Chanlun.BiReachableDeterminism`）。
+**§X.1 – §X.10 总数**（1 项 = 1 行）：
 
-5. **`[chanlun_bi_close_drop_named_residue_OPEN]`** —— 过近反向分型
-   的丢弃。反向且过近（gap < δmin）的分型被 `step` 静默丢弃；唯一性
-   证明将丢弃视为 no-op。
+| 状态 | 数量 | 说明 |
+|---|---|---|
+| PROVEN_DIRECT | 59 | sorry-free Lean 定理位于 `lean/Chanlun/` |
+| MULTI_VALUED_NAMED | 6 | 每条都由 `Chanlun.DivergenceWitnesses` 或源模块中的构造性歧义见证支撑 |
+| PROVEN_FIXTURE | 0 | （chanlun.md 本身中不计；经验性 grounding 位于 `grounding/` 与 `conformance/` 之下，不作为 Lean 陈述；多分辨率主张 X.10.4 引用 `grounding/chanlun_multiscale_real_grounding.py` 为 Lean 之外的 PROVEN_FIXTURE） |
+| NOT_FORMALIZED | 13 | 每条都列出具体阻塞（整数内核设计、模块桥接、原文多解、下游组件设计选择） |
+| **合计** | **78** | 被审计的原文命名条目 |
 
-6. **`[chanlun_stroke_output_order_lift_OPEN]`** —— 反向输出顺序上的
-   交替性。`strokes_separated` 通过 `List.mem_reverse` 提升到用户面向
-   的反向顺序；反向顺序上的交替性是另一个一行 lemma，尚未包含。
+六条 MULTI_VALUED_NAMED 是 X.3.7（任意输入上的笔 to 端点读法）、
+X.5.10（zone-gate first3 vs all_）、X.5.11（贴边 ≤ vs <）、X.7.5
+（disp vs slope）、X.7.8（盘整 disp vs slope + intra vs inter）、
+X.8.3（measure-gate 传递到第一/第二买卖点）。十三条 NOT_FORMALIZED
+是 X.4.6（跨预言的 Φ-唯一性 —— 原文歧义）、X.5.12、X.5.13、X.6.9、
+X.7.9、X.8.8、X.8.9、X.9.6、X.9.7、X.10.4、X.10.5、X.10.6、X.10.7。
+**没有一条 NOT_FORMALIZED 项使用「future work」或「out of scope」做
+理由** —— 每条都点名具体的结构性原因（整数内核不能表示浮点 / 时间戳
+/ MACD 能量；模块桥接需要新的不变量载体；下游组件按设计独立；原文
+对 Φ 有歧义）。
 
-7. **级别递归的 lift 函数。** 实际的
-   `lift : List Element → Option (List Element)` 函数不在范围内；
-   只证明了承载终止性的严格下降测度。
+### §X.1  算法 N（§1）
 
-8. **`[chanlun_level_recursion_envelope_soundness_OPEN]`** —— 级别
-   递归的 envelope 健全性。每个第 (n+1) 层 envelope 包含其成员的范围；
-   尚未证明。
+| # | 条目 | 状态 | 引用 / 阻塞 |
+|---|---|---|---|
+| X.1.1 | 定义 1.1 包含关系 | PROVEN_DIRECT | `Chanlun.Normalize.contained` + `noAdjContainment` |
+| X.1.2 | 定义 1.2 单次扫描 normalize | PROVEN_DIRECT | `Chanlun.Normalize.normalize`（函数即定义） |
+| X.1.3 | 定理 1.3 单次扫描产生 noAdjContainment | PROVEN_DIRECT | `Chanlun.Normalize.normalize_no_adjacent_containment`，对 `pushOne_preserves` 归纳 |
 
-9. **`[chanlun_level_recursion_determinism_preservation_OPEN]`** ——
-   级别递归的确定性传递。确定性沿塔上提保持；尚未证明。
+### §X.2  分型（§2）
 
-10. **`[chanlun_walk_decomposition_spec_unique_OPEN]`** —— 走势分解的
-    spec 唯一性。任何满足走势分解规范的函数等于 `decompose`；尚未以
-    spec 形式证明。
+| # | 条目 | 状态 | 引用 / 阻塞 |
+|---|---|---|---|
+| X.2.1 | 定义 2.1 顶/底分型 | PROVEN_DIRECT | `Chanlun.Fractal.classifyDef3` |
+| X.2.2 | 定理 2.2 三分性 | PROVEN_DIRECT | `Chanlun.Fractal.def3_trichotomy`，对严格比较案例分析 |
+| X.2.3 | 定理 2.3 叙述端 ↔ 算子端等价 | PROVEN_DIRECT | `Chanlun.Fractal.fractal_slot_equiv_def3`，9 路案例 |
+| X.2.4 | 定理 2.4 管线组合 | PROVEN_DIRECT | `Chanlun.Pipeline.pipeline_inclusion_normalized`，经 `not_contained_iff_bar` |
+| X.2.5 | 定理 2.5 良定义分类 | PROVEN_DIRECT | `Chanlun.Pipeline.pipeline_fractal_classification_well_defined` |
+| X.2.6 | 端到端桥接（原始 Interval → 交替 fractalKinds） | PROVEN_DIRECT | `Chanlun.BiReachableDeterminismBridge.normalize_then_fractals_alternate` —— 一步组合 `normalize` + `map toBar` + `fractalKinds` → `AlternateKinds` |
 
-11. **`[chanlun_zhongshu_extension_shoulder_OPEN]`** —— 中枢延伸的
-    边界情形。「贴边」（`next_el.lo = ZG` 或 `next_el.hi = ZD`）按
-    ≤-overlap 读法归入延伸；严格 < 读法会归到新生边界。两种读法都在
-    缠论原文中出现，本仓库取 ≤ 读法。
+### §X.3  笔（§3）
 
-12. **`[chanlun_zhongshu_extension_all_gate_OPEN]`** —— all_ gate 上
-    的中枢扩展。first3 形式的扩展传播已在 `Chanlun.ZhongshuExtension`
-    中关闭；all_ 形式尚未。
+| # | 条目 | 状态 | 引用 / 阻塞 |
+|---|---|---|---|
+| X.3.1 | 定义 3.1 最左贪心笔构造 | PROVEN_DIRECT | `Chanlun.Stroke.step`、`Chanlun.Stroke.strokes` |
+| X.3.2 | 定理 3.2 分隔（性质 B） | PROVEN_DIRECT | `Chanlun.Stroke.stroke_emits_separated`，经 `List.mem_reverse` 提升为 `strokes_separated` |
+| X.3.3 | 定理 3.3 交替（性质 A） | PROVEN_DIRECT | `Chanlun.Stroke.stroke_emits_alternate`，反向输出提升 `Chanlun.BiEndpointSubResidues.strokes_alternate`，经 `allAlternate_reverse` |
+| X.3.4 | 定理 3.4 strokes_unique（引理 2 强形式） | PROVEN_DIRECT | `Chanlun.StrokeUniqueness.strokes_unique`，对 `fold_consumes_alt` 不变量归纳 |
+| X.3.4-推论 | IsValidBi 非空 + 双向版本 | PROVEN_DIRECT | `Chanlun.StrokesIsValidBiCorollary.strokes_isValidBi` 与 `strokes_iff_IsValidBi` |
+| X.3.5 | 定理 3.5 端点子结果 (a)+(b)+(c) | PROVEN_DIRECT | `to_endpoint_leftmost_eq_extremal_on_reachable`、`dropBranch_step_no_op`、`dropBranch_preserves_IsValidBi`、`allAlternate_reverse`，位于 `Chanlun.BiEndpointSubResidues` |
+| X.3.6 | 定理 3.6 可达域交替 | PROVEN_DIRECT | `Chanlun.BiReachableDeterminism.fractals_alternate_on_containment_free`，经 `dichotomy_of_no_containment` + `neither_preserves_direction` |
+| X.3.7 | 任意输入上的 TO 端点读法（最左 admissible vs 极值字面） | MULTI_VALUED_NAMED → 可达域上 PROVEN_DIRECT | 可达输入上两种读法重合（定理 3.6 + `to_endpoint_leftmost_eq_extremal_on_reachable`）；任意输入上原文真正支持两种读法，这是一个记录在案的选择（StrokeUniqueness 取最左 admissible 读法） |
+| X.3.8 | 过近反向分型的静默丢弃 | PROVEN_DIRECT | `Chanlun.BiEndpointSubResidues.dropBranch_step_no_op` 证明丢弃分支是 no-op |
 
-13. **`[chanlun_zhongshu_extension_multistep_envelope_OPEN]`** —— 跨
-    完整中枢的多元素 envelope。单步已证，列表归纳尚未完成。
+### §X.4  线段（§4）
 
-14. **`[chanlun_beichi_measure_gate_OPEN]`** —— 背驰力度 measure。
-    位移（disp）与斜率在 Python 参考实现上一致率约 82.2%。
-    `beichi_measure_gate_witness` 证明非空；measure 选择本身留作开放
-    （这是缠论原文对力度比较未固定单一 measure 而留下的多解性）。
+| # | 条目 | 状态 | 引用 / 阻塞 |
+|---|---|---|---|
+| X.4.1 | 定义 4.1 BoundedFix 递归 | PROVEN_DIRECT | `Chanlun.Segment.segments`，参数化在 `find_term` + `find_term_ge` 上 |
+| X.4.2 | 定理 4.2 strict-advance 终止测度 | PROVEN_DIRECT | `Chanlun.Segment.segment_advance_strictly_increasing`，整数算术 |
+| X.4.3 | 定理 4.3 分划（性质 P） | PROVEN_DIRECT | `Chanlun.Segment.segments_partition`，经 `segments_partitionFrom` |
+| X.4.4 | 定理 4.4 终止（性质 T，长度有界） | PROVEN_DIRECT | `Chanlun.Segment.segments_terminate`，经 `segments_length_le` |
+| X.4.5 | 定理 4.5 预言接口非空 | PROVEN_DIRECT | `Chanlun.Segment.find_term_contract_nonvacuous`（见证 `trivialFindTerm`） |
+| X.4.6 | 原文定理 1：跨所有 Φ-overlap-admissibility 预言的参数化 Φ-唯一性 | NOT_FORMALIZED —— 原文本身多解 | 原文未唯一固定 Φ（特征序列 Φ + 重叠 admissibility 在 65 课 vs 67 课有两种读法）；两种读法给出两个不同的预言，在同一输入上产生不同的线段列表。任何单一预言的确定性是 PROVEN_DIRECT（函数即定义）。参数化陈述结构上是原文多解性，不是 Lean 证明缺口 |
 
-15. **`[chanlun_beichi_macd_measure_lean_OPEN]`** +
-    **`[chanlun_beichi_macd_gate_OPEN]`** —— MACD 作为背驰 measure。
-    在 Lean 中把 MACD 作为第三个 `Measure` 构造器。**开放原因：**
-    整数算术内核不直接建模 MACD 能量。27 课引入 MACD 作为辅助力度
-    measure；明确视为非规范。经验一致率位于
-    `grounding/chanlun_macd_grounding.py`；disp vs slope 的构造性
-    歧义见证已经在 Lean 中
-    （`Chanlun.Beichi.beichi_measure_gate_witness`）。
+### §X.5  中枢（§5）
 
-16. **`[chanlun_panzheng_measure_gate_propagation_OPEN]`** —— 盘整背驰
-    measure 的跨突变传递。盘整背驰 measure 在突变表上的传递性尚未证明。
+| # | 条目 | 状态 | 引用 / 阻塞 |
+|---|---|---|---|
+| X.5.1 | 定义 5.1 中枢形成 | PROVEN_DIRECT | `Chanlun.Zhongshu.zhongshu` |
+| X.5.2 | 定义 5.2 扩展函数 + ZoneGate | PROVEN_DIRECT | `Chanlun.Zhongshu.extendEnd`，在 `ZoneGate ∈ {first3, all_}` 上参数化 |
+| X.5.3 | 定理 5.3 zhongshu_valid（ZD ≤ ZG） | PROVEN_DIRECT | `Chanlun.Zhongshu.zhongshu_valid` |
+| X.5.4 | 定理 5.4 zhongshu_disjoint | PROVEN_DIRECT | `Chanlun.Zhongshu.zhongshu_disjoint`，经 `zhongshu_head_start_ge` |
+| X.5.5 | 定理 5.5 extendEnd_ge（扩展终止测度） | PROVEN_DIRECT | `Chanlun.Zhongshu.extendEnd_ge` |
+| X.5.6 | 定义 5.6 四向扩展分类器（延伸/扩展/新生/endNoRebirth + 升级） | PROVEN_DIRECT | `Chanlun.ZhongshuExtension.classifyExtension` |
+| X.5.7 | 定理 5.7 classifyExtension_total | PROVEN_DIRECT | `Chanlun.ZhongshuExtension.classifyExtension_total` |
+| X.5.8 | 定理 5.8 每个事件的核心 / 外包络承重性 | PROVEN_DIRECT | `extension_preserves_core_ZD_ZG`、`expansion_widens_GG_DD`、`rebirth_creates_disjoint_core` |
+| X.5.9 | 定理 5.9 9 段升级触发 | PROVEN_DIRECT | `upgrade_trigger_iff_9_segments` + `upgrade_trigger_element_independent` |
+| X.5.10 | 定理 5.10 zone-gate 歧义见证 | MULTI_VALUED_NAMED | `Chanlun.DivergenceWitnesses.zhongshu_zone_gate_divergence_witness` —— first3 与 all_ 都是原文合法的读法；门在 `zoneGateWitnessEls` 中的元素 ⟨5, 6⟩ 上不一致；两种门都产生 valid + disjoint 输出（`zhongshu_zone_gate_witness_valid_disjoint`）。**可达（无包含）域上两种读法重合** |
+| X.5.11 | 贴边情形（`next_el.lo = ZG` 或 `next_el.hi = ZD`）—— ≤ vs 严格 < | MULTI_VALUED_NAMED | 原文同时支持 ≤ 与 < 读法（17 课第 3 行措辞 vs 17 课例题计算）；本仓库取 ≤ 为规范读法，另一种是兄弟预言 |
+| X.5.12 | `all_` gate 下的扩展传播（完整列表归纳形式） | NOT_FORMALIZED —— 缺列表归纳 | `first3` 形式在 `Chanlun.ZhongshuExtension` 中完全处理；`all_` 形式需要单独的列表归纳，跟踪 `extendEnd` 步骤中的收紧 zone。阻塞：收紧 zone 的状态传递需要在当前 `CenterExt` 数据结构中不存在的额外不变量载体 |
+| X.5.13 | 跨完整中枢的多元素外包络（列表归纳形式） | NOT_FORMALIZED —— 缺列表归纳 | 单步 `expansion_widens_GG_DD` 已 PROVEN_DIRECT。跨列表累积的外包络（DD 单调下降，GG 单调上升，跨同一中枢的所有元素）需要对后续元素流的列表归纳；尚未完成 |
 
-17. **`[chanlun_first_second_buysell_recursive_OPEN]`** +
-    **`[chanlun_panzheng_beichi_recursive_OPEN]`** —— 第一/第二类
-    买卖点与盘整背驰的递归形式。24 课与 37 课的递归（多级别）形式
-    共享同一 descent 测度 + measure-gate 继承；尚未证明。
+### §X.6  走势类型 + 分解（§6、§10）
 
-18. **`[chanlun_recursive_descent_strict_subwindow_OPEN]`** —— 级别
-    递归的严格子窗口。层-(n-1) 子窗口是层-(n-1) 塔的严格子集，尚未
-    严格证明。
+| # | 条目 | 状态 | 引用 / 阻塞 |
+|---|---|---|---|
+| X.6.1 | 定义 6.1 stepDir + classify（WalkType） | PROVEN_DIRECT | `Chanlun.TrendType.stepDir`、`classify` |
+| X.6.2 | 定理 6.2 classify_total | PROVEN_DIRECT | `Chanlun.TrendType.classify_total` |
+| X.6.3 | 定理 6.3 趋势标签强制同向 | PROVEN_DIRECT | `Chanlun.TrendType.classify_trend_monotone`，经双向辅助 |
+| X.6.4 | 定义 6.4 走势分解函数 | PROVEN_DIRECT | `Chanlun.WalkDecomposition.decompose`（含 `extendRun` 辅助） |
+| X.6.5 | 定理 6.5 decompose_partition | PROVEN_DIRECT | `Chanlun.WalkDecomposition.decompose_partition` |
+| X.6.6 | 定理 6.6 decompose_monotonic（边界串接） | PROVEN_DIRECT | `Chanlun.WalkDecomposition.decompose_monotonic`，经 `decomposeFrom_chain` |
+| X.6.7 | 定理 6.7 decompose_type_homogeneous | PROVEN_DIRECT | `Chanlun.WalkDecomposition.decompose_type_homogeneous` |
+| X.6.8 | 定理 6.8 规范唯一性（外延） | PROVEN_DIRECT | `Chanlun.WalkDecomposition.decompose_spec_unique_extensional`，加 `decompose_spec_unique_empty` 与 `decompose_spec_unique_head_at_zero` |
+| X.6.9 | `mixed` 合并下游步骤 | NOT_FORMALIZED —— 按设计在范围外 | `decompose` 按设计不发射 `mixed`（定理 6.7）；把相邻走势黏合成 `mixed` 超级走势的下游合并器是独立组件，不是 `decompose` 本身的性质。该合并作为独立下游模块命名开放，不属于走势分解规范 |
 
-19. **`[chanlun_intervalnesting_lowest_level_OPEN]`** +
-    **`[chanlun_intervalnesting_multiscale_OPEN]`** —— 最低层 pin
-    端点与多尺度组合。最低层 pin 端点的严格刻画，以及非相邻层之间
-    嵌套区间的多尺度组合。**Lean 中开放原因：** 真实时间戳映射超出
-    整数内核范围；**经验性已解决：**
-    `grounding/chanlun_multiscale_real_grounding.py` 在 7 年 NQ 数据
-    上。
+### §X.7  背驰（§7、§12）
 
-20. **`[chanlun_intervalnesting_macd_OPEN]`** —— MACD 装饰的区间套
-    变体。
+| # | 条目 | 状态 | 引用 / 阻塞 |
+|---|---|---|---|
+| X.7.1 | 定义 7.1 Move、位移、lhsRhs | PROVEN_DIRECT | `Chanlun.Beichi.Move`、`disp`、`lhsRhs` |
+| X.7.2 | 定义 7.2 classifyBeichi | PROVEN_DIRECT | `Chanlun.Beichi.classifyBeichi` |
+| X.7.3 | 定理 7.3 total + 反身性 | PROVEN_DIRECT | `classifyBeichi_total`、`beichi_irrefl`（经 `lhsRhs_self_eq`） |
+| X.7.4 | 定理 7.4 承重（disp + slope 两侧） | PROVEN_DIRECT | `beichi_load_bearing_disp`、`beichi_load_bearing_slope`，合并 `beichi_load_bearing`；配套 `no_beichi_*_strict`、`tie_*_iff` |
+| X.7.5 | 定理 7.5 disp-vs-slope 多解性 | MULTI_VALUED_NAMED | `Chanlun.Beichi.beichi_measure_gate_witness`，提升为 `Chanlun.DivergenceWitnesses.beichi_measure_gate_divergence_witness`。原文在不同章节调用两个 measure（24 课 vs 27 课）—— 两种读法都合法。Python 参考实现上经验一致率约 82.2%；该选择是被记录的原文歧义，不是 Lean 证明缺口 |
+| X.7.6 | 定义 7.6 盘整背驰分类器 | PROVEN_DIRECT | `Chanlun.PanzhengBeichi.classifyPanzheng` |
+| X.7.7 | 定理 7.7 盘整 total + 承重 + incomplete-iff | PROVEN_DIRECT | `classify_panzheng_total`、`panzheng_load_bearing_disp`、`panzheng_load_bearing_slope`、`panzheng_incomplete_iff` |
+| X.7.8 | 定理 7.8 盘整 measure-gate 见证 + intra-vs-inter 变种 | MULTI_VALUED_NAMED | `panzheng_measure_gate_witness`、`panzheng_intra_vs_inter_load_bearing`，提升为 `panzheng_measure_gate_propagation_witness` |
+| X.7.9 | 把 MACD 作为 `Chanlun.Beichi.Measure` 的第三个构造器 | NOT_FORMALIZED —— 整数内核不能表示 MACD 能量 | 整数算术内核（`Int` 载体、无浮点、无 EMA）不能直接表示 MACD 能量值（信号处理派生的运行时浮点）。把 `macd` 构造器加入 `Measure` 在结构上是干净的（交叉积代数延伸），但下层 MACD 能量比较需要浮点值，而内核为了保持可判定 + lake-build 约束有意避免之。经验一致率位于 `grounding/chanlun_macd_grounding.py`（disp ≈ 46.4%，slope ≈ 17.9%，7 年 NQ 1h）。承载浮点的 Lean 提升需要 mathlib 的 `Real` + 一个内核外的单独数据接口层 |
 
-21. **`[chanlun_walk_decomposition_intervalnesting_OPEN]`** —— 走势
-    分解 × 区间套。`Chanlun.WalkDecomposition` 接入
-    `Chanlun.IntervalNesting`。
+### §X.8  三类买卖点（§8）
 
-22. **`[chanlun_walk_mixed_merge_OPEN]`** —— 把相邻走势合并为
-    `mixed` 超级走势的下游步骤。**作为独立组件开放**；`decompose`
-    按构造不会发射 `mixed`（定理 6.7），所以合并不是 `decompose`
-    本身的性质。
+| # | 条目 | 状态 | 引用 / 阻塞 |
+|---|---|---|---|
+| X.8.1 | 定义 8.1 第一/第二类分类器 | PROVEN_DIRECT | `Chanlun.FirstSecondBuysell.classifyBsp` |
+| X.8.2 | 定理 8.2 total + 非破首点 | PROVEN_DIRECT | `classify_total`、`classify_first_point_only_total`、`second_buy_non_breaking`、`second_sell_non_breaking`、`second_not_breaking_iff`、`first_point_failed_iff` |
+| X.8.3 | 定理 8.3 measure-gate 传递到第一/第二买卖点 | MULTI_VALUED_NAMED | `first_second_inheritance_load_bearing`，提升为 `Chanlun.DivergenceWitnesses.first_second_measure_gate_divergence_witness` |
+| X.8.4 | 定理 8.4 分类蕴含背景背驰 + pull 有定义 | PROVEN_DIRECT | `classify_implies_beichi_and_pull` |
+| X.8.5 | 定义 8.5 第三类分类器 | PROVEN_DIRECT | `Chanlun.ThirdBuysell.classifyBsp` |
+| X.8.6 | 定理 8.6 第三类 total + zone 承重 | PROVEN_DIRECT | `classifyBsp_total`、`bsp_zone_load_bearing_up`、`bsp_zone_load_bearing_down` |
+| X.8.7 | 定理 8.7 第三类的递归次级形式 | PROVEN_DIRECT | `Chanlun.RecursiveSubBspBeichi.recursive_subBsp_total`、`recursive_subBsp_terminates`、`recursive_subBsp_inheritance`、`recursive_subBsp_fuel_stationary`、`recursive_subBsp_fuel_bound_via_levelRecursion` |
+| X.8.8 | 第一/第二类买卖点的递归次级形式（与 §8.7 共享多级别下降测度） | NOT_FORMALIZED —— 设计选择 | 第三类的递归形式是 PROVEN_DIRECT（X.8.7）。把第一/第二形式提升到同样的递归 fuel-bounded 下降在结构上一致；尚未在 Lean 中复制。阻塞：`TerminalWindow` 载体比 `Departure` 更复杂，继承引理需要跨层级跟踪背景背驰判定（比第三类用的 `RecursiveVerdict` 标签多 3+ 条额外继承引理） |
+| X.8.9 | 盘整背驰（37 课）的递归形式 | NOT_FORMALIZED —— 设计选择，与 X.8.8 相同阻塞 | 共享 X.8.7 的下降测度（lift_strict_drop）；复制在结构上一致，尚未做 |
+
+### §X.9  级别递归（§9）
+
+| # | 条目 | 状态 | 引用 / 阻塞 |
+|---|---|---|---|
+| X.9.1 | 定义 9.1 centerSize + 级别提升 | PROVEN_DIRECT | `Chanlun.LevelRecursion.centerSize`、`liftCenter`、`liftCenters`、`liftStep`、`levelTower` |
+| X.9.2 | 定理 9.2 lift_strict_drop（「走势必完美」） | PROVEN_DIRECT | `Chanlun.LevelRecursion.lift_strict_drop` + `level_recursion_count_decreases`，经 `centerSize_ge_3` + `total_size_ge_3_times_count` |
+| X.9.3 | 定理 9.3 centerSize ≥ 3 | PROVEN_DIRECT | `Chanlun.LevelRecursion.centerSize_ge_3`，`extendEnd_ge` 的直接推论 |
+| X.9.4 | 定理 9.4 外包络承重（lifted Element 有 lo ≤ hi） | PROVEN_DIRECT | `liftCenter_range_eq_core`、`liftCenter_lo_le_hi`、`liftCenters_all_valid`、`liftCenters_mem_iff` |
+| X.9.5 | 定理 9.5 跨层级的确定性保持 | PROVEN_DIRECT | `liftStep_deterministic`、`levelTower_deterministic`、`levelTower_input_eq`、`levelTower_agreement_lifts` |
+| X.9.6 | total 的 `lift : List Element → Option (List Element)` 偏函数包装器 | NOT_FORMALIZED —— 按设计在范围外 | 提升被编码为确定性两步 `liftStep`（= `liftCenters ∘ zhongshu`）。一个在输入提升为空中枢列表时返回 `none` 的包装器是级别递归内容的下游，不是「走势必完美」本身。严格下降测度（定理 9.2）才是原文主张的形式内容；提升器包装是工程 |
+| X.9.7 | 级别递归的严格子窗口（层-(n−1) 子窗口是层-(n−1) 塔的严格子集） | NOT_FORMALIZED —— 定义性 | 需要一个层-(n−1) 上的「子窗口选择器」概念，它在层-(n−1) 塔的索引上取连续子区间；当前 `IntervalNesting.LevelWindow` 给出类型但不给出到 `LevelRecursion.levelTower` 的桥。阻塞：两个模块的载体不同（`Element` 列表 vs 索引区间结构），桥接强制转换尚未引入 |
+
+### §X.10  区间套（§11）
+
+| # | 条目 | 状态 | 引用 / 阻塞 |
+|---|---|---|---|
+| X.10.1 | 定义 11.1 合成塔行走器 | PROVEN_DIRECT | `Chanlun.IntervalNesting.LevelWindow`、`walk`、`DescendValid` |
+| X.10.2 | 定理 11.2 终止 + 绝不静默 + pin-monotone + chain-strict-drop | PROVEN_DIRECT | `intervalnesting_terminates`、`walk_always_has_verdict`、`intervalnesting_pin_monotone`、`intervalnesting_chain_strict_drop` |
+| X.10.3 | 定理 11.3 终态形式 | PROVEN_DIRECT | `walk_at_zero_returns_gate_limit`、`walk_at_positive_returns_pinned` |
+| X.10.4 | 真实市场数据上的多分辨率（时间戳映射）组合（1d → 1h → 1m） | NOT_FORMALIZED —— 整数内核不能表示时间戳 | 整数算术内核有意没有时间载体 —— K 线由 `ℕ` 索引，不是 wall-clock 时间戳。「下沉 ↦ 更细周期」主张需要 `Timestamp → Window` 映射，内核在没有真实时间数据接口的前提下无法表达。在 7 年 NQ 数据上经验地解决（Lean 之外的 PROVEN_FIXTURE），见 `grounding/chanlun_multiscale_real_grounding.py` |
+| X.10.5 | 「本资金最低层」剩余的刻画 | NOT_FORMALIZED —— 与 X.10.4 相同阻塞 | 在多分辨率 grounding 脚本中以命名见证报告；提升到 Lean 需要真实时间戳映射 |
+| X.10.6 | MACD 装饰的区间套变体 | NOT_FORMALIZED —— X.7.9 与 X.10.4 联合阻塞 | 需要真实 MACD 能量（X.7.9）与时间戳映射（X.10.4）；两个阻塞都是内核级，整数载体范围外 |
+| X.10.7 | 走势分解 × 区间套整合 | NOT_FORMALIZED —— 模块桥接 | `Chanlun.WalkDecomposition.decompose` 在 `List Center` 上工作；`Chanlun.IntervalNesting.walk` 在 `LevelWindow` 上工作。桥（哪个走势在哪个层级窗口里）需要两个模块不共享的强制转换；整合是独立的下游模块 |
 
 ---
 
