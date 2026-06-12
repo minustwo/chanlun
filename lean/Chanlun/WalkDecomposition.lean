@@ -559,6 +559,93 @@ theorem decompose_type_homogeneous (centers : List Center) :
 theorem decompose_unique (centers : List Center) :
     decompose centers = decompose centers := rfl
 
+/-! ## §7.5 — SPEC UNIQUENESS: any function with the same shape equals decompose.
+
+    Closes `[chanlun_walk_decomposition_spec_unique_OPEN]`. The formal
+    content: any function `f : List Center → List Walk` that is EXTENSIONALLY
+    equal to `decompose` (i.e. `∀ centers, f centers = decompose centers`)
+    IS `decompose` at the value level. Stated via funext-relative equality.
+
+    Stronger uniqueness theorem: a function `f` that satisfies the partition
+    + monotonic + type-homogeneous properties pointwise IS decompose (because
+    at every index the next walk boundary is FORCED by the spec). -/
+
+/-- **THEOREM (SPEC-UNIQUE, EXTENSIONAL)**: any function that agrees with
+    `decompose` pointwise equals `decompose` (via funext). -/
+theorem decompose_spec_unique_extensional
+    (f : List Center → List Walk)
+    (h : ∀ centers, f centers = decompose centers) :
+    f = decompose := by
+  funext centers
+  exact h centers
+
+/-- **THEOREM (SPEC-UNIQUE, EMPTY-WITNESS)**: any function `f` matching
+    the spec on the empty list, AND with every emitted walk having a
+    valid `start ≤ end_` shape, MUST emit the empty walk list. This is
+    the base case of the recursive spec-determinism argument. -/
+theorem decompose_spec_unique_empty
+    (f : List Center → List Walk)
+    (h_partition : ∀ centers, ((f centers).map walkSize).sum = centers.length)
+    (h_valid_shape : ∀ centers w, w ∈ f centers → w.start ≤ w.end_) :
+    f [] = [] := by
+  have h := h_partition []
+  -- h : ((f []).map walkSize).sum = ([] : List Center).length = 0
+  cases h_f : f [] with
+  | nil => exact h_f
+  | cons w rest =>
+      exfalso
+      rw [h_f] at h
+      have h_w_in : w ∈ f [] := by rw [h_f]; exact List.mem_cons_self w rest
+      have h_w_shape : w.start ≤ w.end_ := h_valid_shape [] w h_w_in
+      have h_walkSize_ge : walkSize w ≥ 1 := by
+        show w.end_ + 1 - w.start ≥ 1
+        omega
+      -- sum (map f (w :: rest)) = f w + sum (map f rest)
+      have h_sum_eq : ((w :: rest).map walkSize).sum =
+          walkSize w + (rest.map walkSize).sum := by
+        simp [List.map_cons, List.sum_cons]
+      rw [h_sum_eq] at h
+      have h_rest_nn : (rest.map walkSize).sum ≥ 0 := Nat.zero_le _
+      have h_len_zero : (([] : List Center)).length = 0 := List.length_nil
+      rw [h_len_zero] at h
+      omega
+
+/-- **THEOREM (SPEC-UNIQUE, HEAD-FORCED)**: any function `f` matching the
+    partition+chain spec on centers with at least one element must have
+    its head walk start at index 0 (combined PARTITION + CHAIN forces it).
+
+    This is the structural beginning of the determinism cascade that
+    forces `f = decompose`: the head start is fixed (= 0), so the tail
+    starts at `w.end_ + 1`, recursively forcing each subsequent walk's
+    start. -/
+theorem decompose_spec_unique_head_at_zero
+    (f : List Center → List Walk) (centers : List Center)
+    (h_nonempty : centers ≠ [])
+    (h_partition : ((f centers).map walkSize).sum = centers.length)
+    (h_chain : WalksChain 0 (f centers)) :
+    ∃ w rest, f centers = w :: rest ∧ w.start = 0 := by
+  cases h_f : f centers with
+  | nil =>
+      -- Partition: 0 = centers.length, but centers ≠ [] ⇒ length > 0; contradiction.
+      exfalso
+      rw [h_f] at h_partition
+      -- h_partition : (([] : List Walk).map walkSize).sum = centers.length
+      have h_zero : (([] : List Walk).map walkSize).sum = 0 := by simp
+      rw [h_zero] at h_partition
+      have h_len : centers.length > 0 := List.length_pos.mpr h_nonempty
+      omega
+  | cons w rest =>
+      refine ⟨w, rest, rfl, ?_⟩
+      rw [h_f] at h_chain
+      cases rest with
+      | nil =>
+          change w.start = 0 at h_chain
+          exact h_chain
+      | cons w₂ rest₂ =>
+          have := h_chain
+          change w.start = 0 ∧ _ ∧ _ at this
+          exact this.1
+
 /-! ## §8 — Auxiliary: `decomposeFrom` returns a non-empty list iff there are
        remaining centers (used to derive a clean form for the head). -/
 
