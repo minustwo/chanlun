@@ -216,6 +216,33 @@ jobs:
           # non-zero on any divergence; the gate fails honestly, never silently.
           java -jar target/chanlun-check.jar
 
+  conformance-csharp:
+    name: Conformance corpus (chanlun-v1, C# backend)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore dependencies
+        working-directory: impl/csharp
+        run: dotnet restore
+
+      - name: Build C# conformance backend
+        working-directory: impl/csharp
+        run: dotnet build -c Release --no-restore
+
+      - name: Run C# conformance harness
+        working-directory: impl/csharp
+        run: |
+          set -euo pipefail
+          # SHA-equality is the law. A byte off = FAIL. The harness exits
+          # non-zero on any divergence; the gate fails honestly, never silently.
+          dotnet run -c Release --no-build --project src/Chanlun.Check/Chanlun.Check.csproj
+
   conformance-pinescript-lint:
     name: PineScript v5 port (discipline lint, not a conformance gate)
     runs-on: ubuntu-latest
