@@ -1149,41 +1149,146 @@ data interface.
 
 ## §X Consolidated limitations and open questions
 
-Five items remain externally auditable as open. Each has a concrete
-reason an external reader can check.
+The following items are not yet proven in the Lean library. They are
+stated explicitly here to make the scope publicly transparent, rather
+than hidden. Each item has a Lean identifier (where one exists in the
+repository), an auditable reason an external reader can check, and any
+partial-result theorem reference.
 
-1. **`[chanlun_segment_phi_uniqueness_OPEN]`** — Parametric uniqueness of
-   the segment decomposition across all Φ-overlap-admissibility-satisfying
-   oracles. **Open because** the master text does not fix Φ uniquely;
-   alternative readings are listed in
-   [`README.md`](README.md). Determinism for any single oracle is settled
-   in Lean (the function is by definition).
+1. **Containment-normalization precondition bridge.**
+   `Chanlun.Pipeline.pipeline_inclusion_normalized` discharges the
+   precondition that Def-3 assumes upstream, but the type bridge between
+   the Interval layer (Algorithm N's stack carrier) and the Bar layer
+   (Def-3's window carrier) is named explicitly (`toBar`, the
+   field-order swap) rather than collapsed into a single theorem. **Open
+   because** the bridge is currently a named lemma chain
+   (`not_contained_iff_bar` + `pipeline_inclusion_normalized`), not one
+   end-to-end statement.
 
-2. **`[chanlun_zhongshu_zone_gate_OPEN]`** — The first3 vs all_ extension
-   rule. **Settled multi-valued.** A constructive divergence witness is
+2. **`[chanlun_segment_phi_uniqueness_OPEN]`** + **`[chanlun_segment_terminates_sub_OPEN]`** —
+   Segment-recursion internals. Parametric uniqueness of the segment
+   decomposition across all Φ-overlap-admissibility-satisfying oracles
+   remains open because the master text does not fix Φ uniquely;
+   alternative readings are listed in [`README.md`](README.md).
+   Concretely, the feature-sequence Φ and overlap-admissibility
+   internals of `find_term` are not re-derived inside `Chanlun.Segment`;
+   the recursion is parameterized over the "leftmost-≥-a" contract
+   `find_term_ge`. A concrete `find_term` instance satisfying the
+   contract is taken as given. Determinism for any single oracle is
+   settled in Lean (the function is by definition).
+
+3. **`[chanlun_zhongshu_zone_gate_OPEN]`** — Zhongshu zone-gate
+   non-uniqueness (first3 vs all_). **Settled multi-valued.** The two
+   zone-gates produce different results on roughly 12% of arbitrary
+   element sequences; both are proven valid + disjoint. A constructive
+   divergence witness is
    `Chanlun.DivergenceWitnesses.zhongshu_zone_gate_divergence_witness`;
    both readings are proven valid by Theorem 5.3 and disjoint by
-   Theorem 5.4. The master text supports both readings, so this is a
-   genuine bifurcation, not a missing proof.
+   Theorem 5.4. The master text supports both readings, so the gate
+   relativity is a genuine multi-valuedness left to interpretation in
+   the source theory, not a missing proof. **On the reachable
+   (containment-free) domain the two readings coincide.**
 
-3. **`[chanlun_beichi_macd_measure_lean_OPEN]`** — MACD as a third
-   `Measure` constructor in Lean. **Open because** the integer-arithmetic
-   kernel does not directly model MACD-energy. Empirical agreement rates
-   in `grounding/chanlun_macd_grounding.py`; constructive divergence
-   witnesses for disp vs slope already in Lean
-   (`Chanlun.Beichi.beichi_measure_gate_witness`).
+4. **`[chanlun_bi_to_endpoint_first_admissible_OPEN]`** — Reading of 笔
+   (Bi) TO endpoint. `Chanlun.StrokeUniqueness` reads the TO endpoint as
+   the leftmost reverse-admissible fractal; a literal "extremum of the
+   endpoint run" reading may differ on multi-fractal runs. On reachable
+   inputs the two readings coincide (see `Chanlun.BiReachableDeterminism`).
 
-4. **`[chanlun_intervalnesting_multiscale_OPEN]`** and
-   **`[chanlun_intervalnesting_lowest_level_OPEN]`** — Genuine
-   multi-resolution descent across real timeframes. **Open in Lean
-   because** real-time timestamp mapping is out of scope for the integer
-   kernel; **settled empirically** by
-   `grounding/chanlun_multiscale_real_grounding.py` on 7-year NQ data.
+5. **`[chanlun_bi_close_drop_named_residue_OPEN]`** — Silent drop of
+   over-close reverse fractals. A reverse fractal that is too close
+   (gap < δmin) is silently dropped by `step`; the uniqueness proof
+   treats the drop as a no-op.
 
-5. **`[chanlun_walk_mixed_merge_OPEN]`** — Downstream merge of adjacent
-   walks into a `mixed` super-walk. **Open as a separate component**;
-   `decompose` does not emit `mixed` by construction (Theorem 6.7), so
-   the merge is not a property of `decompose` itself.
+6. **`[chanlun_stroke_output_order_lift_OPEN]`** — Alternation in
+   user-facing reverse output order. `strokes_separated` lifts
+   separation to the user-facing reverse order via `List.mem_reverse`;
+   alternation in the reverse order is a further one-line lemma that has
+   not yet been included.
+
+7. **Level-recursion lift function.** The actual lift function
+   `lift : List Element → Option (List Element)` is out of scope; only
+   the strict-drop measure carrying termination is proven.
+
+8. **`[chanlun_level_recursion_envelope_soundness_OPEN]`** — Level
+   recursion envelope soundness. Each level-(n+1) envelope contains the
+   range of its constituents; not yet proven in the list form.
+
+9. **`[chanlun_level_recursion_determinism_preservation_OPEN]`** —
+   Determinism preservation up the level tower; not yet proven.
+
+10. **`[chanlun_walk_decomposition_spec_unique_OPEN]`** — Walk
+    decomposition spec-uniqueness. Any function satisfying the walk
+    decomposition specification equals `decompose`; not yet proven in
+    spec form.
+
+11. **`[chanlun_zhongshu_extension_shoulder_OPEN]`** — Zhongshu extension
+    boundary cases. The "shoulder" cases (`next_el.lo = ZG` or
+    `next_el.hi = ZD`) count as extension under the ≤-overlap reading;
+    a strict-< reading would route them to a new emergent boundary.
+    Both readings appear in the master text; this repository takes the
+    ≤ reading.
+
+12. **`[chanlun_zhongshu_extension_all_gate_OPEN]`** — Zhongshu extension
+    propagation under the all_ gate. The first3 form of extension
+    propagation is closed in `Chanlun.ZhongshuExtension`; the all_ form
+    is not.
+
+13. **`[chanlun_zhongshu_extension_multistep_envelope_OPEN]`** —
+    Multi-element envelope across a complete zhongshu. The single-step
+    version is proven; the list-induction version is not yet complete.
+
+14. **`[chanlun_beichi_measure_gate_OPEN]`** — Beichi 力度 measure.
+    Displacement (disp) versus slope agree on the Python reference
+    implementation at roughly 82.2%. `beichi_measure_gate_witness`
+    proves non-emptiness; the measure choice itself is left open (this
+    is the multi-valuedness the master text left by not fixing a single
+    measure for comparing 力度).
+
+15. **`[chanlun_beichi_macd_measure_lean_OPEN]`** + **`[chanlun_beichi_macd_gate_OPEN]`** —
+    MACD as a third `Measure` constructor in Lean. **Open because** the
+    integer-arithmetic kernel does not directly model MACD-energy.
+    Lecture 27 introduces MACD as an auxiliary 力度 measure, explicitly
+    regarded as non-canonical. Empirical agreement rates in
+    `grounding/chanlun_macd_grounding.py`; constructive divergence
+    witnesses for disp vs slope already in Lean
+    (`Chanlun.Beichi.beichi_measure_gate_witness`).
+
+16. **`[chanlun_panzheng_measure_gate_propagation_OPEN]`** — Cross-mutation
+    propagation of the panzheng-beichi measure gate. Propagation of the
+    panzheng-beichi measure over a mutation table is not yet proven.
+
+17. **`[chanlun_first_second_buysell_recursive_OPEN]`** +
+    **`[chanlun_panzheng_beichi_recursive_OPEN]`** — Recursive form of
+    第一/第二类买卖点 and 盘整背驰. The recursive (multi-level) forms
+    of Lecture 24 and Lecture 37 share the same descent measure and
+    measure-gate inheritance; not yet proven.
+
+18. **`[chanlun_recursive_descent_strict_subwindow_OPEN]`** — Strict
+    sub-window of the level recursion. The level-(n-1) sub-window is a
+    strict subset of the level-(n-1) tower; not yet rigorously proven.
+
+19. **`[chanlun_intervalnesting_lowest_level_OPEN]`** +
+    **`[chanlun_intervalnesting_multiscale_OPEN]`** — Lowest-level pin
+    endpoint, and multi-scale composition between non-adjacent levels.
+    A strict characterization of the lowest-level pin endpoint, together
+    with the multi-scale composition of nested intervals between
+    non-adjacent levels. **Open in Lean because** real-time timestamp
+    mapping is out of scope for the integer kernel; **settled
+    empirically** by `grounding/chanlun_multiscale_real_grounding.py`
+    on 7-year NQ data.
+
+20. **`[chanlun_intervalnesting_macd_OPEN]`** — MACD-decorated
+    interval-nesting variant.
+
+21. **`[chanlun_walk_decomposition_intervalnesting_OPEN]`** — Walk
+    decomposition × interval nesting. Integration of
+    `Chanlun.WalkDecomposition` with `Chanlun.IntervalNesting`.
+
+22. **`[chanlun_walk_mixed_merge_OPEN]`** — Downstream merge of adjacent
+    walks into a `mixed` super-walk. **Open as a separate component**;
+    `decompose` does not emit `mixed` by construction (Theorem 6.7), so
+    the merge is not a property of `decompose` itself.
 
 ---
 
