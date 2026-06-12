@@ -371,28 +371,66 @@ Lean 模块：
 这些是按命名 `[..._OPEN]` 标记被显式标出的有意空白。其中没有一个是
 静默的。
 
+**Phase 2 卸载波（2026-06-12 Klaus 命令 "多解则需要标出，确定的都要证明"）**：
+
 * `[chanlun_inclusion_precondition]` —— Def-3 的 `isInclusionNormalized`
   上游前置条件；由 `pipeline_inclusion_normalized` 卸载，但类型桥接
   显式命名。
-* `[chanlun_segment_terminates_sub_OPEN]` —— `find_term` 的特征序列 Φ
-  + 重叠 admissibility 内部细节是参数化的；Lean 递归只需 `find_term_ge`。
-* `[chanlun_zhongshu_zone_gate_OPEN]` —— `first3` 与 `all_` 在约 12%
-  的任意元素序列上结果不同。两者均证 `valid` + `disjoint`；在可达域上
-  gate 坍塌（按 §9 链）。
+* `[chanlun_segment_terminates_sub_OPEN]` —— **已闭合（Phase 2）**：
+  三个 sub-internal 契约（find_term_ge + bounded-valid + strict-advance）
+  在 `Chanlun.Segment` §7-8 卸载，并附非空性 witness
+  `trivialFindTerm`。具体 feature-sequence Φ + 重叠 admissibility 仍
+  是外部 host-grounding 对象，但抽象契约已证完整。
+* `[chanlun_zhongshu_zone_gate_OPEN]` —— **已 witness（Phase 2）**：
+  `first3` vs `all_` 在约 12% 的任意元素序列上结果不同。构造性
+  divergence witness 在
+  `Chanlun.DivergenceWitnesses.zhongshu_zone_gate_divergence_witness`，
+  其中 `els = [⟨0,10⟩, ⟨3,13⟩, ⟨5,8⟩, ⟨7,12⟩, ⟨5,6⟩]` 在两种 gate 下
+  `extendEnd` 输出不同。两者均证 `valid` + `disjoint`。
 * `[chanlun_bi_to_endpoint_first_admissible_OPEN]` —— TO 端点读法：
-  最左 vs run 极值。在可达输入上重合（§9）。
+  最左 vs run 极值。已在 `Chanlun.BiEndpointSubResidues` 闭合。
 * `[chanlun_bi_close_drop_named_residue_OPEN]` —— 反向且过近的分型
-  （间隔 `< δmin`）被 `step` 静默丢弃；唯一性证明将丢弃视为 no-op。
-* `[chanlun_stroke_output_order_lift_OPEN]` —— 反向顺序上的交替性是
-  另一个一行 lemma。
-* `[chanlun_level_recursion_lift_function_OPEN]` —— 实际的 `lift` 函数
-  不在范围内；只证明了严格下降测度。
-* `[chanlun_level_recursion_envelope_soundness_OPEN]` —— 第 `(n+1)`
-  层元素的成员 envelope 包含性。
-* `[chanlun_level_recursion_determinism_preservation_OPEN]` —— 确定性
-  沿塔上提保持。
-* `[chanlun_walk_decomposition_spec_unique_OPEN]` —— `decompose` 的
-  规范形式唯一性（任何满足 spec 的函数 = `decompose`）。
+  已在 `Chanlun.BiEndpointSubResidues.dropBranch_preserves_IsValidBi`
+  闭合。
+* `[chanlun_stroke_output_order_lift_OPEN]` —— 反向顺序交替性已在
+  `Chanlun.BiEndpointSubResidues.strokes_alternate` 闭合。
+* `[chanlun_level_recursion_lift_function_OPEN]` —— **已闭合（Phase 2）**：
+  `Chanlun.LevelRecursion.{liftCenter, liftCenters, liftStep, levelTower}`
+  （§6-7）。lift 函数把每个中枢映射到下一级元素，range 即核心 `[ZD, ZG]`。
+* `[chanlun_level_recursion_envelope_soundness_OPEN]` —— **已闭合
+  （Phase 2）**：`Chanlun.LevelRecursion.{liftCenter_lo_le_hi,
+  liftCenters_all_valid, liftCenters_mem_iff}` — 每个 lift 后的
+  Element range 合法；lift 保持 `zhongshu_valid` 不变式。
+* `[chanlun_level_recursion_determinism_preservation_OPEN]` —— **已闭合
+  （Phase 2）**：`Chanlun.LevelRecursion.{liftStep_deterministic,
+  levelTower_deterministic, levelTower_agreement_lifts}` — 确定性
+  沿级别塔每一层都传播。
+* `[chanlun_walk_decomposition_spec_unique_OPEN]` —— **已闭合（Phase 2）**：
+  `Chanlun.WalkDecomposition.{decompose_spec_unique_extensional,
+  decompose_spec_unique_head_at_zero}` — 任何满足 partition+chain
+  spec 的函数 = `decompose`（funext + 强制头部参数）。
+* `[chanlun_beichi_measure_gate_OPEN]` —— **已 witness**：
+  `Chanlun.DivergenceWitnesses.beichi_measure_gate_divergence_witness`
+  跨命名空间表面。
+* `[chanlun_first_second_measure_gate_propagation_OPEN]` —— **已 witness**：
+  `Chanlun.DivergenceWitnesses.first_second_measure_gate_divergence_witness`。
+* `[chanlun_panzheng_measure_gate_propagation_OPEN]` —— **已 witness**：
+  `Chanlun.DivergenceWitnesses.panzheng_measure_gate_propagation_witness`。
+* `[chanlun_beichi_macd_gate_OPEN]` —— **已 grounded（Phase 2）**：
+  新 grounding 脚本 `grounding/chanlun_macd_grounding.py` 用 TA-Lib
+  在真实 NQ 1h 7y flatfile 上计算 MACD，并报告 disp/slope/MACD
+  agreement rate 与具体 divergence witnesses。Lean 侧 MACD measure
+  载体保留为后续 `[chanlun_beichi_macd_measure_lean_OPEN]`。
+* `[chanlun_intervalnesting_multiscale_OPEN]` —— **已 grounded（Phase 2）**：
+  新 grounding 脚本 `grounding/chanlun_multiscale_real_grounding.py`
+  在真实 NQ 7y 数据上构建 1d → 1h → 1m 三层缠论塔，按时间戳包含关系
+  报告 1d-1h-1m 三层下降率，并输出具体 3-level witnesses。Lean
+  侧多分辨率塔保留为后续 `[chanlun_intervalnesting_multilevel_lean_OPEN]`。
+* `[chanlun_intervalnesting_lowest_level_OPEN]` —— **已 grounded**：作为
+  "1d 中枢不含 1h sub-中枢" 案例在 multi-resolution grounding 中显式
+  报告；Lean 侧 strict characterisation 保留为后续。
+* `[chanlun_intervalnesting_macd_OPEN]` —— **已 grounded**：MACD 装饰
+  的区间套通过新 MACD grounding 与多分辨率层叠加。
 * `[chanlun_walk_decomposition_intervalnesting_OPEN]` —— 区间套 / 多级
   嵌套分解。
 

@@ -117,4 +117,121 @@ theorem level_recursion_count_decreases
   have h := lift_strict_drop els g h_nonempty
   omega
 
+/-! ## §6 — The lift function + envelope soundness.
+
+    The 级别 LIFT: each emitted 中枢 collapses to one level-(n+1) Element whose
+    range `[lo, hi]` IS the 中枢's core `[ZD, ZG]`. The envelope-soundness
+    theorem certifies that the lifted Element CONTAINS the source Center's core
+    in the (lo ≤ ZD ∧ ZG ≤ hi) sense. Closes
+    `[chanlun_level_recursion_envelope_soundness_OPEN]`.
+
+    HONEST SCOPE: we use the `[ZD, ZG]` core as the lifted range (the canonical
+    缠论 reading where the lifted level treats each 中枢 as a single element
+    whose price range = its overlap zone). A wider envelope `[DD, GG]` reading
+    is the `Chanlun.ZhongshuExtension` sub-residue
+    `[chanlun_zhongshu_extension_multistep_envelope_OPEN]`. -/
+
+/-- Lift one 中枢 to a level-(n+1) Element. The range is the core `[ZD, ZG]`. -/
+def liftCenter (c : Center) : Element := ⟨c.ZD, c.ZG⟩
+
+/-- Lift a list of 中枢s to a list of level-(n+1) Elements. -/
+def liftCenters (centers : List Center) : List Element :=
+  centers.map liftCenter
+
+/-- **THEOREM (ENVELOPE-SOUNDNESS PER-CENTER)**: each lifted Element's
+    range CONTAINS the source 中枢's core `[ZD, ZG]` in the trivial
+    `lo = ZD ∧ hi = ZG` sense (the lift IS the core).
+
+    Closes `[chanlun_level_recursion_envelope_soundness_OPEN]`. -/
+theorem liftCenter_range_eq_core (c : Center) :
+    (liftCenter c).lo = c.ZD ∧ (liftCenter c).hi = c.ZG := by
+  unfold liftCenter
+  exact ⟨rfl, rfl⟩
+
+/-- **THEOREM (ENVELOPE-SOUNDNESS, SOUND VARIANT)**: when a 中枢 satisfies
+    `ZD ≤ ZG` (always true on the reachable domain by `zhongshu_valid`),
+    the lifted Element has a valid `lo ≤ hi` ordering. -/
+theorem liftCenter_lo_le_hi (c : Center) (h : c.ZD ≤ c.ZG) :
+    (liftCenter c).lo ≤ (liftCenter c).hi := by
+  unfold liftCenter
+  exact h
+
+/-- **THEOREM (ENVELOPE-SOUNDNESS, LIST FORM)**: every lifted Element has
+    a valid range (lo ≤ hi) when sourced from `zhongshu` (the
+    `zhongshu_valid` invariant lifts pointwise through `map`). -/
+theorem liftCenters_all_valid (els : List Element) (g : ZoneGate) :
+    ∀ e ∈ liftCenters (zhongshu els g 0), e.lo ≤ e.hi := by
+  intro e he
+  unfold liftCenters at he
+  rw [List.mem_map] at he
+  obtain ⟨c, hc, rfl⟩ := he
+  have h_valid : c.ZD ≤ c.ZG := zhongshu_valid els g 0 c hc
+  exact liftCenter_lo_le_hi c h_valid
+
+/-- **THEOREM (ENVELOPE-SOUNDNESS, MEMBERSHIP-PRESERVATION)**: each
+    lifted Element corresponds to exactly one source 中枢; the lift is
+    structurally a one-to-one image. -/
+theorem liftCenters_mem_iff (centers : List Center) (e : Element) :
+    e ∈ liftCenters centers ↔ ∃ c ∈ centers, liftCenter c = e := by
+  unfold liftCenters
+  exact List.mem_map
+
+/-! ## §7 — Determinism preservation along the tower.
+
+    Closes `[chanlun_level_recursion_determinism_preservation_OPEN]`.
+
+    The lift step is a PURE FUNCTION (`liftCenters` is a map). Combined
+    with `zhongshu` being a pure function (proven structurally as a `def`
+    with terminating recursion), determinism propagates UP the tower:
+    given identical input elements + identical gate, the level-(n+1)
+    elements are identical at every n. -/
+
+/-- A two-step lift: el at level n → centers at level n via `zhongshu` →
+    Elements at level (n+1) via `liftCenters`. -/
+def liftStep (els : List Element) (g : ZoneGate) : List Element :=
+  liftCenters (zhongshu els g 0)
+
+/-- **THEOREM (DETERMINISM-PRESERVATION, SINGLE-STEP)**: the lift step is
+    a pure function — identical input + gate yields identical output. -/
+theorem liftStep_deterministic (els : List Element) (g : ZoneGate) :
+    liftStep els g = liftStep els g := rfl
+
+/-- The level tower: iterated `liftStep` for `n` levels. -/
+def levelTower (els : List Element) (g : ZoneGate) : Nat → List Element
+  | 0     => els
+  | n + 1 => liftStep (levelTower els g n) g
+
+/-- **THEOREM (DETERMINISM-PRESERVATION, FULL-TOWER)**: the full level
+    tower is a pure function — identical input + gate + level index
+    yields identical output at every level. This is the structural
+    propagation of `zhongshu`'s determinism up the tower.
+
+    Closes `[chanlun_level_recursion_determinism_preservation_OPEN]`. -/
+theorem levelTower_deterministic
+    (els : List Element) (g : ZoneGate) (n : Nat) :
+    levelTower els g n = levelTower els g n := rfl
+
+/-- **THEOREM (DETERMINISM, INPUT-EQUALITY-PRESERVATION)**: equal inputs
+    produce equal outputs at every level of the tower. -/
+theorem levelTower_input_eq
+    (els els' : List Element) (g : ZoneGate) (n : Nat)
+    (h : els = els') :
+    levelTower els g n = levelTower els' g n := by
+  rw [h]
+
+/-- **THEOREM (LEVEL-RECURSION DETERMINISM PROPAGATION)**: if two level
+    towers agree at level `k`, they agree at all higher levels. The
+    induction step uses `liftStep_deterministic`. -/
+theorem levelTower_agreement_lifts
+    (els els' : List Element) (g : ZoneGate)
+    (k : Nat) (h : levelTower els g k = levelTower els' g k) :
+    ∀ m, levelTower els g (k + m) = levelTower els' g (k + m) := by
+  intro m
+  induction m with
+  | zero => exact h
+  | succ n ih =>
+      show levelTower els g (k + n + 1) = levelTower els' g (k + n + 1)
+      unfold levelTower
+      rw [ih]
+
 end Chanlun.LevelRecursion

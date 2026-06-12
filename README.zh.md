@@ -3,7 +3,7 @@
 **缠论**（缠中说禅老师所传授的技术分析方法）的形式化几何分解系统：
 
 * **理论文档**：[`chanlun.zh.md`](chanlun.zh.md)（数学形式）。
-* **Lean 4 形式化**（`lean/Chanlun/`）：以下 21 个承重模块，全部 `sorry`-free，
+* **Lean 4 形式化**（`lean/Chanlun/`）：以下 22 个承重模块，全部 `sorry`-free，
   由 Hosted Ubuntu CI 的 Lean 内核验证。
 * **纯 Python 接地**（`grounding/`）：每个 Lean 定理都有独立参考实现作为
   对照，并配有 §15 反例突变体。
@@ -21,7 +21,7 @@ English version: see [README.md](README.md).
 ## 状态 —— 已证 vs 命名残差
 
 Lean 库 `Chanlun`（`lake build Chanlun`）sorry-free，覆盖了发表版四段流水线
-加上结构层（中枢 / 走势类型）+ 买卖点/背驰层 + 级别递归 + 区间套。共 21 个模块：
+加上结构层（中枢 / 走势类型）+ 买卖点/背驰层 + 级别递归 + 区间套。共 22 个模块：
 
 ### 核心流水线（Def-3 → 笔 → 线段 → 中枢）
 
@@ -145,7 +145,7 @@ lake exe cache get
 lake build Chanlun
 ```
 
-`lake build Chanlun` 通过 ⇒ 21 个模块在 Lean 内核下 sorry-free。
+`lake build Chanlun` 通过 ⇒ 22 个模块在 Lean 内核下 sorry-free。
 
 ### 运行接地
 
@@ -171,7 +171,7 @@ chanlun/
 ├─ README.md                          # 英文版
 ├─ README.zh.md                       # 本文件（中文）
 ├─ lakefile.lean, lean-toolchain      # Lean 4 构建配置（Mathlib v4.14.0）
-├─ lean/Chanlun/                      # 21 个 Lean MWE 模块
+├─ lean/Chanlun/                      # 22 个 Lean MWE 模块
 │  ├─ Fractal.lean, Normalize.lean, Pipeline.lean
 │  ├─ Stroke.lean, StrokeUniqueness.lean, StrokesIsValidBiCorollary.lean
 │  ├─ BiEndpointSubResidues.lean
