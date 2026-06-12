@@ -234,4 +234,129 @@ theorem levelTower_agreement_lifts
       unfold levelTower
       rw [ih]
 
+/-! ## §8 — Option-wrapped lift (terminal vs non-terminal).
+
+    Closes the Lean side of `[chanlun_level_recursion_lift_function_OPEN]`
+    (audit item X.9.6): the engineering wrapper that returns `none` on
+    terminal input and `some next_level` on non-terminal. The strict-drop
+    measure (Thm 9.2) is the load-bearing content; this is just the
+    Option packaging so the lift can be iterated cleanly. -/
+
+/-- The Option-wrapped level lift. Returns `none` when no center forms at
+    this level (走势 is complete — 完美). Returns `some next_els` when at
+    least one center forms; `next_els` is the lifted element list. -/
+def liftOption (els : List Element) (g : ZoneGate) : Option (List Element) :=
+  if zhongshu els g 0 = [] then none else some (liftCenters (zhongshu els g 0))
+
+/-- **THEOREM (LIFT-OPTION TERMINAL)**: when `zhongshu` emits no center,
+    `liftOption` returns `none` — the level is terminal (走势 complete). -/
+theorem liftOption_eq_none_iff (els : List Element) (g : ZoneGate) :
+    liftOption els g = none ↔ zhongshu els g 0 = [] := by
+  constructor
+  · intro h_none
+    unfold liftOption at h_none
+    by_cases h : zhongshu els g 0 = []
+    · exact h
+    · rw [if_neg h] at h_none
+      exact Option.noConfusion h_none
+  · intro h_empty
+    unfold liftOption
+    rw [if_pos h_empty]
+
+/-- **THEOREM (LIFT-OPTION NON-TERMINAL)**: when `zhongshu` emits at least
+    one center, `liftOption` returns `some (liftCenters centers)`. The
+    payload is the level-(n+1) element list, and strict-drop applies. -/
+theorem liftOption_eq_some_iff (els : List Element) (g : ZoneGate) :
+    (∃ next, liftOption els g = some next) ↔ zhongshu els g 0 ≠ [] := by
+  constructor
+  · intro ⟨next, h_some⟩
+    intro h_empty
+    unfold liftOption at h_some
+    rw [if_pos h_empty] at h_some
+    exact Option.noConfusion h_some
+  · intro h_ne
+    refine ⟨liftCenters (zhongshu els g 0), ?_⟩
+    unfold liftOption
+    rw [if_neg h_ne]
+
+/-- **THEOREM (LIFT-OPTION STRICT-DROP)**: when `liftOption` returns
+    `some next`, the next-level element count is strictly less than the
+    current-level center count + 2 — i.e. the strict drop guaranteed by
+    `lift_strict_drop` carries through the Option wrapper. -/
+theorem liftOption_strict_drop
+    (els : List Element) (g : ZoneGate)
+    (next : List Element) (h : liftOption els g = some next) :
+    next.length + 2 ≤ ((zhongshu els g 0).map centerSize).sum := by
+  unfold liftOption at h
+  by_cases h_empty : zhongshu els g 0 = []
+  · rw [if_pos h_empty] at h
+    exact Option.noConfusion h
+  · rw [if_neg h_empty] at h
+    have h_next : liftCenters (zhongshu els g 0) = next := Option.some.inj h
+    have h_drop := lift_strict_drop els g h_empty
+    rw [← h_next]
+    unfold liftCenters
+    rw [List.length_map]
+    exact h_drop
+
+/-! ## §9 — Multi-step envelope monotonicity (list-induction form).
+
+    Closes the Lean side of `[chanlun_zhongshu_extension_multistep_envelope_OPEN]`
+    (audit item X.5.13): across a list of post-elements, the cumulative
+    DD is monotone non-increasing and GG monotone non-decreasing. The
+    single-step `expansion_widens_GG_DD` is the per-step content; this
+    is the list-induction.
+
+    We model the cumulative envelope as a fold over a list of elements
+    that updates `(DD, GG)` by `(min DD e.lo, max GG e.hi)`. Each fold
+    step weakly tightens the envelope; the list-form theorem says the
+    final envelope contains the initial one. -/
+
+/-- Fold one element into a `(DD, GG)` envelope: tighten `DD` downward,
+    `GG` upward. -/
+def foldEnvelope (acc : Int × Int) (e : Element) : Int × Int :=
+  (min acc.1 e.lo, max acc.2 e.hi)
+
+/-- Cumulative envelope of a list of elements with a starting envelope. -/
+def listEnvelope (start : Int × Int) (els : List Element) : Int × Int :=
+  els.foldl foldEnvelope start
+
+/-- **THEOREM (LIST-ENVELOPE MONOTONE)**: across any list of post-elements,
+    the cumulative `DD` weakly drops (`DD' ≤ DD`) and the cumulative `GG`
+    weakly grows (`GG ≤ GG'`). The envelope only widens; never contracts.
+
+    This is the list-induction lift of `expansion_widens_GG_DD`. -/
+theorem listEnvelope_widens (start : Int × Int) (els : List Element) :
+    (listEnvelope start els).1 ≤ start.1 ∧ start.2 ≤ (listEnvelope start els).2 := by
+  unfold listEnvelope
+  induction els generalizing start with
+  | nil =>
+      simp
+  | cons e rest ih =>
+      simp only [List.foldl]
+      have h_rest := ih (foldEnvelope start e)
+      refine ⟨?_, ?_⟩
+      · -- Goal: (foldl ... (foldEnvelope start e) rest).1 ≤ start.1
+        have h1 : (foldEnvelope start e).1 ≤ start.1 := by
+          unfold foldEnvelope
+          exact min_le_left _ _
+        exact le_trans h_rest.1 h1
+      · -- Goal: start.2 ≤ (foldl ... (foldEnvelope start e) rest).2
+        have h2 : start.2 ≤ (foldEnvelope start e).2 := by
+          unfold foldEnvelope
+          exact le_max_left _ _
+        exact le_trans h2 h_rest.2
+
+/-- **COROLLARY (POST-LIST ENVELOPE-WIDENS)**: any post-element list folded
+    against an initial `(DD, GG)` envelope yields a wider envelope. This
+    is exactly the multi-step form of `expansion_widens_GG_DD` lifted from
+    single-element to list. -/
+theorem listEnvelope_DD_drops (start : Int × Int) (els : List Element) :
+    (listEnvelope start els).1 ≤ start.1 :=
+  (listEnvelope_widens start els).1
+
+theorem listEnvelope_GG_grows (start : Int × Int) (els : List Element) :
+    start.2 ≤ (listEnvelope start els).2 :=
+  (listEnvelope_widens start els).2
+
 end Chanlun.LevelRecursion

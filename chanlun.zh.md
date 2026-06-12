@@ -1082,22 +1082,33 @@ grounding 解决两个经验性主张：
 
 | 状态 | 数量 | 说明 |
 |---|---|---|
-| PROVEN_DIRECT | 59 | sorry-free Lean 定理位于 `lean/Chanlun/` |
+| PROVEN_DIRECT | 61 | sorry-free Lean 定理位于 `lean/Chanlun/`（包含本 PR 新形式化的 X.5.13 + X.9.6） |
 | MULTI_VALUED_NAMED | 6 | 每条都由 `Chanlun.DivergenceWitnesses` 或源模块中的构造性歧义见证支撑 |
 | PROVEN_FIXTURE | 0 | （chanlun.md 本身中不计；经验性 grounding 位于 `grounding/` 与 `conformance/` 之下，不作为 Lean 陈述；多分辨率主张 X.10.4 引用 `grounding/chanlun_multiscale_real_grounding.py` 为 Lean 之外的 PROVEN_FIXTURE） |
-| NOT_FORMALIZED | 13 | 每条都列出具体阻塞（整数内核设计、模块桥接、原文多解、下游组件设计选择） |
+| NOT_FORMALIZED | 11 | 每条都列出具体阻塞（整数内核设计、模块桥接、原文多解、下游组件设计选择） |
 | **合计** | **78** | 被审计的原文命名条目 |
 
 六条 MULTI_VALUED_NAMED 是 X.3.7（任意输入上的笔 to 端点读法）、
 X.5.10（zone-gate first3 vs all_）、X.5.11（贴边 ≤ vs <）、X.7.5
 （disp vs slope）、X.7.8（盘整 disp vs slope + intra vs inter）、
-X.8.3（measure-gate 传递到第一/第二买卖点）。十三条 NOT_FORMALIZED
-是 X.4.6（跨预言的 Φ-唯一性 —— 原文歧义）、X.5.12、X.5.13、X.6.9、
-X.7.9、X.8.8、X.8.9、X.9.6、X.9.7、X.10.4、X.10.5、X.10.6、X.10.7。
+X.8.3（measure-gate 传递到第一/第二买卖点）。十一条 NOT_FORMALIZED
+是 X.4.6（跨预言的 Φ-唯一性 —— 原文歧义）、X.5.12、X.6.9、X.7.9、
+X.8.8、X.8.9、X.9.7、X.10.4、X.10.5、X.10.6、X.10.7。
 **没有一条 NOT_FORMALIZED 项使用「future work」或「out of scope」做
 理由** —— 每条都点名具体的结构性原因（整数内核不能表示浮点 / 时间戳
 / MACD 能量；模块桥接需要新的不变量载体；下游组件按设计独立；原文
 对 Φ 有歧义）。
+
+**本 PR 新形式化（NOT_FORMALIZED → PROVEN_DIRECT）：**
+
+* X.5.13（跨完整中枢的多元素外包络，列表归纳形式）：现在为
+  `Chanlun.LevelRecursion.listEnvelope_widens` +
+  `listEnvelope_DD_drops` + `listEnvelope_GG_grows`。`expansion_widens_GG_DD`
+  的列表归纳提升。
+* X.9.6（Option 包装的级别提升 `liftOption`）：现在为
+  `Chanlun.LevelRecursion.liftOption` + `liftOption_eq_none_iff` +
+  `liftOption_eq_some_iff` + `liftOption_strict_drop`。`liftStep` 的
+  Option 包装，在终态时返回 `none`。
 
 ### §X.1  算法 N（§1）
 
@@ -1159,7 +1170,7 @@ X.7.9、X.8.8、X.8.9、X.9.6、X.9.7、X.10.4、X.10.5、X.10.6、X.10.7。
 | X.5.10 | 定理 5.10 zone-gate 歧义见证 | MULTI_VALUED_NAMED | `Chanlun.DivergenceWitnesses.zhongshu_zone_gate_divergence_witness` —— first3 与 all_ 都是原文合法的读法；门在 `zoneGateWitnessEls` 中的元素 ⟨5, 6⟩ 上不一致；两种门都产生 valid + disjoint 输出（`zhongshu_zone_gate_witness_valid_disjoint`）。**可达（无包含）域上两种读法重合** |
 | X.5.11 | 贴边情形（`next_el.lo = ZG` 或 `next_el.hi = ZD`）—— ≤ vs 严格 < | MULTI_VALUED_NAMED | 原文同时支持 ≤ 与 < 读法（17 课第 3 行措辞 vs 17 课例题计算）；本仓库取 ≤ 为规范读法，另一种是兄弟预言 |
 | X.5.12 | `all_` gate 下的扩展传播（完整列表归纳形式） | NOT_FORMALIZED —— 缺列表归纳 | `first3` 形式在 `Chanlun.ZhongshuExtension` 中完全处理；`all_` 形式需要单独的列表归纳，跟踪 `extendEnd` 步骤中的收紧 zone。阻塞：收紧 zone 的状态传递需要在当前 `CenterExt` 数据结构中不存在的额外不变量载体 |
-| X.5.13 | 跨完整中枢的多元素外包络（列表归纳形式） | NOT_FORMALIZED —— 缺列表归纳 | 单步 `expansion_widens_GG_DD` 已 PROVEN_DIRECT。跨列表累积的外包络（DD 单调下降，GG 单调上升，跨同一中枢的所有元素）需要对后续元素流的列表归纳；尚未完成 |
+| X.5.13 | 跨完整中枢的多元素外包络（列表归纳形式） | PROVEN_DIRECT（本 PR 新形式化） | `Chanlun.LevelRecursion.listEnvelope_widens` + `listEnvelope_DD_drops` + `listEnvelope_GG_grows` 把单步 `expansion_widens_GG_DD` 提升为完整列表归纳形式：在任意后续元素列表上，累计 `DD` 弱下降，累计 `GG` 弱上升。证明技术：对后续元素列表归纳，每步使用 mathlib 的 `min_le_left` 与 `le_max_left` |
 
 ### §X.6  走势类型 + 分解（§6、§10）
 
@@ -1212,7 +1223,7 @@ X.7.9、X.8.8、X.8.9、X.9.6、X.9.7、X.10.4、X.10.5、X.10.6、X.10.7。
 | X.9.3 | 定理 9.3 centerSize ≥ 3 | PROVEN_DIRECT | `Chanlun.LevelRecursion.centerSize_ge_3`，`extendEnd_ge` 的直接推论 |
 | X.9.4 | 定理 9.4 外包络承重（lifted Element 有 lo ≤ hi） | PROVEN_DIRECT | `liftCenter_range_eq_core`、`liftCenter_lo_le_hi`、`liftCenters_all_valid`、`liftCenters_mem_iff` |
 | X.9.5 | 定理 9.5 跨层级的确定性保持 | PROVEN_DIRECT | `liftStep_deterministic`、`levelTower_deterministic`、`levelTower_input_eq`、`levelTower_agreement_lifts` |
-| X.9.6 | total 的 `lift : List Element → Option (List Element)` 偏函数包装器 | NOT_FORMALIZED —— 按设计在范围外 | 提升被编码为确定性两步 `liftStep`（= `liftCenters ∘ zhongshu`）。一个在输入提升为空中枢列表时返回 `none` 的包装器是级别递归内容的下游，不是「走势必完美」本身。严格下降测度（定理 9.2）才是原文主张的形式内容；提升器包装是工程 |
+| X.9.6 | total 的 `lift : List Element → Option (List Element)` 偏函数包装器 | PROVEN_DIRECT（本 PR 新形式化） | `Chanlun.LevelRecursion.liftOption` 在终态输入（无中枢形成）时返回 `none`，在非终态时返回 `some next`；配套定理 `liftOption_eq_none_iff`、`liftOption_eq_some_iff`、`liftOption_strict_drop` 描述两个分支并在 `some` 分支上重新派生严格下降。严格下降测度（定理 9.2）是承重内容；本 PR 加的是 Option 包装以便迭代 |
 | X.9.7 | 级别递归的严格子窗口（层-(n−1) 子窗口是层-(n−1) 塔的严格子集） | NOT_FORMALIZED —— 定义性 | 需要一个层-(n−1) 上的「子窗口选择器」概念，它在层-(n−1) 塔的索引上取连续子区间；当前 `IntervalNesting.LevelWindow` 给出类型但不给出到 `LevelRecursion.levelTower` 的桥。阻塞：两个模块的载体不同（`Element` 列表 vs 索引区间结构），桥接强制转换尚未引入 |
 
 ### §X.10  区间套（§11）

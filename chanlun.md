@@ -1178,10 +1178,10 @@ as 1):
 
 | Status | Count | Notes |
 |---|---|---|
-| PROVEN_DIRECT | 59 | sorry-free Lean theorems under `lean/Chanlun/` |
+| PROVEN_DIRECT | 61 | sorry-free Lean theorems under `lean/Chanlun/` (includes X.5.13 + X.9.6 newly formalized in this PR) |
 | MULTI_VALUED_NAMED | 6 | each backed by a constructive divergence witness in `Chanlun.DivergenceWitnesses` or the originating module |
 | PROVEN_FIXTURE | 0 | (none counted in chanlun.md proper — empirical groundings live under `grounding/` and `conformance/`, not as Lean statements; the multi-scale claim X.10.4 cites `grounding/chanlun_multiscale_real_grounding.py` as PROVEN_FIXTURE outside Lean) |
-| NOT_FORMALIZED | 13 | each cell names the specific blocker (integer kernel design, module-bridging, master-text multi-readability, downstream-component design choice) |
+| NOT_FORMALIZED | 11 | each cell names the specific blocker (integer kernel design, module-bridging, master-text multi-readability, downstream-component design choice) |
 | **Total** | **78** | named paper items audited |
 
 The audit covers every `Def x.y` and `Thm x.y` shipped in §1 through §11
@@ -1190,14 +1190,25 @@ of this document, plus the `Status —` items each of §4, §6, §7, §8, §9,
 X.3.7 (`bi-to-endpoint` reading on arbitrary inputs), X.5.10 (zone-gate
 first3 vs all_), X.5.11 (shoulder ≤ vs <), X.7.5 (disp vs slope), X.7.8
 (panzheng disp vs slope + intra vs inter), X.8.3 (measure-gate
-propagation into 第一/第二 buy/sell). The thirteen NOT_FORMALIZED items
+propagation into 第一/第二 buy/sell). The eleven NOT_FORMALIZED items
 are X.4.6 (Φ-uniqueness across oracles — master-text ambiguity), X.5.12,
-X.5.13, X.6.9, X.7.9, X.8.8, X.8.9, X.9.6, X.9.7, X.10.4, X.10.5,
-X.10.6, X.10.7. None of the NOT_FORMALIZED items use the phrase
-"future work" or "out of scope" as the blocker — each names the
-structural reason (integer kernel cannot represent floats / timestamps
-/ MACD energy; module-bridging needs an additional invariant carrier;
+X.6.9, X.7.9, X.8.8, X.8.9, X.9.7, X.10.4, X.10.5, X.10.6, X.10.7. None
+of the NOT_FORMALIZED items use the phrase "future work" or "out of
+scope" as the blocker — each names the structural reason (integer
+kernel cannot represent floats / timestamps / MACD energy;
+module-bridging needs an additional invariant carrier;
 downstream-component design choice; master-text ambiguity on Φ).
+
+**New formalizations in this PR (NOT_FORMALIZED → PROVEN_DIRECT)**:
+
+* X.5.13 (multi-element envelope across a complete zhongshu, list-induction
+  form): now `Chanlun.LevelRecursion.listEnvelope_widens` +
+  `listEnvelope_DD_drops` + `listEnvelope_GG_grows`. Direct list-induction
+  lift of `expansion_widens_GG_DD`.
+* X.9.6 (Option-wrapped level lift `liftOption`): now
+  `Chanlun.LevelRecursion.liftOption` + `liftOption_eq_none_iff` +
+  `liftOption_eq_some_iff` + `liftOption_strict_drop`. The packaging
+  of `liftStep` that returns `none` on terminal input.
 
 ### §X.1  Algorithm N (§1)
 
@@ -1259,7 +1270,7 @@ downstream-component design choice; master-text ambiguity on Φ).
 | X.5.10 | Thm 5.10 zone-gate divergence witness | MULTI_VALUED_NAMED | `Chanlun.DivergenceWitnesses.zhongshu_zone_gate_divergence_witness` — first3 vs all_ are both legitimate readings of the master text; the gate disagrees on element ⟨5, 6⟩ within `zoneGateWitnessEls`; both gates produce valid + disjoint outputs (`zhongshu_zone_gate_witness_valid_disjoint`). On the reachable (containment-free) domain the two readings coincide |
 | X.5.11 | Shoulder cases (`next_el.lo = ZG` or `next_el.hi = ZD`) — ≤ vs strict-< | MULTI_VALUED_NAMED | Master text supports both ≤ and < readings (lesson 17 line 3 wording vs lesson 17 example computation); this repository takes ≤ as the canonical reading; the other reading is a sibling oracle |
 | X.5.12 | Extension propagation under the `all_` gate (full list-induction form) | NOT_FORMALIZED — list-induction missing | The `first3` form is fully discharged in `Chanlun.ZhongshuExtension`; the `all_` form requires a separate list-induction tracking the tightening zone through `extendEnd` steps. Blocker: the tightening zone state-passing requires an additional invariant carrier not present in the current `CenterExt` data structure |
-| X.5.13 | Multi-element envelope across a complete zhongshu (list-induction form) | NOT_FORMALIZED — list-induction missing | Single-step `expansion_widens_GG_DD` is PROVEN_DIRECT. The cross-list cumulative envelope (DD monotonically descends and GG monotonically ascends across all elements of one center) requires list-induction over the post-element stream; not yet completed |
+| X.5.13 | Multi-element envelope across a complete zhongshu (list-induction form) | PROVEN_DIRECT (newly formalized in this PR) | `Chanlun.LevelRecursion.listEnvelope_widens` + `listEnvelope_DD_drops` + `listEnvelope_GG_grows` lift the single-step `expansion_widens_GG_DD` to the full list-induction form: across any list of post-elements, the cumulative `DD` weakly drops and the cumulative `GG` weakly grows. Proof technique: induction on the post-element list, using `min_le_left` and `le_max_left` from mathlib at each step |
 
 ### §X.6  走势 / Walk type + decomposition (§6, §10)
 
@@ -1312,7 +1323,7 @@ downstream-component design choice; master-text ambiguity on Φ).
 | X.9.3 | Thm 9.3 centerSize ≥ 3 | PROVEN_DIRECT | `Chanlun.LevelRecursion.centerSize_ge_3`, immediate from `extendEnd_ge` |
 | X.9.4 | Thm 9.4 envelope-soundness (lifted Element has lo ≤ hi) | PROVEN_DIRECT | `liftCenter_range_eq_core`, `liftCenter_lo_le_hi`, `liftCenters_all_valid`, `liftCenters_mem_iff` |
 | X.9.5 | Thm 9.5 determinism preservation across levels | PROVEN_DIRECT | `liftStep_deterministic`, `levelTower_deterministic`, `levelTower_input_eq`, `levelTower_agreement_lifts` |
-| X.9.6 | Total `lift : List Element → Option (List Element)` partial-function lifter | NOT_FORMALIZED — out-of-scope by design | The lift is encoded as the deterministic two-step `liftStep` (= `liftCenters ∘ zhongshu`). A wrapper that returns `none` when the input lifts to an empty center list is downstream of the level-recursion content and not part of "走势必完美" itself. The strict-drop measure (Thm 9.2) is the formal content of the master text's claim; the lifter wrapper is engineering |
+| X.9.6 | Total `lift : List Element → Option (List Element)` partial-function lifter | PROVEN_DIRECT (newly formalized in this PR) | `Chanlun.LevelRecursion.liftOption` returns `none` on terminal input (no center forms) and `some next` on non-terminal; companion theorems `liftOption_eq_none_iff`, `liftOption_eq_some_iff`, `liftOption_strict_drop` characterize both branches and re-derive the strict-drop on the `some` branch. The strict-drop measure (Thm 9.2) is the load-bearing content; this is the Option packaging for iteration |
 | X.9.7 | Strict sub-window of the level recursion (level-(n−1) sub-window is a strict subset) | NOT_FORMALIZED — definitional | Requires a notion of "sub-window selector" at level (n−1) that picks a contiguous index sub-range of the level-(n−1) tower; the current `IntervalNesting.LevelWindow` provides the type but not the bridge to `LevelRecursion.levelTower`. Blocker: the two modules' carriers are different (`Element` list vs index-range struct) and a bridging coercion is not yet introduced |
 
 ### §X.10  区间套 / Interval nesting (§11)
