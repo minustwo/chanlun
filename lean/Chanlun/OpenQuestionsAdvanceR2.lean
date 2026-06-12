@@ -788,7 +788,8 @@ theorem demoTw_descended_level_eq_five :
   intro tw' h
   have h_eq : tw'.level + 1 = demoTw.level :=
     descendTimestamps_level_drops demoTw tw' h
-  unfold demoTw at h_eq
+  have h_demo_lvl : demoTw.level = 6 := rfl
+  rw [h_demo_lvl] at h_eq
   omega
 
 /-- §Y.5 mutant fires: any window descended from `demoTw` fails the
