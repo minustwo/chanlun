@@ -591,11 +591,8 @@ theorem decompose_spec_unique_empty
   have h := h_partition []
   -- h : ((f []).map walkSize).sum = ([] : List Center).length = 0
   by_contra h_ne
-  -- f [] is non-empty: get its head via `List.exists_cons_of_ne_nil`.
-  obtain ⟨w, rest, h_cons⟩ : ∃ w rest, f [] = w :: rest := by
-    cases h_eq : f [] with
-    | nil => exact absurd h_eq h_ne
-    | cons w' rest' => exact ⟨w', rest', h_eq⟩
+  -- f [] is non-empty: List.exists_cons_of_ne_nil from Mathlib gives the witness.
+  obtain ⟨w, rest, h_cons⟩ := List.exists_cons_of_ne_nil h_ne
   rw [h_cons] at h
   have h_w_in : w ∈ f [] := by rw [h_cons]; exact List.mem_cons_self w rest
   have h_w_shape : w.start ≤ w.end_ := h_valid_shape [] w h_w_in
@@ -633,10 +630,7 @@ theorem decompose_spec_unique_head_at_zero
     rw [h_zero] at h_partition
     have h_len : centers.length > 0 := List.length_pos.mpr h_nonempty
     omega
-  obtain ⟨w, rest, h_cons⟩ : ∃ w rest, f centers = w :: rest := by
-    cases h_eq : f centers with
-    | nil => exact absurd h_eq h_fcenters_ne
-    | cons w' rest' => exact ⟨w', rest', h_eq⟩
+  obtain ⟨w, rest, h_cons⟩ := List.exists_cons_of_ne_nil h_fcenters_ne
   refine ⟨w, rest, h_cons, ?_⟩
   rw [h_cons] at h_chain
   cases rest with
