@@ -190,6 +190,32 @@ jobs:
           # non-zero on any divergence; the gate fails honestly, never silently.
           go run ./cmd/check
 
+  conformance-java:
+    name: Conformance corpus (chanlun-v1, Java backend)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Build Java conformance backend
+        working-directory: impl/java
+        run: |
+          set -euo pipefail
+          mvn -B -q -DskipTests package
+
+      - name: Run Java conformance harness (48 fixtures)
+        working-directory: impl/java
+        run: |
+          set -euo pipefail
+          # SHA-equality is the law. A byte off = FAIL. The harness exits
+          # non-zero on any divergence; the gate fails honestly, never silently.
+          java -jar target/chanlun-check.jar
+
   conformance-pinescript-lint:
     name: PineScript v5 port (discipline lint, not a conformance gate)
     runs-on: ubuntu-latest
