@@ -100,8 +100,8 @@ theorem zhongshu_zone_gate_witness_valid_disjoint :
     (∀ c ∈ zhongshu zoneGateWitnessEls ZoneGate.all_ 0, c.ZD ≤ c.ZG) ∧
     DisjointConsec (zhongshu zoneGateWitnessEls ZoneGate.first3 0) ∧
     DisjointConsec (zhongshu zoneGateWitnessEls ZoneGate.all_ 0) :=
-  ⟨zhongshu_valid zoneGateWitnessEls ZoneGate.first3,
-   zhongshu_valid zoneGateWitnessEls ZoneGate.all_,
+  ⟨fun c hc => zhongshu_valid zoneGateWitnessEls ZoneGate.first3 0 c hc,
+   fun c hc => zhongshu_valid zoneGateWitnessEls ZoneGate.all_ 0 c hc,
    zhongshu_disjoint zoneGateWitnessEls ZoneGate.first3 0,
    zhongshu_disjoint zoneGateWitnessEls ZoneGate.all_ 0⟩
 

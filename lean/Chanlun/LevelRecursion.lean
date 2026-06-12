@@ -174,10 +174,7 @@ theorem liftCenters_all_valid (els : List Element) (g : ZoneGate) :
 theorem liftCenters_mem_iff (centers : List Center) (e : Element) :
     e ∈ liftCenters centers ↔ ∃ c ∈ centers, liftCenter c = e := by
   unfold liftCenters
-  rw [List.mem_map]
-  constructor
-  · rintro ⟨c, hc, hl⟩; exact ⟨c, hc, hl⟩
-  · rintro ⟨c, hc, hl⟩; exact ⟨c, hc, hl⟩
+  exact List.mem_map
 
 /-! ## §7 — Determinism preservation along the tower.
 

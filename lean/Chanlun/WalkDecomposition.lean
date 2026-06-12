@@ -590,25 +590,26 @@ theorem decompose_spec_unique_empty
     f [] = [] := by
   have h := h_partition []
   -- h : ((f []).map walkSize).sum = ([] : List Center).length = 0
-  cases h_f : f [] with
-  | nil => exact h_f
-  | cons w rest =>
-      exfalso
-      rw [h_f] at h
-      have h_w_in : w ∈ f [] := by rw [h_f]; exact List.mem_cons_self w rest
-      have h_w_shape : w.start ≤ w.end_ := h_valid_shape [] w h_w_in
-      have h_walkSize_ge : walkSize w ≥ 1 := by
-        show w.end_ + 1 - w.start ≥ 1
-        omega
-      -- sum (map f (w :: rest)) = f w + sum (map f rest)
-      have h_sum_eq : ((w :: rest).map walkSize).sum =
-          walkSize w + (rest.map walkSize).sum := by
-        simp [List.map_cons, List.sum_cons]
-      rw [h_sum_eq] at h
-      have h_rest_nn : (rest.map walkSize).sum ≥ 0 := Nat.zero_le _
-      have h_len_zero : (([] : List Center)).length = 0 := List.length_nil
-      rw [h_len_zero] at h
-      omega
+  by_contra h_ne
+  -- f [] is non-empty: get its head via `List.exists_cons_of_ne_nil`.
+  obtain ⟨w, rest, h_cons⟩ : ∃ w rest, f [] = w :: rest := by
+    cases h_eq : f [] with
+    | nil => exact absurd h_eq h_ne
+    | cons w' rest' => exact ⟨w', rest', h_eq⟩
+  rw [h_cons] at h
+  have h_w_in : w ∈ f [] := by rw [h_cons]; exact List.mem_cons_self w rest
+  have h_w_shape : w.start ≤ w.end_ := h_valid_shape [] w h_w_in
+  have h_walkSize_ge : walkSize w ≥ 1 := by
+    show w.end_ + 1 - w.start ≥ 1
+    omega
+  have h_sum_eq : ((w :: rest).map walkSize).sum =
+      walkSize w + (rest.map walkSize).sum := by
+    simp [List.map_cons, List.sum_cons]
+  rw [h_sum_eq] at h
+  have h_rest_nn : (rest.map walkSize).sum ≥ 0 := Nat.zero_le _
+  have h_len_zero : (([] : List Center)).length = 0 := List.length_nil
+  rw [h_len_zero] at h
+  omega
 
 /-- **THEOREM (SPEC-UNIQUE, HEAD-FORCED)**: any function `f` matching the
     partition+chain spec on centers with at least one element must have
@@ -624,27 +625,28 @@ theorem decompose_spec_unique_head_at_zero
     (h_partition : ((f centers).map walkSize).sum = centers.length)
     (h_chain : WalksChain 0 (f centers)) :
     ∃ w rest, f centers = w :: rest ∧ w.start = 0 := by
-  cases h_f : f centers with
+  -- First establish f centers is non-empty (from partition + centers ≠ []).
+  have h_fcenters_ne : f centers ≠ [] := by
+    intro h_eq
+    rw [h_eq] at h_partition
+    have h_zero : (([] : List Walk).map walkSize).sum = 0 := by simp
+    rw [h_zero] at h_partition
+    have h_len : centers.length > 0 := List.length_pos.mpr h_nonempty
+    omega
+  obtain ⟨w, rest, h_cons⟩ : ∃ w rest, f centers = w :: rest := by
+    cases h_eq : f centers with
+    | nil => exact absurd h_eq h_fcenters_ne
+    | cons w' rest' => exact ⟨w', rest', h_eq⟩
+  refine ⟨w, rest, h_cons, ?_⟩
+  rw [h_cons] at h_chain
+  cases rest with
   | nil =>
-      -- Partition: 0 = centers.length, but centers ≠ [] ⇒ length > 0; contradiction.
-      exfalso
-      rw [h_f] at h_partition
-      -- h_partition : (([] : List Walk).map walkSize).sum = centers.length
-      have h_zero : (([] : List Walk).map walkSize).sum = 0 := by simp
-      rw [h_zero] at h_partition
-      have h_len : centers.length > 0 := List.length_pos.mpr h_nonempty
-      omega
-  | cons w rest =>
-      refine ⟨w, rest, rfl, ?_⟩
-      rw [h_f] at h_chain
-      cases rest with
-      | nil =>
-          change w.start = 0 at h_chain
-          exact h_chain
-      | cons w₂ rest₂ =>
-          have := h_chain
-          change w.start = 0 ∧ _ ∧ _ at this
-          exact this.1
+      change w.start = 0 at h_chain
+      exact h_chain
+  | cons w₂ rest₂ =>
+      have := h_chain
+      change w.start = 0 ∧ _ ∧ _ at this
+      exact this.1
 
 /-! ## §8 — Auxiliary: `decomposeFrom` returns a non-empty list iff there are
        remaining centers (used to derive a clean form for the head). -/
