@@ -151,10 +151,92 @@ _BI_SEPARATION = "(>= (abs (- pb pt)) 4)"   # 新笔 ⟺ |p_b − p_t| ≥ 4 (th
 _BI_SEPARATION_ENV = {"pt": 0, "pb": 4}
 
 
+# ---------------------------------------------------------------------------
+# 笔-DECOMPOSITION PROGRAM (笔的唯一分解) — R4, the FULL list-structural 笔 validity.
+#
+# The 新笔 SEPARATION KERNEL above (`bi_separation`) is a 2-pivot predicate — it captures only the
+# δmin CLAUSE of the opposite-far branch. It does NOT decide whether a WHOLE `List Stroke` is a valid
+# 笔 decomposition of a `List Fractal` (the discovered residue R4, the window-local detector vs
+# list-structural validity gap the 分型/separation locks could not reach).
+#
+# THIS program closes R4. It is the FAITHFUL 笔-decomposition as a residua-Scheme `fold` over a
+# `List Fractal`, mirroring `lean/Chanlun/StrokeUniqueness.lean#IsValidBi_from` (≡ the greedy
+# `Stroke.step` fold) CHARACTER-FOR-CHARACTER at δmin=4. The fold carries the EXACT Lean state
+# `StrokeState = ⟨anchor : Option Fractal, out : List Stroke⟩` (a residua record), and the body is the
+# three-branch `step δmin`:
+#
+#   step δmin ⟨anchor, out⟩ f =
+#     | anchor = none           → ⟨some f, out⟩                                   (bootstrap)
+#     | some a, a.kind = f.kind → ⟨some (pickRep a f), out⟩                       (same-kind: extremal rep)
+#     | some a, f.idx−a.idx ≥ δmin → ⟨some f, ⟨a.idx,f.idx,emitDir f⟩ :: out⟩     (opposite-far: EMIT 笔)
+#     | some a, else            → ⟨some a, out⟩                                    (opposite-close: keep)
+#
+# The output `(field … out)` is the 笔 list. `strokes frs δmin := (foldl step empty).out.reverse`;
+# we build `out` with forward `append` (not prepend), so the program's `out` IS `strokes frs 4` in
+# final order — i.e. EXACTLY the `alt` that `IsValidBi frs 4 alt` accepts. (`strokes_unique` then
+# gives THE unique 笔.) Encodings, mirroring the Lean defs verbatim:
+#   • Option Fractal anchor → a record with `present` ∈ {0,1}; `present 0` ≡ `none` (bootstrap branch).
+#   • FractalKind  → kind ∈ {1=top, 2=bottom}; `a.kind = f.kind` ≡ `(= (field a kind) (field f kind))`.
+#   • pickRep cur cand → top: higher h (`(> f.h a.h)`); bottom: lower l (`(< f.l a.l)`) — Stroke.lean §2.
+#   • emitDir target → top→up, bottom→down; the emitted `dir` IS `f.kind` (1=up≡top, 2=down≡bottom).
+#   • the δmin gate → `(>= (- (field f idx) (field a idx)) 4)` — the SAME δmin=4 fix as bi_separation,
+#     now the opposite-far emit gate of the WHOLE fold (not a 2-pivot predicate).
+#
+# A produced 笔 list is NOT a proof: the obligation locks to StrokeUniqueness#IsValidBi born
+# undischarged; only cc's lake proof `IsValidBi frs 4 (evalL(bi_decomposition frs))` discharges it.
+#
+# Fixed FRACTAL sample (the ict_residua BARS analog) — an alternating top/bottom 分型 list chosen to
+# exercise ALL FOUR branches and stay non-vacuous (records: idx + kind + extremes h/l):
+#   f0(idx0,top  h130 l120)  bootstrap         → anchor=f0
+#   f1(idx2,top  h140 l125)  same-kind pickRep → 140>130 ⇒ anchor=f1 (extremal top)
+#   f2(idx6,bot  h95  l60 )  opposite, 6−2=4≥4 → EMIT ⟨2,6,down⟩, anchor=f2
+#   f3(idx8,top  h150 l130)  opposite, 8−6=2<4 → KEEP anchor=f2 (NO emit — the close-gap branch)
+#   f4(idx12,top h160 l140)  opposite,12−6=6≥4 → EMIT ⟨6,12,up⟩, anchor=f4
+# ⇒ the unique δ=4 决定 decomposition = [⟨2,6,down⟩, ⟨6,12,up⟩] (= strokes frs 4 = the IsValidBi alt).
+_BI_FRS = """(append (singleton (record (idx 0)  (kind 1) (h 130) (l 120)))
+        (append (singleton (record (idx 2)  (kind 1) (h 140) (l 125)))
+        (append (singleton (record (idx 6)  (kind 2) (h 95)  (l 60)))
+        (append (singleton (record (idx 8)  (kind 1) (h 150) (l 130)))
+                (singleton (record (idx 12) (kind 1) (h 160) (l 140)))))))"""
+
+# `some f` as the anchor record (present=1, carrying the fractal's idx/kind/extremes).
+_FREC = ("(record (present 1) (idx (field f idx)) (kind (field f kind)) "
+         "(h (field f h)) (l (field f l)))")
+# `none` anchor — present=0 (the StrokeState.empty bootstrap; field values are inert placeholders).
+_BI_NONE_ANCHOR = "(record (present 0) (idx 0) (kind 0) (h 0) (l 0))"
+# the emitted 笔 ⟨a.idx, f.idx, emitDir f⟩ (dir = f.kind: 1=up≡top, 2=down≡bottom).
+_BI_EMIT = "(record (from_idx (field a idx)) (to_idx (field f idx)) (dir (field f kind)))"
+
+# The fold BODY = `step δmin` (three branches, with the none-bootstrap as the outermost `if`). `acc`
+# is the StrokeState record ⟨anchor, out⟩; `f` is the current Fractal. δmin=4 (the audited fix).
+_BI_STEP_BODY = f"""(let (a (field acc anchor))
+  (if (= (field a present) 0)
+      (record (anchor {_FREC}) (out (field acc out)))
+      (if (= (field a kind) (field f kind))
+          (record
+            (anchor
+              (if (= (field a kind) 1)
+                  (if (> (field f h) (field a h)) {_FREC} a)
+                  (if (< (field f l) (field a l)) {_FREC} a)))
+            (out (field acc out)))
+          (if (>= (- (field f idx) (field a idx)) 4)
+              (record (anchor {_FREC})
+                      (out (append (field acc out) (singleton {_BI_EMIT}))))
+              acc))))"""
+
+# `strokes frs 4` as a fold: foldl step empty, then project `.out` (built forward ⇒ already in
+# final 笔 order). This is the residua-Scheme PROGRAM whose evalL the lock binds to IsValidBi.
+_BI_DECOMPOSITION = (f"(field (fold {_BI_FRS} "
+                     f"(record (anchor {_BI_NONE_ANCHOR}) (out (empty-list))) "
+                     f"(acc f) {_BI_STEP_BODY}) out)")
+
+
 # name -> (scheme, env). env=None: the window detectors carry their own sample bars inline (the
 # residua-Scheme body is the load-bearing artifact; the sample only makes the value non-vacuous).
 # bi_separation carries an env {pt, pb}: the 2-pivot 新笔-separation predicate is parameterized by
 # the top/bottom pivot indices (the body is the load-bearing artifact; the env picks a sample pair).
+# bi_decomposition carries its fractal list inline (env=None) — the fold body is the load-bearing
+# artifact (the full IsValidBi state machine); the fixed sample just makes the 笔 list non-vacuous.
 PRIMS = {
     # ---- 分型 Def-3 a-gate (= isTopFractal / isBottomFractal) over 3-bar windows ----
     "top_fractal":    (_windowed(BARS, _TOP_BODY), None),
@@ -163,6 +245,9 @@ PRIMS = {
     "inclusion_normalized": (_windowed(WIN_NORMALIZED, _INC_BODY), None),
     # ---- 笔 新笔 SEPARATION KERNEL (= the δmin clause; 新笔 ⟺ |p_b − p_t| ≥ 4) — the audited fix ----
     "bi_separation": (_BI_SEPARATION, _BI_SEPARATION_ENV),
+    # ---- 笔-DECOMPOSITION (= the FULL list-structural IsValidBi validity; R4) — the fold over
+    #      `List Fractal` carrying ⟨anchor, out⟩, emitting the unique δ=4 笔 list (= strokes frs 4) ----
+    "bi_decomposition": (_BI_DECOMPOSITION, None),
 }
 
 
