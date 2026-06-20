@@ -91,6 +91,20 @@ MAPPING = {
         "B", "chanlun:lean/Chanlun/Fractal.lean#isInclusionNormalized",
         "Prop (the 包含关系 [chanlun_inclusion_precondition] Def-3 assumes upstream); ↔",
     ),
+    # ---- 笔 新笔 SEPARATION KERNEL — the audited δmin fix, HONESTLY kernel-scoped (NOT full IsValidBi) ----
+    # The residua-Scheme detector `(>= (abs (- pb pt)) 4)` mirrors chanlun_bi_kline_rule_grounding's
+    # proven 新笔 math (新笔 ⟺ |p_b − p_t| ≥ 4) — the audited fix for the runtime δmin=1 bug. The Lean
+    # target StrokeUniqueness.lean#IsValidBi is LIST-STRUCTURAL (over `List Fractal`); this 2-pivot
+    # detector captures only its δmin SEPARATION CLAUSE (the `f.idx − a.idx ≥ δmin` gate of the
+    # opposite-far branch in IsValidBi_from / Stroke.step), NOT the full list validity. The lock
+    # theorem cc will prove is the separation-clause direction (evalL = true ↔ the δmin gate holds),
+    # NOT full IsValidBi. The full list-decomposition lock remains a discovered residue R4.
+    "bi_separation": (
+        "B", "chanlun:lean/Chanlun/StrokeUniqueness.lean#IsValidBi",
+        "Prop, SEPARATION KERNEL of 新笔 (the δmin clause `f.idx−a.idx ≥ δmin`, here δmin=4 ⟺ "
+        "|p_b−p_t|≥4 — the audited δmin=1-bug fix), NOT full IsValidBi list validity (= R4, "
+        "list-structural over List Fractal); lock theorem is the separation-clause ↔, not full =",
+    ),
 }
 
 
@@ -153,11 +167,14 @@ def main(argv):
               f"chanlun_residua.PRIMS")
         print(f"# TEMPLATE: {TEMPLATE_NOTE}")
         print(f"# Lock-theorem shape: chanlun isX are Prop -> evalL = true ↔ isX (Tier-B ↔, not Bool =).")
+        print(f"# Kernel-scope: bi_separation locks the 新笔 SEPARATION KERNEL (the δmin clause, "
+              f"δmin=4 ⟺ |p_b−p_t|≥4 — the audited δmin=1-bug fix), NOT full IsValidBi list validity (= R4).")
         print(f"# {'PRIM':22s} {'TIER':4s} {'STATUS':16s} {'LEAN_REF (or NONE)'}")
         per_tier = {}
         for name, tier, ref, status, residue in rows:
             per_tier[tier] = per_tier.get(tier, 0) + 1
-            print(f"  {name:22s} {tier:4s} {status:16s} {ref}")
+            scope = "  [kernel: 新笔 δmin separation clause, NOT full IsValidBi = R4]" if name == "bi_separation" else ""
+            print(f"  {name:22s} {tier:4s} {status:16s} {ref}{scope}")
         tiers = ", ".join(f"{t}={per_tier.get(t, 0)}" for t in ("A", "B", "C", "D") if per_tier.get(t))
         print(f"# SUMMARY: {len(rows)} obligations declared, ALL undischarged "
               f"(no lake proof yet — honest). Tiers: {tiers}.")

@@ -124,14 +124,45 @@ def _windowed(bars, body):
     return f"(let (bars {bars}) (map (window bars 3) (w) (let (mid {_MID}) {body})))"
 
 
+# ---------------------------------------------------------------------------
+# 笔 SEPARATION KERNEL (新笔) — the next layer down from 分型 (geometry) to 笔 (stroke).
+#
+# This encodes a REAL audited bug fix. The 108课-vs-impl audit (proven in
+# grounding/chanlun_bi_kline_rule_grounding.py) found the runtime `strokes` program gates two
+# opposite fractals on `f.idx − anchor.idx ≥ δmin` with default **δmin=1** — neither 老笔 nor 新笔
+# (the audit bug). The MATH VERDICT, exhaustively grounded in that file:
+#
+#     新笔(t, b)  ⟺  |p_b − p_t| ≥ 4      (顶/底分型 不共用K线 ∧ 极值间 ≥3 K线)
+#
+# So the faithful 新笔-separation detector, written as a residua-Scheme program (a 2-pivot
+# separation predicate, env-parameterized by the two pivot indices pt/pb), is exactly the
+# index-difference gate `|p_b − p_t| ≥ 4`. This mirrors chanlun_bi_kline_rule_grounding's
+# XINBI_DMIN = 4 boundary CHARACTER-FOR-CHARACTER (the δmin clause), the audited FIX.
+#
+# HONEST SCOPE: this is the 新笔 SEPARATION KERNEL (the `δmin` clause of the opposite-far branch in
+# lean/Chanlun/Stroke.lean#step / StrokeUniqueness.lean#IsValidBi_from), NOT the full list-structural
+# `IsValidBi` validity (which is over `List Fractal` — a known discovered residue R4, a list-
+# decomposition lock this 2-pivot detector does NOT capture). See chanlun_domain_lock.py.
+_BI_SEPARATION = "(>= (abs (- pb pt)) 4)"   # 新笔 ⟺ |p_b − p_t| ≥ 4 (the audited δmin=4 fix)
+
+# Sample env: the exact δ=4 boundary from the grounding proof — pt=0,pb=4 → true (≥4: 新笔);
+# pt=0,pb=3 → false (only 3 separation: shared K-lines / <3 between extremes — NOT a 新笔). `abs`
+# makes the predicate order-independent (a 底→顶 pair at pt=4,pb=0 is the same 新笔).
+_BI_SEPARATION_ENV = {"pt": 0, "pb": 4}
+
+
 # name -> (scheme, env). env=None: the window detectors carry their own sample bars inline (the
 # residua-Scheme body is the load-bearing artifact; the sample only makes the value non-vacuous).
+# bi_separation carries an env {pt, pb}: the 2-pivot 新笔-separation predicate is parameterized by
+# the top/bottom pivot indices (the body is the load-bearing artifact; the env picks a sample pair).
 PRIMS = {
     # ---- 分型 Def-3 a-gate (= isTopFractal / isBottomFractal) over 3-bar windows ----
     "top_fractal":    (_windowed(BARS, _TOP_BODY), None),
     "bottom_fractal": (_windowed(BARS, _BOTTOM_BODY), None),
     # ---- 包含关系 precondition (= isInclusionNormalized) — the Def-3 upstream gate ----
     "inclusion_normalized": (_windowed(WIN_NORMALIZED, _INC_BODY), None),
+    # ---- 笔 新笔 SEPARATION KERNEL (= the δmin clause; 新笔 ⟺ |p_b − p_t| ≥ 4) — the audited fix ----
+    "bi_separation": (_BI_SEPARATION, _BI_SEPARATION_ENV),
 }
 
 
