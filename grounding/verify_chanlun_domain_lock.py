@@ -208,6 +208,117 @@ def section_15_bi_separation_delta_bug():
           "[domain_lock_undischarged], NOT locked (kernel-scoped to IsValidBi, not full list validity = R4).")
 
 
+# The 笔-DECOMPOSITION program (R4) and its δmin=1 over-segmentation MUTANT, as residua-Scheme folds
+# over the SAME fixed `List Fractal`. `bi_decomposition` IS the faithful δ=4 fold (single-sourced);
+# the mutant replaces the opposite-far emit gate `≥ 4` with the audited buggy `≥ 1`.
+_REAL_DECOMP_SRC = chanlun_residua.PRIMS["bi_decomposition"][0]            # δmin=4 opposite-far gate
+_MUTANT_DECOMP_SRC = _REAL_DECOMP_SRC.replace(
+    "(>= (- (field f idx) (field a idx)) 4)",
+    "(>= (- (field f idx) (field a idx)) 1)", 1)                           # δmin=1 — the audited bug
+
+
+def _decode_strokes(val):
+    """Decode a residua list-of-stroke-records value into [{from_idx,to_idx,dir}, …] (plain ints)."""
+    assert isinstance(val, dict) and val.get("tag") == "list", f"expected a list value, got {val}"
+    out = []
+    for rec in val["xs"]:
+        assert rec.get("tag") == "record", f"expected stroke records, got {rec}"
+        out.append({kv[0]: kv[1]["n"] for kv in rec["kvs"]})
+    return out
+
+
+def _min_separation(strokes):
+    """The smallest 笔 separation `to_idx − from_idx` in a decomposition (∞ for the empty 笔 list)."""
+    return min((s["to_idx"] - s["from_idx"] for s in strokes), default=float("inf"))
+
+
+def section_15_bi_decomposition_oversegment():
+    """§15 (bi_decomposition) — the mutant is the δmin=1 over-segmentation of the FULL fold. On the
+    SAME fixed `List Fractal`, the δ=1 BUG emits a 笔 ⟨6,8⟩ (separation 2 — only 2 K-lines between
+    extremes, an INVALID 笔 `IsValidBi … 4` REJECTS), where the faithful δ=4 FOLD instead extends to
+    ⟨6,12⟩ (separation 6 — a real 新笔). The δ=1 decomposition is OVER-SEGMENTED and IsValidBi-invalid
+    at δ=4; the δ=4 decomposition is the unique valid 笔. value-≠-proof ALSO holds: even the faithful
+    fold's produced 笔 list reports [domain_lock_undischarged] — a produced decomposition is NOT a lock."""
+    # Sanity: the mutant must actually be the δ=1 opposite-far gate (a real, different program).
+    assert _MUTANT_DECOMP_SRC != _REAL_DECOMP_SRC, \
+        "§15 precondition: the δ=1 over-segmentation mutant must differ from the faithful δ=4 fold."
+    assert "(>= (- (field f idx) (field a idx)) 1)" in _MUTANT_DECOMP_SRC, \
+        "§15 precondition: the mutant must use the audited δmin=1 emit gate."
+
+    faithful = _decode_strokes(chanlun_residua.run(_REAL_DECOMP_SRC, None)[0])
+    oversegmented = _decode_strokes(chanlun_residua.run(_MUTANT_DECOMP_SRC, None)[0])
+
+    # The faithful δ=4 decomposition is the unique valid 笔 list = strokes frs 4 = the IsValidBi alt.
+    assert faithful == [{"from_idx": 2, "to_idx": 6, "dir": 2},
+                        {"from_idx": 6, "to_idx": 12, "dir": 1}], \
+        f"§15: the faithful δ=4 fold must emit the unique 笔 [⟨2,6,down⟩,⟨6,12,up⟩], got {faithful}"
+    # The δ=1 BUG over-segments: it emits ⟨6,8⟩ (separation 2) instead of extending to ⟨6,12⟩.
+    assert oversegmented == [{"from_idx": 2, "to_idx": 6, "dir": 2},
+                             {"from_idx": 6, "to_idx": 8, "dir": 1}], \
+        f"§15: the δ=1 BUG must over-segment to [⟨2,6,down⟩,⟨6,8,up⟩], got {oversegmented}"
+    assert faithful != oversegmented, \
+        "§15: the δ=4 decomposition must differ from the δ=1 over-segmentation (the bug is real)."
+
+    # The structural verdict: the δ=1 decomposition contains a 笔 with separation < δmin=4 — so
+    # `IsValidBi frs 4` (which requires every opposite-far emit to satisfy `f.idx−a.idx ≥ 4`) REJECTS
+    # it. The faithful δ=4 decomposition has every 笔 ≥ 4 — IsValidBi at δ=4 accepts it.
+    assert _min_separation(oversegmented) < 4, \
+        f"§15: the δ=1 over-segmentation must contain a 笔 with separation < 4 (IsValidBi-invalid), " \
+        f"got min separation {_min_separation(oversegmented)}"
+    assert _min_separation(faithful) >= 4, \
+        f"§15: the faithful δ=4 decomposition must have every 笔 separation ≥ 4 (IsValidBi-valid), " \
+        f"got min separation {_min_separation(faithful)}"
+
+    # value-≠-proof: even the FAITHFUL fold's produced 笔 list does NOT lock. The SAME obligation
+    # reports [domain_lock_undischarged] — a produced decomposition is not a proof (the §15 invariant).
+    _tier, lean_ref, _note = L.MAPPING["bi_decomposition"]
+    ob = DL.declare(_REAL_DECOMP_SRC, L.DOMAIN, "bi_decomposition", lean_ref)
+    st = DL.verify_lock(ob)
+    assert ob.status == "undischarged" and ob.lean_proof_q is None, \
+        f"§15: bi_decomposition obligation must be born undischarged, got {ob.status}/{ob.lean_proof_q}"
+    assert (not st.locked) and st.residue == DL.DOMAIN_LOCK_UNDISCHARGED, \
+        f"§15: a produced 笔 decomposition must NOT lock — expected [domain_lock_undischarged], got {st}"
+    # R4-closure honesty: the obligation locks to StrokeUniqueness#IsValidBi (the FULL list validity).
+    assert ob.isX_lean_ref.endswith("StrokeUniqueness.lean#IsValidBi"), \
+        f"§15: bi_decomposition must lock to the StrokeUniqueness IsValidBi target, got {ob.isX_lean_ref}"
+    print("§15 (bi_decomposition) PASS: the mutant is the δmin=1 OVER-SEGMENTATION of the full fold — "
+          "on the SAME `List Fractal` it emits a 笔 ⟨6,8⟩ (separation 2, IsValidBi-INVALID at δ=4) "
+          "where the faithful δ=4 fold extends to ⟨6,12⟩ (a real 新笔); the δ=4 decomposition is the "
+          "unique IsValidBi-valid 笔. And value≠proof: the faithful fold's produced 笔 list reports "
+          "[domain_lock_undischarged], NOT locked (R4 — full list-structural validity, not a kernel).")
+
+
+def section_40_bi_decomposition():
+    """§40 (bi_decomposition) — the discharge path is REACHABLE for the R4 obligation (stub proof q on
+    a COPY → locked) while the REAL bi_decomposition obligation stays undischarged. The faithful fold
+    produces a non-vacuous 笔 list AND the obligation is reachably dischargeable yet undischarged."""
+    _tier, lean_ref, _note = L.MAPPING["bi_decomposition"]
+    ob = DL.declare(_REAL_DECOMP_SRC, L.DOMAIN, "bi_decomposition", lean_ref)
+
+    # the faithful fold produces a non-vacuous 笔 list (two strokes) — non-vacuous.
+    strokes = _decode_strokes(chanlun_residua.run(_REAL_DECOMP_SRC, None)[0])
+    assert len(strokes) == 2, f"§40 precondition: bi_decomposition must emit 2 strokes, got {strokes}"
+
+    # the REAL obligation stays undischarged (we never stub-discharge it).
+    st_real = DL.verify_lock(ob)
+    assert (not st_real.locked) and st_real.residue == DL.DOMAIN_LOCK_UNDISCHARGED, \
+        f"§40: the REAL bi_decomposition obligation must stay undischarged, got {st_real}"
+
+    # on a COPY: a stub proof q discharges the R4 obligation → locked (path REACHABLE).
+    stub_proof_q = "stub_lean_proof_q_bi_decomposition_R4_anti_vacuity_only"
+    discharged = DL.discharge(ob, stub_proof_q)
+    st_locked = DL.verify_lock(discharged)
+    assert discharged.status == "discharged" and st_locked.locked and st_locked.residue is None, \
+        f"§40: a stub-discharged bi_decomposition copy must report locked, got {discharged.status}/{st_locked}"
+    # the original R4 obligation is still undischarged (non-mutating discharge).
+    assert DL.verify_lock(ob).residue == DL.DOMAIN_LOCK_UNDISCHARGED, \
+        "§40: discharging a copy must NOT lock the REAL bi_decomposition obligation."
+    print("§40 (bi_decomposition) PASS: the faithful fold emits a non-vacuous 笔 list AND the R4 "
+          "obligation's discharge path is REACHABLE (stub proof q on a COPY → locked), while the REAL "
+          "bi_decomposition obligation stays undischarged (no stub used — only cc's lake proof "
+          "`IsValidBi frs 4 (evalL prog)` discharges it).")
+
+
 def section_40_bi_separation():
     """§40 (bi_separation) — the discharge path is REACHABLE for the kernel obligation (stub proof q
     on a COPY → locked) while the REAL bi_separation obligation stays undischarged. sep=4 → the
@@ -242,8 +353,10 @@ def main():
     # §15 FIRST — falsifiability before anything else.
     section_15_mutant_first()
     section_15_bi_separation_delta_bug()
+    section_15_bi_decomposition_oversegment()
     section_40_anti_vacuity()
     section_40_bi_separation()
+    section_40_bi_decomposition()
     section_all_undischarged()
     print("verify_chanlun_domain_lock: PASS — every chanlun (缠论) 分型 residua-Scheme primitive has "
           "a domain-lock obligation bound to its lean/Chanlun/Fractal.lean target, born honestly "

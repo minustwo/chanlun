@@ -105,6 +105,24 @@ MAPPING = {
         "|p_b−p_t|≥4 — the audited δmin=1-bug fix), NOT full IsValidBi list validity (= R4, "
         "list-structural over List Fractal); lock theorem is the separation-clause ↔, not full =",
     ),
+    # ---- 笔-DECOMPOSITION — the FULL list-structural IsValidBi validity. CLOSES R4. ----
+    # bi_separation (above) locked only the δmin SEPARATION CLAUSE (a 2-pivot predicate). This
+    # obligation locks the WHOLE 笔-decomposition: bi_decomposition is the residua-Scheme `fold` over
+    # `List Fractal` carrying ⟨anchor, out⟩ — the EXACT IsValidBi_from / Stroke.step state machine at
+    # δmin=4. Its evalL output IS `strokes frs 4` (the unique 笔 list IsValidBi accepts). This reaches
+    # the layer the window-local 分型 / 2-pivot separation locks could not: list-structural validity
+    # over `List Fractal` (the discovered residue R4 — now CLOSED as an obligation). The lock theorem
+    # cc proves on the lake lane: `IsValidBi frs 4 (evalL(bi_decomposition frs))` (the program's output
+    # is a valid 笔 decomposition), which with `strokes_unique` gives THE unique 笔 — 缠论's defining
+    # 确定性 / 唯一分解 claim ("所有的图形，都可以唯一地分解为上下交替的笔"). Prop target ⇒ Tier-B ↔.
+    "bi_decomposition": (
+        "B", "chanlun:lean/Chanlun/StrokeUniqueness.lean#IsValidBi",
+        "Prop, FULL list-structural 笔 validity (CLOSES R4): a `fold` over `List Fractal` carrying "
+        "⟨anchor,out⟩ — the EXACT IsValidBi_from/Stroke.step state machine at δmin=4; evalL output = "
+        "strokes frs 4 (the unique IsValidBi alt). Lock theorem: `IsValidBi frs 4 (evalL(prog))` "
+        "(a Prop), which with strokes_unique gives THE unique 笔 (唯一分解 / 确定性). NOT a 2-pivot "
+        "kernel (= bi_separation) — this is the whole-list lock the 分型/separation locks couldn't reach.",
+    ),
 }
 
 
@@ -169,11 +187,19 @@ def main(argv):
         print(f"# Lock-theorem shape: chanlun isX are Prop -> evalL = true ↔ isX (Tier-B ↔, not Bool =).")
         print(f"# Kernel-scope: bi_separation locks the 新笔 SEPARATION KERNEL (the δmin clause, "
               f"δmin=4 ⟺ |p_b−p_t|≥4 — the audited δmin=1-bug fix), NOT full IsValidBi list validity (= R4).")
+        print(f"# R4 CLOSED: bi_decomposition locks the FULL list-structural IsValidBi validity — a fold "
+              f"over `List Fractal` carrying ⟨anchor,out⟩ (the IsValidBi_from/Stroke.step state machine "
+              f"at δmin=4; evalL = strokes frs 4 = the unique 笔). The layer the 分型/separation locks "
+              f"couldn't reach. Lock theorem: IsValidBi frs 4 (evalL prog) → strokes_unique ⇒ 唯一分解.")
         print(f"# {'PRIM':22s} {'TIER':4s} {'STATUS':16s} {'LEAN_REF (or NONE)'}")
         per_tier = {}
         for name, tier, ref, status, residue in rows:
             per_tier[tier] = per_tier.get(tier, 0) + 1
-            scope = "  [kernel: 新笔 δmin separation clause, NOT full IsValidBi = R4]" if name == "bi_separation" else ""
+            scope = ""
+            if name == "bi_separation":
+                scope = "  [kernel: 新笔 δmin separation clause, NOT full IsValidBi = R4]"
+            elif name == "bi_decomposition":
+                scope = "  [FULL list-structural IsValidBi — CLOSES R4 (笔 唯一分解 / 确定性)]"
             print(f"  {name:22s} {tier:4s} {status:16s} {ref}{scope}")
         tiers = ", ".join(f"{t}={per_tier.get(t, 0)}" for t in ("A", "B", "C", "D") if per_tier.get(t))
         print(f"# SUMMARY: {len(rows)} obligations declared, ALL undischarged "
