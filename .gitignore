@@ -6,3 +6,6 @@ build/
 __pycache__/
 *.pyc
 .DS_Store
+.external-audit-cache/
+differential/czsc_core_probe/Cargo.lock
+differential/czsc_core_probe/target/

@@ -12,6 +12,8 @@
 * **冻结的一致性语料库**（`conformance/chanlun-v1/`）：逐字节对齐、
   语言无关的测试套件。48 个 fixture × 6 个阶段，SHA-256 锁定。
 * **多语言移植**（`impl/`）：TypeScript、Go、PineScript 后端均实现同一算法。
+* **扩展边界**（`profiles/`、`adapters/`、`differential/`）：外部框架可以被
+  对比、适配并用于产品层，但不能改变已证明的 `chanlun-v1` 几何语义。
 
 English version: see [README.md](README.md).
 
@@ -163,6 +165,51 @@ lake build Chanlun
 ```
 
 `lake build Chanlun` 成功 ⇒ 21 个模块在 Lean 内核下无任何 `sorry`。
+
+### 验证扩展边界
+
+这些检查只做追加验证，不修改冻结语料库或 Lean 库。
+
+```bash
+python3 profiles/verify_profiles.py
+python3 adapters/verify_adapters.py
+python3 differential/compare.py --backend canonical
+python3 differential/compare.py --backend fixture-replay
+python3 differential/fetch_external_sources.py chanpy
+python3 differential/absorption_report.py
+python3 differential/pipeline_projection_report.py
+python3 differential/optional_backend_availability.py
+python3 differential/source_audit.py
+```
+
+`chan.py`、`czsc`、交易信号工作台等外部实现必须先进入 `profiles/` 和
+`adapters/`。只有逐字节复现 `chanlun-v1`，或创建未来的新语料版本，才可能成为
+canonical；否则差异必须保持为显式 profile divergence。
+
+当前吸收状态：
+
+- `chanlun-trade-signal`：已接 runtime differential，覆盖
+  `normalize/fractal/stroke/zhongshu`。其中 Def-3 分型在冻结 fixtures 上与
+  `chanlun-v1` 一致；其他阶段差异写入
+  `differential/ABSORPTION_REPORT.md`，保持为 profile divergence。
+- `chan.py`：已接 `chanpy` runtime differential，通过内存 custom DataAPI
+  喂 fixture。运行 `python3 differential/fetch_external_sources.py chanpy`
+  后，`normalize` 和 `fractal` 与 `chanlun-v1` 逐字节一致；full-pipeline
+  projection 也确认 N/Def-3 一致，并把 BI/ZS 记录为 profile-local，因为这些
+  阶段需要 chan.py 自己的对象图，而不是 canonical 中间 wire。
+- `czsc`：已做 source audit，记录 Rust/PyO3 core、BarGenerator、signals/trader
+  等产品层能力。runtime backend 名为 `czsc-native`，只接 `czsc._native`；
+  缺 `_native` 时 SKIP-LOUD，不回退到 PyPI 旧版 Python 语义。另有
+  `differential/czsc_core_probe/` 里的可选 Rust probe，固定到已发布 crate
+  `czsc-core = 1.0.0-rc.8`；首次编译会拉上游 Rust 依赖图，所以不进默认 CI。
+  `differential/OPTIONAL_BACKENDS_REPORT.md` 记录当前 Cargo cache 是否已足够
+  运行这条 probe。PyPI `czsc==0.10.12` 作为单独 release profile 记录，因为它
+  依赖 `rs_czsc`，且可能不同于 GitHub master `_native`；
+  `install_czsc_pypi_profile.py` 会创建隔离的 no-deps venv，并把缺失 import
+  依赖保持为 SKIP-LOUD。`czsc-pypi-rs` backend 会从这个 release profile 调用
+  `rs_czsc` 做 full-pipeline runtime projection；当前非平凡 walk fixtures 仍是
+  profile divergence，因为 `rs_czsc.CZSC` 暴露的是在线分析状态，而不是 frozen
+  canonical wire。
 
 ### 运行参考实现
 

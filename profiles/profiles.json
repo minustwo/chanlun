@@ -1,0 +1,114 @@
+{
+  "schema": "chanlun-profile-registry-v1",
+  "canonical_profile": "canonical-v1",
+  "profiles": [
+    {
+      "id": "canonical-v1",
+      "kind": "canonical",
+      "source": "minustwo/chanlun",
+      "authority": "conformance/chanlun-v1/manifest.json",
+      "proof_kind": "frozen_corpus_identity",
+      "semantic_scope": [
+        "normalize",
+        "fractal",
+        "stroke",
+        "zhongshu",
+        "trend_type",
+        "pipeline"
+      ],
+      "realtime_virtual_state": false,
+      "allowed_differences": [],
+      "divergence_policy": "any byte divergence is non-conformant"
+    },
+    {
+      "id": "chanpy-main-declared",
+      "kind": "external-declared",
+      "source": "github.com/Vespa314/chan.py@main",
+      "authority": null,
+      "proof_kind": "none-yet",
+      "semantic_scope": [
+        "kline",
+        "fractal",
+        "bi",
+        "seg",
+        "zs",
+        "bsp",
+        "multi_level"
+      ],
+      "realtime_virtual_state": true,
+      "allowed_differences": [
+        "bi configuration may change stroke formation",
+        "virtual bi/seg state may change at the stream tail",
+        "gap_as_kl may change the distance gate",
+        "zs algorithms may differ from canonical first3/all zone gates"
+      ],
+      "divergence_policy": "must be labelled known_profile_divergence or unknown_divergence"
+    },
+    {
+      "id": "czsc-master-declared",
+      "kind": "external-declared",
+      "source": "github.com/waditu/czsc@master",
+      "authority": null,
+      "proof_kind": "none-yet",
+      "semantic_scope": [
+        "fx",
+        "bi",
+        "zs",
+        "signals",
+        "trader"
+      ],
+      "realtime_virtual_state": true,
+      "allowed_differences": [
+        "Rust/PyO3 engineering API is not the canonical wire shape",
+        "signals and trader state are derived layers, not geometry core",
+        "data resampling may differ before adapter normalization"
+      ],
+      "divergence_policy": "must be labelled known_profile_divergence or unknown_divergence"
+    },
+    {
+      "id": "czsc-pypi-0.10-declared",
+      "kind": "external-declared",
+      "source": "pypi:czsc==0.10.12 + rs-czsc==0.1.26.post260402",
+      "authority": null,
+      "proof_kind": "none-yet",
+      "semantic_scope": [
+        "fx",
+        "bi",
+        "zs",
+        "signals",
+        "trader",
+        "python_api"
+      ],
+      "realtime_virtual_state": true,
+      "allowed_differences": [
+        "PyPI 0.10.x depends on rs_czsc and may differ from GitHub master czsc._native",
+        "stable package API is a release profile, not canonical geometry",
+        "runtime comparison requires both czsc and rs_czsc wheels to be importable"
+      ],
+      "divergence_policy": "must be labelled known_profile_divergence or unknown_divergence"
+    },
+    {
+      "id": "trade-signal-workbench-declared",
+      "kind": "external-declared",
+      "source": "github.com/wepoets1107/chanlun-trade-signal@main",
+      "authority": null,
+      "proof_kind": "none-yet",
+      "semantic_scope": [
+        "kline",
+        "fractal",
+        "stroke",
+        "center",
+        "buy_sell_point",
+        "risk_plan",
+        "chart"
+      ],
+      "realtime_virtual_state": true,
+      "allowed_differences": [
+        "float market data must be adapted to integer bars before canonical comparison",
+        "buy/sell confidence and risk planning are derived signals",
+        "heuristic thresholds are profile-local and cannot change canonical geometry"
+      ],
+      "divergence_policy": "must be labelled known_profile_divergence or unknown_divergence"
+    }
+  ]
+}

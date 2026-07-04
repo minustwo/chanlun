@@ -134,6 +134,32 @@ jobs:
           python3 conformance/chanlun-v1/example_phase3_check.py reference
           python3 conformance/chanlun-v1/example_phase3_check.py alt
 
+  extension-boundaries:
+    name: Profiles/adapters/differential boundary
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Verify profile registry
+        run: python3 profiles/verify_profiles.py
+
+      - name: Verify canonical input adapters
+        run: python3 adapters/verify_adapters.py
+
+      - name: Differential smoke against frozen corpus
+        run: |
+          set -euo pipefail
+          python3 differential/compare.py --backend canonical
+          python3 differential/compare.py --backend fixture-replay
+          python3 differential/absorption_report.py
+          python3 differential/pipeline_projection_report.py
+          python3 differential/optional_backend_availability.py
+
   conformance-ts:
     name: Conformance corpus (chanlun-v1, TypeScript backend)
     runs-on: ubuntu-latest

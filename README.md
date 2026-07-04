@@ -14,6 +14,9 @@ pure-Python reference backend and multi-language ports.
   language-agnostic test suite. 48 fixtures × 6 stages, SHA-256 locked.
 * **Multi-language ports** (`impl/`): TypeScript, Go, and PineScript backends
   exercising the same algorithm.
+* **Extension boundary** (`profiles/`, `adapters/`, `differential/`):
+  external frameworks may be compared, adapted, and used for product layers
+  without changing the proven `chanlun-v1` geometry.
 
 Chinese version: see [README.zh.md](README.zh.md).
 
@@ -190,6 +193,57 @@ lake build Chanlun
 
 A successful `lake build Chanlun` certifies all 21 modules under the Lean
 kernel with no admitted lemmas.
+
+### Verify extension boundaries
+
+These checks are additive: they do not edit the frozen corpus or the Lean
+library.
+
+```bash
+python3 profiles/verify_profiles.py
+python3 adapters/verify_adapters.py
+python3 differential/compare.py --backend canonical
+python3 differential/compare.py --backend fixture-replay
+python3 differential/fetch_external_sources.py chanpy
+python3 differential/absorption_report.py
+python3 differential/pipeline_projection_report.py
+python3 differential/optional_backend_availability.py
+python3 differential/source_audit.py
+```
+
+External implementations such as `chan.py`, `czsc`, and product workbenches
+must enter through `profiles/` and `adapters/`. They become canonical only by
+reproducing `chanlun-v1` byte-for-byte or by creating a future corpus version;
+otherwise their differences remain labelled profile divergence.
+
+Current absorption status:
+
+- `chanlun-trade-signal`: runtime differential is wired for
+  `normalize/fractal/stroke/zhongshu`. Def-3 fractal matches `chanlun-v1` on
+  the frozen fixtures; the other stage differences are recorded as profile
+  divergence in `differential/ABSORPTION_REPORT.md`.
+- `chan.py`: runtime differential is wired through the `chanpy` backend and an
+  in-memory custom DataAPI. After
+  `python3 differential/fetch_external_sources.py chanpy`, `normalize` and
+  `fractal` are byte-identical to `chanlun-v1`; full-pipeline projections
+  confirm the same N/Def-3 equality and record BI/ZS as profile-local because
+  those stages use chan.py's own object graph rather than the canonical
+  intermediate wire.
+- `czsc`: source audit records the Rust/PyO3 core and product surfaces
+  (BarGenerator, signals/trader). A runtime backend named `czsc-native` is
+  wired for `czsc._native`; missing `_native` is SKIP-LOUD and never falls
+  back to older PyPI Python semantics. An optional Rust probe for published
+  crate `czsc-core = 1.0.0-rc.8` lives under `differential/czsc_core_probe/`;
+  it is not in default CI because first compile pulls the upstream Rust graph.
+  `differential/OPTIONAL_BACKENDS_REPORT.md` records whether that graph is
+  currently available in the local Cargo cache. PyPI `czsc==0.10.12` is tracked
+  as a separate release profile because it depends on `rs_czsc` and may differ
+  from GitHub master `_native`; `install_czsc_pypi_profile.py` builds an
+  isolated no-deps venv and keeps missing import deps as SKIP-LOUD. The
+  `czsc-pypi-rs` backend calls `rs_czsc` from that release profile for
+  full-pipeline runtime projection; current nontrivial walk fixtures remain
+  profile divergence because `rs_czsc.CZSC` exposes online analyzer state
+  rather than the frozen canonical wire.
 
 ### Run the reference oracles
 
